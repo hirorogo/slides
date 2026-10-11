@@ -1,9 +1,10 @@
 ---
 marp: true
-paginate: true
 theme: honoconf
+paginate: true
 size: 16:9
-title: 個人開発者よ、Honoを使え
+title: HonoConf 2026 theme preview
+description: honoconf.devの2026サイトをモチーフにしたMarpテーマ
 ---
 
 <!-- _class: title -->
@@ -20,7 +21,7 @@ title: 個人開発者よ、Honoを使え
 
 <div class="title-wrap">
 
-# 個人開発者よ、<br><span class="outline">Honoを</span><span class="accent">使え。</span>
+# 個人開発者よ<br><span class="outline">Honoを</span><span class="accent">使え。</span>
 
 </div>
 
@@ -52,6 +53,25 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
+<!-- _class: lead -->
+# なんと <span class="red">66%成立</span>
+## Hono ≒ バンジージャンプ
+
+---
+
+<!-- _class: lead -->
+# しかし！！
+
+---
+
+<!-- _class: lead -->
+
+# ここではその話はしません！
+## なぜならそのプロポーザルは採択されなかったから
+### 気になったら懇親会で話しかけてください！
+
+---
+
 ## 好きな <span class="red">フレームワーク</span> ありますか？
 
 <div class="feature-grid favorite-frameworks-grid" style="margin-top: 18px; gap: 28px;">
@@ -67,7 +87,7 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
-## 個人開発、何を使いますか？
+## アンケートしてみた結果、個人開発では...
 
 <div class="choice-grid">
   <div class="mini-panel"><b>Next.js</b><span>大きなReactエコシステム</span></div>
@@ -84,11 +104,12 @@ title: 個人開発者よ、Honoを使え
 
 <div class="geo ring chapter-ring"></div>
 
-# 個人開発の敵は、<br><strong>複雑さ</strong>です
+# 個人開発の敵は<strong>複雑さ</strong>
 
 ---
 
-## 「あとで必要かも」を、最初から背負っていました
+# 「あとで必要かも」
+## 最初から背負っていませんか？
 
 <div class="type-ghost stats-word">STATE / CACHE / HYDRATION</div>
 
@@ -103,17 +124,33 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
-## 小説投稿サイトを、没にしました
+## 小説投稿サイトを没にしました
 
-<div class="flow">
-  <div class="flow-step"><b>01 / FETCH</b><span> `useEffect` から大量のAPI Routesを呼ぶ</span></div>
+<div class="flow failure-flow">
+  <div class="flow-step"><b>01 / FETCH</b><span>ブラウザから<br>大量のAPIを呼ぶ</span></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><b>02 / WAIT</b><span>VercelとNeonのリージョンも未整理</span></div>
+  <div class="flow-step"><b>02 / WAIT</b><span>アプリとDBの<br>配置場所も未整理</span></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><b>03 / DROP</b><span>待たせる設計のまま開発中止</span></div>
+  <div class="flow-step"><b>03 / DROP</b><span>待ち時間を改善できず<br>開発を中止</span></div>
 </div>
 
-> Next.jsが悪い、という話ではありません
+<div class="failure-transition">当時の構成を見てみます。</div>
+
+---
+
+## 当時はNext.js + Vercel + Neon
+
+<div class="layers failure-stack">
+  <div class="layer"><b>Next.js</b><span>画面とAPI Routesを実装</span></div>
+  <div class="layer"><b>Vercel</b><span>Next.jsアプリの公開先</span></div>
+  <div class="layer"><b>Neon</b><span>データを保存するPostgreSQL</span></div>
+</div>
+
+<div class="failure-request"><span>ブラウザ</span><span class="flow-arrow">→</span><span>Vercel上のAPI</span><span class="flow-arrow">→</span><span>NeonのDB</span></div>
+
+<div class="failure-context">useEffectでデータを取得し、ブラウザで画面を組み立てる。<br>アプリとDBのリージョン（配置地域）も未整理でした。</div>
+
+<div class="failure-takeaway">Next.jsが悪いという話ではありません。<br>当時の自分の実装と構成の問題です。</div>
 
 ---
 
@@ -121,13 +158,8 @@ title: 個人開発者よ、Honoを使え
 
 <div class="geo solid-square closing-square"></div>
 
-# 初期表示、<br><strong>最悪で約1分。</strong>
-
----
-
-<!-- _class: lead -->
-
-# 必要になる前から、<br><strong>SPAの複雑さ</strong>を<br>背負っていました
+# 初期表示<br><strong>最悪で約1分。</strong>
+### 言い過ぎではあるかもだけど、少なくとも30秒以上はした
 
 ---
 
@@ -135,19 +167,20 @@ title: 個人開発者よ、Honoを使え
 
 <div class="big-statement">技術スタックは、<br><em>Next.js</em></div>
 
-<br />
-
-<div class="feature-grid">
-  <div class="mini-panel"><b>計算する</b><span>ブラウザで十分</span></div>
-  <div class="mini-panel"><b>送る</b><span>値をいちいちバックエンドへ</span></div>
-  <div class="mini-panel"><b>結果</b><span>ロードが重い</span></div>
-  <div class="mini-panel"><b>収益化</b><span>忍者 AdMaxなる広告収益化サービスで...</span></div>
-  <div class="mini-panel"><b>デプロイ</b><span>Vercelにてホスト。収益化しているのでおそらくVercel有料プラン</span></div>
+<div class="flow">
+  <div class="flow-step"><b>計算する</b><span>ブラウザで十分</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>送る</b><span>値をバックエンドへ</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>待つ</b><span>ロードが重い</span></div>
+  <div class="flow-step"><b>収益</b><span>どこぞのAdsence</span></div>
 </div>
+
+<div class="note">広告収益化まで考えると、無料プランの利用条件も気になります。</div>
 
 ---
 
-## LPなのに、React SPA
+## LPなのにReact SPA
 
 <div class="big-statement">ページは複数。ブログもある。<br>でも<em>metaはいつも同じ</em></div>
 
@@ -163,7 +196,7 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
-## そこで、Renovelを作り直しました
+## そこでReNovelを作り直しました
 
 <div class="screen-frame">
   <img src="img/renovel-home.png" alt="Renovelのホーム画面">
@@ -171,18 +204,15 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
-## この見た目、Honoで動いています
+## この見た目はHonoで動いています
 
-<div class="measure-grid">
-  <div class="measure"><b>9,956</b><span>TypeScript / TSX 行数</span></div>
-  <div class="measure"><b>27</b><span>JSX View</span></div>
-  <div class="measure"><b>9</b><span>route module</span></div>
-  <div class="measure"><b>0</b><span>React / Next.js</span></div>
-</div>
+<div class="big-statement">約1万行のアプリを<br><em>React / Next.jsなし</em>で動かす</div>
+
+<div class="type-ghost stats-word">27 JSX VIEW / 9 ROUTE MODULE</div>
 
 ---
 
-## 構成も、まずはこれだけ
+## 構成はまずこれだけ
 
 <div class="choice-grid">
   <div class="mini-panel"><b>Bun + Hono</b><span>Runtime / Web</span></div>
@@ -199,11 +229,14 @@ title: 個人開発者よ、Honoを使え
 <div class="chapter-number">02</div>
 <div class="geo ring chapter-ring"></div>
 
-# 複雑さは、<br>あとで払う
+# 〝複雑〟さは あとで払おう
+
+最初からAPIとかゴリゴリに設計しなくても、
+個人開発だからこそまずは〝単純〟に始めれる
 
 ---
 
-## Honoなら、まずHTMLを返せます
+## HonoならまずHTMLを返せます
 
 <div class="flow">
   <div class="flow-step"><b>GET /novel</b><span>URL + HTTP</span></div>
@@ -225,7 +258,7 @@ title: 個人開発者よ、Honoを使え
 
 ---
 
-## `hono/jsx`は、HTMLを返す
+## `hono/jsx`はHTMLを返す
 
 <div class="big-statement">JSXを書いて、<br><em>サーバーでHTML</em>を作る</div>
 
@@ -262,7 +295,7 @@ app.get('/novel', (c) => c.html(
 
 ---
 
-## islandって、何？
+## islandって何？
 
 <!--  -->
 <div class="big-statement">HTMLの海に浮かぶ、<br><em>小さなインタラクション</em></div>
@@ -271,7 +304,7 @@ app.get('/novel', (c) => c.html(
 
 ---
 
-## `hono/jsx/dom`は、そこだけ動かす
+## `hono/jsx/dom`はそこだけ動かす
 
 <div class="big-statement">ページ全体を動かさない。<br><em>必要な部分だけ</em>動かす</div>
 
@@ -284,7 +317,7 @@ export function LikeButton() {
 
 ---
 
-## JSを足したのは、ここだけ
+## JSを足したのはここだけ
 
 <div class="type-ghost stats-word">LIKE / FOLLOW / RATE / BOOKSHELF</div>
 
@@ -296,7 +329,7 @@ export function LikeButton() {
 
 <!-- _class: small-code -->
 
-## まず、JavaScriptなしで動くようにする
+## まずJavaScriptなしで動くようにする
 
 <div class="vertical-type">No-JS fallback / Server HTML</div>
 
@@ -315,7 +348,7 @@ export function LikeButton() {
 
 <!-- _class: small-code -->
 
-## 動かしたい部分だけ、ブラウザで強化する
+## 動かしたい部分だけブラウザで強化する
 
 ```tsx
 /** @jsxImportSource hono/jsx/dom */
@@ -338,7 +371,7 @@ export function LikeButton({ action, liked: initial, count: initialCount }) {
 
 ---
 
-## 送るJSは、このくらいです
+## 送るJSはこのくらいです
 
 <div class="measure-grid">
   <div class="measure"><b>34750B</b><span>islands bundle<br>圧縮前</span></div>
@@ -349,7 +382,7 @@ export function LikeButton({ action, liked: initial, count: initialCount }) {
 
 ---
 
-## サーバー側も、測ってみました
+## サーバー側も測ってみました
 
 <div class="measure-grid">
   <div class="measure"><b>0.33MB</b><span>server bundle<br>Bun minify</span></div>
@@ -364,13 +397,13 @@ export function LikeButton({ action, liked: initial, count: initialCount }) {
 
 <div class="geo ring chapter-ring"></div>
 
-## SEOは、フレームワーク名で決まらない
+## SEOはフレームワーク名で決まらない
 
 <div class="big-statement">各URLの情報が、<em>最初のHTML</em>に入っているか</div>
 
 ---
 
-## 最初のHTMLに、何を入れる？
+## 最初のHTMLに何を入れる？
 
 <div class="choice-grid">
   <div class="mini-panel"><b>Content</b><span>本文 / title / description</span></div>
@@ -382,21 +415,35 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 ---
 
-## 公開までの手数も、減らせます
+## HonoはCloudflare Workersに載せられる
 
 <div class="flow">
   <div class="flow-step"><b>APP</b><span>Hono appをexport</span></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><b>DATA</b><span>D1をbindingで参照</span></div>
+  <div class="flow-step"><b>WORKERS</b><span>エッジでリクエストを処理</span></div>
   <div class="flow-arrow">→</div>
   <div class="flow-step"><b>SHIP</b><span>`wrangler deploy`</span></div>
 </div>
 
-> Renovel本体はBun + PostgreSQLです。Workers + D1は持ち帰り用の小さな別サンプルで扱います
+<div class="big-statement">まずはアプリを<br><em>小さく公開する</em></div>
 
 ---
 
-## デプロイ先、どうしますか？
+## データはD1にbindingでつなぐ
+
+<div class="flow">
+  <div class="flow-step"><b>REQUEST</b><span>Hono route</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>DATA</b><span>D1 binding</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>RESPONSE</b><span>HTML / JSON</span></div>
+</div>
+
+<div class="note">Renovel本体はBun + PostgreSQLです。Workers + D1は持ち帰り用の別サンプルです。</div>
+
+---
+
+## デプロイ先どうしますか？
 
 <div class="flow">
   <div class="flow-step"><b>Next.js</b><span>Vercel / AWS など</span></div>
@@ -410,20 +457,21 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 ---
 
-## 個人開発の基盤として、Cloudflare
+## 個人開発の基盤にCloudflare
 
-<div class="measure-grid">
-  <div class="measure"><b>FREE</b><span>Workers Free<br>無料枠から始める</span></div>
-  <div class="measure"><b>100K</b><span>requests / day<br>Workers Freeの上限</span></div>
-  <div class="measure"><b>$5</b><span>Workers Paid<br>有料プランの入口</span></div>
-  <div class="measure"><b>EDGE</b><span>世界のエッジで<br>アプリを動かす</span></div>
+<div class="flow">
+  <div class="flow-step"><b>FREE</b><span>無料枠から始める</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>EDGE</b><span>世界のエッジで動かす</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><b>PAID</b><span>必要になったら払う</span></div>
 </div>
 
-<div class="big-statement">だから、Honoは<br><em>Cloudflareと相性がいい</em></div>
+<div class="big-statement">だからHonoは<br><em>Cloudflareと相性がいい</em></div>
 
 ---
 
-## どれが上か、ではなく何が必要か
+## どれが上かではなく何が必要か
 
 | Choice | 向いている場面 |
 | --- | --- |
@@ -450,7 +498,7 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 ---
 
-## もちろん、別の選択肢もあります
+## もちろん別の選択肢もあります
 
 <div class="panel">
 
@@ -471,11 +519,11 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 <div class="chapter-label">Chapter 03 / Take it home</div>
 <div class="chapter-number">03</div>
 
-# まず小さく作る。<br>必要な分だけ育てる
+# まず小さく作る<br>必要な分だけ育てる
 
 ---
 
-## まず、サーバーだけで動かす
+## まずサーバーだけで動かす
 
 <div class="steps">
   <div class="step"><b>01</b><span>まずHTMLを返す</span></div>
@@ -486,7 +534,7 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 ---
 
-## 必要になったら、足していく
+## 必要になったら足していく
 
 <div class="steps">
   <div class="step"><b>03</b><span>必要な場所だけJSを足す</span></div>
@@ -502,7 +550,7 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 <div class="geo solid-square closing-square"></div>
 
-# Honoを盲目的に使え、<br>という話ではありません
+# Honoを盲目的に使え<br>という話ではありません
 
 ---
 
@@ -511,4 +559,4 @@ ReactやNext.jsでもSSRで実現できます。Honoではページ全体のhydr
 
 <div class="geo ring chapter-ring"></div>
 
-# 個人開発者よ、<br><strong>複雑さをあとで払える<br>道具として</strong><br>Honoを使え。
+# 個人開発者よ<br><strong>複雑さをあとで払える<br>道具として</strong><br>Honoを使え。
