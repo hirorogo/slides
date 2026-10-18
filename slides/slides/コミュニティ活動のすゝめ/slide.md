@@ -372,12 +372,6 @@ published: true
 
 ::center size=1.5 bg=white::
 
-水を飲む
-
----
-
-::center size=1.5 bg=white::
-
 人
 
 ---
@@ -562,12 +556,6 @@ published: true
 ::center::
 
 その挑戦が、また新しい出会いを生む
-
----
-
-::center size=1.5 bg=white::
-
-水を飲む 🍵
 
 ---
 
@@ -780,12 +768,6 @@ published: true
 - 運営者が信頼できるか
 
 -# 高校生なら、公開イベント・信頼できる運営の場から始めると安心
-
----
-
-::center size=1.5 bg=white::
-
-水を飲む
 
 ---
 
