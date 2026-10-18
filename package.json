@@ -11,7 +11,7 @@
     "prepare": "vp config"
   },
   "dependencies": {
-    "ippon-slides": "^0.1.1"
+    "ippon-slides": "^0.1.2"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
