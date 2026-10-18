@@ -14,6 +14,12 @@ published: true
 
 田中博悠 / tanahiro2010
 
+::note::
+
+「Terraformで素数をマイニングしたら、ブロックチェーンが生まれた」というタイトルで発表します。田中博悠です。よろしくお願いします。
+
+全 98 枚・想定 12 分。巻くなら ①Phase 2 のハマりポイント → ②Phase 4 の検証 HCL → ③destroy ログ 2 枚目 の順で落とす。
+
 ---
 
 ## 田中博悠 / tanahiro2010
@@ -27,11 +33,23 @@ published: true
 ::right::
 ![tanahiro2010](./img/tanahiro_hono.jpg)
 
+::note::
+
+高校1年で、普段は TypeScript で Web とか CLI とか AI エージェントとか、あとセキュリティまわりを触っています。写真はバンジージャンプしてるところです。あとで聞いてください。
+
+笑いが取れなくても気にせず次へ。**15 秒で切る。**
+
 ---
 
 ::center::
 
 Terraform、使ってますか？
+
+::note::
+
+まず、Terraform 使ってる方ってどのくらいいますか？
+
+軽く手を挙げてもらう。挙手が少なければ「大丈夫です、今日は Terraform の話ほぼしません」と足す。
 
 ---
 
@@ -39,11 +57,19 @@ Terraform、使ってますか？
 
 インフラをコードで管理するやつ
 
+::note::
+
+インフラをコードで管理するツールですね。
+
 ---
 
 ::center::
 
 Infrastructure as Code
+
+::note::
+
+Infrastructure as Code、略して IaC。
 
 ---
 
@@ -51,11 +77,19 @@ Infrastructure as Code
 
 Infrastructure as **Code**
 
+::note::
+
+Infrastructure as、**Code**。
+
 ---
 
 ::center::
 
 つまり
+
+::note::
+
+つまり、
 
 ---
 
@@ -63,11 +97,21 @@ Infrastructure as **Code**
 
 **Code**
 
+::note::
+
+**Code** なんですよ。
+
+ここは溜める。1 拍置く。
+
 ---
 
 ::center::
 
 Code なら
+
+::note::
+
+Code なら……
 
 ---
 
@@ -75,17 +119,31 @@ Code なら
 
 素数のマイニングもできますよね？
 
+::note::
+
+素数のマイニングも、できますよね？
+
 ---
 
 ::center size=2::
 
 🤔
 
+::note::
+
+何も言わずに 1 拍。
+
 ---
 
 ::center bg=purple::
 
 できました
+
+::note::
+
+できました。
+
+**ここが一つ目の山。** 拍手や笑いが来たら待つ。
 
 ---
 
@@ -97,6 +155,10 @@ Code なら
 4. **PrimeChain** — 素数でブロックチェーンを作る
 5. **Terraform Destroy** — 全部壊す
 
+::note::
+
+今日は 5 つのフェーズで話します。HCL だけで素数を探して、Terraform が Terraform を起動して、それを並列にして、素数でブロックチェーンを作って、最後に全部壊します。
+
 ---
 
 ## ルール
@@ -107,11 +169,19 @@ Code なら
 - Provider は Terraform 組み込みのものだけ
   - `terraform_data` / `terraform_remote_state`
 
+::note::
+
+ルールがあります。計算ロジックは**すべて HCL**。Python や JS で計算したら負け。シェルがやっていいのは「Terraform を起動する」ことと「ファイルを置く」ことだけ。Provider も Terraform 組み込みのものだけです。
+
 ---
 
 ::center::
 
 **Terraform 以外に計算させたら負け**
+
+::note::
+
+Terraform 以外に計算させたら、負けです。
 
 ---
 
@@ -121,11 +191,19 @@ Phase 1
 
 Prime Discovery
 
+::note::
+
+まず Phase 1、素数を探します。
+
 ---
 
 ::center::
 
 HCL にはループがない
+
+::note::
+
+HCL にはループ構文がありません。for 文も while もない。
 
 ---
 
@@ -133,11 +211,19 @@ HCL にはループがない
 
 でも `for` 式はある
 
+::note::
+
+でも、**for 式**はあります。リスト内包表記みたいなやつですね。
+
 ---
 
 ::center::
 
 `n` が素数 ⇔ `2..√n` のどれでも割り切れない
+
+::note::
+
+素数判定はシンプルに試し割り法です。n が素数っていうのは、2 からルート n までのどれでも割り切れない、ということ。これ、for 式で書けます。
 
 ---
 
@@ -153,11 +239,21 @@ locals {
 }
 ```
 
+::note::
+
+これが全部です。range で候補を作って、for 式で回して、`alltrue` で「全部の割り算の余りがゼロじゃない」ことを判定する。強調行を指して、この 1 行が素数判定です。
+
+**コードは全部読まない。ハイライト行だけ指す。**
+
 ---
 
 ::center::
 
 `terraform apply` すると
+
+::note::
+
+これを `terraform apply` すると、
 
 ---
 
@@ -173,11 +269,19 @@ primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
 summary = "[1, 100) の 98 個の整数を判定し、25 個の素数を発見しました（最大: 97）"
 ```
 
+::note::
+
+素数が出てきます。1 から 100 までで 25 個。
+
 ---
 
 ::center::
 
 **Resources: 0 added**
+
+::note::
+
+ここ見てください。**Resources: 0 added**。
 
 ---
 
@@ -187,17 +291,29 @@ summary = "[1, 100) の 98 個の整数を判定し、25 個の素数を発見�
 
 -# terraform apply が素数を計算しているだけ
 
+::note::
+
+インフラは何も作ってません。`terraform apply` が、ただ素数を計算しているだけです。
+
 ---
 
 ::center bg=blue::
 
 ハマりポイント
 
+::note::
+
+ここでハマりポイントがありました。
+
 ---
 
 ::center::
 
 `range()` は **1024 要素** までしか作れない
+
+::note::
+
+`range()` 関数、1024 要素までしか作れないんです。
 
 ---
 
@@ -206,6 +322,10 @@ $ echo 'length(range(1025))' | terraform console
 
 Error: Error in function call
 ```
+
+::note::
+
+`range(1025)` やるとエラーになります。知らなかった。
 
 ---
 
@@ -222,11 +342,21 @@ locals {
 
 -# 除数側の range(2, √n) も 1024 以内 → n は 1024² = 1,048,576 まで
 
+::note::
+
+なので探索範囲を 1024 ずつのチャンクに分けて、flatten で平らにしました。
+
+ちなみに割る側の `range(2, √n)` も 1024 以内に収める必要があるので、扱える n の上限は 1024 の 2 乗、だいたい 100 万です。
+
 ---
 
 ::center::
 
 10 万までやってみた
+
+::note::
+
+で、10 万までやってみました。
 
 ---
 
@@ -238,17 +368,29 @@ summary = "[1, 100000) の 99998 個の整数を判定し、9592 個の素数を
 real  2:02.14
 ```
 
+::note::
+
+9592 個見つかりました。かかった時間が、
+
 ---
 
 ::center size=2::
 
 **2 分**
 
+::note::
+
+2 分。
+
 ---
 
 ::center::
 
 遅い
+
+::note::
+
+遅い。
 
 ---
 
@@ -258,11 +400,19 @@ Phase 2
 
 Recursive Terraform
 
+::note::
+
+Phase 2。遅いので並列化したい。そのためにまず範囲を分割したい。
+
 ---
 
 ::center::
 
 範囲を分割したい
+
+::note::
+
+範囲を分割したい。
 
 ---
 
@@ -270,17 +420,29 @@ Recursive Terraform
 
 でも HCL には再帰関数もない
 
+::note::
+
+でも HCL には再帰関数もないんですよ。ループもない、再帰もない。
+
 ---
 
 ::center::
 
 なら
 
+::note::
+
+なら、
+
 ---
 
 ::center::
 
 **Terraform を再帰起動すればいい**
+
+::note::
+
+**Terraform 自体を再帰起動すればいい**。
 
 ---
 
@@ -303,6 +465,10 @@ module "child" {
 }
 ```
 
+::note::
+
+範囲が大きければ半分に割って、自分自身を子 Terraform として 2 つ起動します。強調行を指して、`config_dir` に自分のディレクトリを渡しているのがポイントです。自分で自分を apply します。
+
 ---
 
 ## spawn モジュール
@@ -323,6 +489,10 @@ resource "terraform_data" "process" {
 }
 ```
 
+::note::
+
+起動の実体がこれ。`terraform_data` の `local-exec` で `terraform init` して `terraform apply` する。子ごとに State の置き場所と `TF_DATA_DIR` を分けているので、同じディレクトリを何個でも同時に apply できます。
+
 ---
 
 ## 子の結果は子の State から読む
@@ -339,6 +509,12 @@ data "terraform_remote_state" "process" {
 ```
 
 -# 引数は TF_VAR_*、戻り値は terraform_remote_state。プロセス間通信です
+
+::note::
+
+結果は `terraform_remote_state` で子の State を読んで回収します。`depends_on` で、子の apply が終わってから読むようにする。
+
+引数は環境変数の `TF_VAR_*`、戻り値は State。これ、要するに**プロセス間通信**です。
 
 ---
 
@@ -362,6 +538,10 @@ tree = [
 ]
 ```
 
+::note::
+
+動かすとこうなります。root が L と R に割れて、その下もまた割れて、葉だけが素数を計算している。
+
 ---
 
 ::center::
@@ -370,11 +550,19 @@ tree = [
 
 自分自身を起動している
 
+::note::
+
+このとき、**15 個の Terraform** が自分自身を起動しています。
+
 ---
 
 ::center bg=blue::
 
 ハマりポイント
+
+::note::
+
+ここでもハマりました。
 
 ---
 
@@ -383,6 +571,10 @@ tree = [
 1 回目は動くのに
 
 2 回目の apply で子が全滅
+
+::note::
+
+1 回目の apply は通るのに、2 回目で子が全滅する。
 
 ---
 
@@ -397,6 +589,10 @@ Lock Info:
   Operation: OperationTypeApply
 ```
 
+::note::
+
+`Error acquiring the state lock`。State のロックが取れない。
+
 ---
 
 ::center::
@@ -405,6 +601,10 @@ Lock Info:
 
 親の `terraform.tfstate` を見つけて
 
+::note::
+
+原因は、子の `terraform init` が、親の `terraform.tfstate` を見つけてしまうことでした。
+
 ---
 
 ::center::
@@ -412,6 +612,10 @@ Lock Info:
 「**古い State を移行しなきゃ！**」
 
 -# → 親が掴んでいるロックとぶつかる
+
+::note::
+
+「あっ、古い State がある。backend に移行しなきゃ！」って気を利かせてくれて、親が掴んでいるロックとぶつかる。
 
 ---
 
@@ -425,6 +629,10 @@ terraform {
 }
 ```
 
+::note::
+
+対策は、起動される側の State をディレクトリ直下に置かないこと。`backend "local"` で `.runs` の下に逃がしました。
+
 ---
 
 ::center size=1.5 bg=white::
@@ -433,6 +641,10 @@ Phase 3
 
 Distributed Prime Mining
 
+::note::
+
+Phase 3。再帰できるなら、
+
 ---
 
 ::center::
@@ -440,6 +652,10 @@ Distributed Prime Mining
 再帰できるなら
 
 並列もできる
+
+::note::
+
+並列もできます。
 
 ---
 
@@ -464,6 +680,10 @@ module "miner" {
 
 -# Miner ごとに State を分けるので、ロック競合は起きない
 
+::note::
+
+親を Pool、子を Miner と呼ぶことにして、範囲を Miner の数で割って `for_each` で起動します。Miner ごとに State が別なので、さっきのロック競合は起きません。
+
 ---
 
 ```console
@@ -481,17 +701,29 @@ $ make pool
 summary = "4 台の Terraform Miner が [1, 20000) から 2262 個の素数を発見しました（最大: 19997）"
 ```
 
+::note::
+
+動かすと、4 台の Miner が同時に起動して、同時に終わります。
+
 ---
 
 ::center::
 
 Terraform はリソースを **10 並列** で作る
 
+::note::
+
+これ、並列化のコードは書いてません。Terraform はもともとリソースを最大 10 並列で作るので、
+
 ---
 
 ::center::
 
 = Miner が勝手に並列で動く
+
+::note::
+
+Miner が勝手に並列で動くんです。
 
 ---
 
@@ -502,11 +734,19 @@ Terraform はリソースを **10 並列** で作る
 | Phase 1: 1 プロセス | 2 分 02 秒 |
 | Phase 3: 8 Miner    |  **38 秒** |
 
+::note::
+
+10 万までの素数 9592 個で比べると、1 プロセスで 2 分 2 秒、8 Miner で 38 秒。
+
 ---
 
 ::center size=2::
 
 **3.2 倍**
+
+::note::
+
+3.2 倍速くなりました。
 
 ---
 
@@ -516,6 +756,10 @@ Terraform はリソースを **10 並列** で作る
 
 -# 言わない約束
 
+::note::
+
+Python なら一瞬です。言わない約束でお願いします。
+
 ---
 
 ::center size=1.5 bg=white::
@@ -524,11 +768,19 @@ Phase 4
 
 PrimeChain
 
+::note::
+
+Phase 4。素数が掘れるようになりました。
+
 ---
 
 ::center::
 
 素数が掘れるようになった
+
+::note::
+
+素数が掘れるようになりました。
 
 ---
 
@@ -536,11 +788,19 @@ PrimeChain
 
 掘る（マイニング）といえば
 
+::note::
+
+掘る、マイニングといえば、
+
 ---
 
 ::center size=1.5::
 
 ブロックチェーン
+
+::note::
+
+ブロックチェーンですよね。
 
 ---
 
@@ -555,11 +815,19 @@ PrimeChain
 | `nonce`     | Nonce                                              |
 | `hash`      | `sha256("height\|prev_hash\|miner\|prime\|nonce")` |
 
+::note::
+
+ブロックの中身はこうです。ブロック番号、前のブロックのハッシュ、掘った Miner、発見した素数、Nonce、そしてそれ全部を連結して sha256 したブロックハッシュ。
+
 ---
 
 ::center::
 
 `terraform apply` 1 回 = **ブロック 1 個**
+
+::note::
+
+`terraform apply` 1 回で、ブロックが 1 個増えます。
 
 ---
 
@@ -584,6 +852,10 @@ locals {
 }
 ```
 
+::note::
+
+採掘も HCL です。見つけた素数と nonce の全組み合わせで sha256 を計算して、強調行を指して、ハッシュの先頭が 0 で始まるものだけ残す。これが Proof of Work です。
+
 ---
 
 ::center::
@@ -591,6 +863,12 @@ locals {
 採用ルール：
 
 ハッシュ値が **いちばん小さい** 候補
+
+::note::
+
+条件を満たす候補が複数あったときは、ハッシュ値がいちばん小さいものを採用します。
+
+Terraform は何度 plan しても同じ結果じゃないと困るので、**採用ルールは決定的にしてあります。**
 
 ---
 
@@ -611,11 +889,19 @@ $ make explorer
 #2   001d824ab4d1be8c ← 0008d290675e22b3  miner-04 prime=1103   nonce=48
 ```
 
+::note::
+
+掘ってみるとこうなります。ブロック 0 を miner-01 が素数 101 で掘って、1 を miner-02 が 593 で、2 を miner-04 が 1103 で。ハッシュがちゃんと前のブロックとつながっています。
+
 ---
 
 ::center::
 
 チェーンの検証も HCL
+
+::note::
+
+検証も HCL です。
 
 ---
 
@@ -633,6 +919,10 @@ verifications = [
   }
 ]
 ```
+
+::note::
+
+ブロック番号が連番か、前のハッシュとつながっているか、ハッシュを計算し直すと一致するか、難易度条件を満たしているか、そして**素数が本当に素数か**。最後のやつは Phase 1 の判定式を再利用しています。
 
 ---
 
@@ -652,11 +942,21 @@ resource "terraform_data" "block" {
 }
 ```
 
+::note::
+
+ここが個人的にいちばん気に入っているところで。ブロック 1 個を `terraform_data` のリソース 1 個として管理して、強調行を指して、`precondition` に検証を書いています。
+
 ---
 
 ::center bg=red::
 
 改ざんしてみる
+
+::note::
+
+改ざんしてみましょう。
+
+**ライブデモするならここ。** しないならスライドのまま読む。時間が余ったらここを伸ばす。
 
 ---
 
@@ -676,6 +976,10 @@ Error: Resource precondition failed
 make: *** [mine] Error 1
 ```
 
+::note::
+
+台帳のブロック #1 の素数を 4 に書き換えます。4 は素数じゃないですね。この状態で `make mine` すると、`Resource precondition failed`。ブロック #1 の検証に失敗しました、と出て、hash と prime が false になっています。
+
 ---
 
 ::center::
@@ -684,17 +988,29 @@ make: *** [mine] Error 1
 
 -# Miner を起動する前に止まる
 
+::note::
+
+しかも**plan の時点でバレる**。Miner を起動する前に止まります。
+
 ---
 
 ::center bg=blue::
 
 ハマりポイント
 
+::note::
+
+ここでもハマりました。台帳をどこに置くか問題です。
+
 ---
 
 ::center::
 
 台帳をどこに置くか
+
+::note::
+
+台帳をどこに置くか問題です。
 
 ---
 
@@ -705,6 +1021,10 @@ make: *** [mine] Error 1
 自分自身の `terraform.tfstate` を
 
 `jsondecode(file())` で読む
+
+::note::
+
+最初は「State に全部入ってるんだから、自分の `terraform.tfstate` を読めばいいじゃん」と思ったんです。
 
 ---
 
@@ -720,11 +1040,19 @@ goroutine 397 [running]:
 runtime/debug.Stack()
 ```
 
+::note::
+
+Terraform が panic しました。
+
 ---
 
 ::center size=2::
 
 **panic**
+
+::note::
+
+panic です。goroutine のスタックトレースが出ました。
 
 ---
 
@@ -733,6 +1061,10 @@ runtime/debug.Stack()
 apply 中に Terraform が State を書き換える
 
 -# → plan と apply で読める値が変わる
+
+::note::
+
+当たり前なんですが、apply 中に Terraform 自身が State を書き換えるので、plan のときと apply のときで読める値が変わるんですよね。自分の State を自分で読むのは無理でした。
 
 ---
 
@@ -744,6 +1076,10 @@ apply 中に Terraform が State を書き換える
 
 -# 中身は HCL が jsonencode した JSON。シェルはファイルに置くだけ
 
+::note::
+
+なので、検証を通ったチェーンだけを `ledger.json` に書き出すことにしました。中身は HCL が `jsonencode` した JSON で、シェルはファイルに置くだけ。**ルールは守っています。**
+
 ---
 
 ::center size=1.5 bg=white::
@@ -752,11 +1088,19 @@ Phase 5
 
 Terraform Destroy
 
+::note::
+
+Phase 5。最後に、
+
 ---
 
 ::center::
 
 最後に
+
+::note::
+
+最後に、
 
 ---
 
@@ -764,11 +1108,19 @@ Terraform Destroy
 
 Terraform 本来の機能を使います
 
+::note::
+
+ようやく Terraform 本来の機能を使います。
+
 ---
 
 ::center size=1.5::
 
 `terraform destroy`
+
+::note::
+
+`terraform destroy` です。
 
 ---
 
@@ -788,6 +1140,10 @@ provisioner "local-exec" {
 
 -# 子が孫を持っていれば、孫も連鎖して destroy される
 
+::note::
+
+`local-exec` には `when = destroy` が書けるので、親が destroy されたら子を destroy する、と書いておきます。子が孫を持っていれば、孫も連鎖して destroy されます。
+
 ---
 
 ```console
@@ -804,6 +1160,10 @@ $ make destroy
 💥 23:39:16 destroyed:       miner-03
 Destroy complete! Resources: 9 destroyed.
 ```
+
+::note::
+
+実行すると、台帳が消えて、ブロックが消えて、Miner が消えていきます。「prime 101 is gone」。
 
 ---
 
@@ -826,11 +1186,21 @@ Destroy complete! Resources: 9 destroyed.
 Destroy complete! Resources: 2 destroyed.
 ```
 
+::note::
+
+再帰のほうはもっと壮観で、root.R.L.L から順に 14 個消えます。
+
+**巻くならこの 1 枚を飛ばす。**
+
 ---
 
 ::center::
 
 親から見ると **リソース 2 個**
+
+::note::
+
+でも親から見ると、`Destroy complete! Resources: 2 destroyed`。リソースは 2 個です。
 
 ---
 
@@ -838,11 +1208,19 @@ Destroy complete! Resources: 2 destroyed.
 
 その裏で **14 個の Terraform** が消えていく
 
+::note::
+
+その裏で 14 個の Terraform が消えている。
+
 ---
 
 ::center::
 
 そして Phase 1 の素数は
+
+::note::
+
+そして Phase 1 の素数はどうなるかというと、
 
 ---
 
@@ -851,11 +1229,19 @@ Destroy complete! Resources: 2 destroyed.
 Destroy complete! Resources: 0 destroyed.
 ```
 
+::note::
+
+`0 destroyed`。
+
 ---
 
 ::center::
 
 そもそもリソースじゃなかった
+
+::note::
+
+そもそもリソースじゃなかったです。
 
 ---
 
@@ -865,11 +1251,19 @@ Terraform で素数を構築し、
 
 Terraform で素数を破壊する
 
+::note::
+
+Terraform で素数を構築し、Terraform で素数を破壊する。これが本プロジェクトの到達点です。
+
 ---
 
 ::center size=1.5 bg=white::
 
 まとめ
+
+::note::
+
+まとめます。
 
 ---
 
@@ -882,6 +1276,12 @@ Terraform で素数を破壊する
   - init は State の移行を気にするし、apply 中は State を書き換え続ける
 - `range()` の 1024 制限など、計算基盤ではない前提が随所にある
 
+::note::
+
+分かったことです。HCL は思ったより書けます。for 式、`alltrue`、`sha256`、`precondition`。そして `local-exec` と `TF_VAR_*` と `terraform_remote_state` を組み合わせるとプロセス間通信ができる。
+
+あとこれが一番大きいんですが、**Terraform は State を中心に動いている**。init は State の移行を気にするし、apply 中は State を書き換え続ける。今回ハマったところは、全部 State 絡みでした。
+
 ---
 
 ::center::
@@ -889,6 +1289,10 @@ Terraform で素数を破壊する
 技術的に可能なことと
 
 技術的に適切なことは違う
+
+::note::
+
+技術的に可能なことと、技術的に適切なことは違います。
 
 ---
 
@@ -900,9 +1304,17 @@ Terraform で素数を破壊する
 
 **全力で使う** 必要がある
 
+::note::
+
+しかし、それを知るためには、時として技術を間違った方向に全力で使う必要があると思っています。
+
 ---
 
 ::center size=2::
+
+All You Need Is Terraform.
+
+::note::
 
 All You Need Is Terraform.
 
@@ -917,3 +1329,9 @@ Terraform PrimeChain
 田中博悠 / tanahiro2010
 https://github.com/tanahiro2010/terraform-primechain
 https://github.com/tanahiro2010/ippon-slides
+
+::note::
+
+ありがとうございました。
+
+リポジトリは github.com/tanahiro2010/terraform-primechain。質問あればぜひ。
