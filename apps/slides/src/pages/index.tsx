@@ -58,6 +58,9 @@ const Index = () => (
       <li>
         <a href="https://github.com/tanahiro2010/slides">GitHub</a>
       </li>
+      <li>
+        <a href="/feed.xml">RSS</a>
+      </li>
     </ul>
 
     {sections.map((section) => (

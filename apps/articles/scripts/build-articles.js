@@ -123,31 +123,6 @@ ${TOP_BUTTON}
 </html>
 `;
 
-/** RSS。記事が増えたら購読者に届くように、一覧と一緒に吐く。 */
-const feed = (articles) => `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-<channel>
-<title>${esc(site.title)}</title>
-<link>${esc(site.url)}</link>
-<description>${esc(site.description)}</description>
-<language>ja</language>
-<atom:link href="${esc(new URL("/feed.xml", site.url).href)}" rel="self" type="application/rss+xml"/>
-${articles
-  .map((a) => {
-    const url = new URL(a.path, site.url).href;
-    return `<item>
-<title>${esc(a.title)}</title>
-<link>${esc(url)}</link>
-<guid isPermaLink="true">${esc(url)}</guid>
-<pubDate>${new Date(`${a.date}T00:00:00Z`).toUTCString()}</pubDate>
-<description>${esc(a.description)}</description>
-</item>`;
-  })
-  .join("\n")}
-</channel>
-</rss>
-`;
-
 const build = () => {
   if (!fs.existsSync(distDir)) {
     throw new Error("dist/ が無い。vp build とプリレンダの後に実行すること");
@@ -174,9 +149,7 @@ const build = () => {
   }
 
   copyKatex();
-
-  fs.writeFileSync(path.join(distDir, "feed.xml"), feed(articles));
-  console.log(`built ${articles.length} article(s) -> dist/articles/ (+ feed.xml)`);
+  console.log(`built ${articles.length} article(s) -> dist/articles/`);
 };
 
 build();

@@ -35,6 +35,9 @@ const Index = () => (
       <li>
         <a href="https://github.com/tanahiro2010">GitHub</a>
       </li>
+      <li>
+        <a href="/feed.xml">RSS</a>
+      </li>
     </ul>
 
     {articles.length === 0 ? (

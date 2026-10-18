@@ -11,5 +11,6 @@
   "themeColor": "#ffffff",
   "ogImage": "/ogp.png",
   "tagline": "スライド",
-  "blogUrl": "https://blog.tanahiro2010.com"
+  "blogUrl": "https://blog.tanahiro2010.com",
+  "feed": true
 }

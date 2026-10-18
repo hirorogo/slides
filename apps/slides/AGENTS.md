@@ -91,6 +91,7 @@ lint / fmt / commit フックの設定はリポジトリルートの `vite.confi
 - 一覧: WebSite + ItemList / デッキ: PresentationDigitalDocument + BreadcrumbList
 - 記事: BlogPosting(wordCount, keywords) + BreadcrumbList
 - `sitemap.xml` / `robots.txt` / `llms.txt` は `bin/sitemap.js` が dist を歩いて作る
+- `feed.xml`(RSS 2.0) は `bin/feed.js` が `src/data/*.json` から作る。両サイトが持つ
 - **OGP 画像はビルド時に 1 枚ずつ作る**（`bin/ogimages.js`）。ブラウザは使わず、
   SVG を組み立てて resvg でラスタライズするので 25 枚で 0.5 秒ほど。
   CI に Chrome も日本語フォントも要らない。
