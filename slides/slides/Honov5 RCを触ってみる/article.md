@@ -626,23 +626,6 @@ npm registry で `hono` の `dependencies` を引くと、こうなっていま�
 
 依存ゼロのライブラリにとって、サプライチェーン上の攻撃対象は「自分が配っているコードそのもの」です。そう考えると、アダプターをコアから外すのは、依存グラフを削る話ではなく、**1 つのパッケージに同梱して配るコードを半分に削る話**として筋が通ります。
 
-
-### 外部からの PR は、10 月 5 日に閉じられた
-
-同じ文脈で、もうひとつ大きな変化がありました。
-
-2026 年 10 月 5 日に、`honojs/hono` は外部コントリビューターからの PR を受け付けなくなっています。PR を作れるのはコラボレーターだけになりました。
-
-理由として挙げられているのは、
-
-> PR が増えた / GitHub の inbox を見るのが追いつかない
-
-というレビュー容量の問題です。PR の品質そのものは問題なく、「貢献のための貢献」が増えたことの方が課題だったとされています。
-
-実際にリポジトリの直近の PR を見ると、マージされているものは `yusukebe` と `usualoma` の 2 人のものばかりで、外部コントリビューターの PR は open のまま残っていました。
-
-6 月の発表では、Hono のメンテナが実質 1 人であることが単一障害点として挙げられていました。PR を閉じたことはレビュー負荷への対処であると同時に、悪意ある PR という攻撃経路をひとつ塞いだ、という見方もできると思います。
-
 ## 10. `defineHandler()` ―― 「選択肢が少ない」の実物
 
 1 章で書いた「抽象化されていて、選択肢が少ない」が一番はっきり出ているのが、v5 で入った `defineHandler()` です。experimental 扱いですが、方向性がよく分かるので触ってみました。
@@ -774,7 +757,7 @@ invalid -> 500 Internal Server Error
 
 - [Migrating to v5 — Hono](https://hono.dev/docs/guides/migrating-to-v5) — v5 の破壊的変更の一覧。この記事の検証項目はここから取った
 - [feat!: add routable error and not-found middleware (honojs/hono#5541)](https://github.com/honojs/hono/pull/5541) — `onError()` / `notFound()` 再設計の PR。`@ERROR` / `@NOT_FOUND` の実装方針や、サブアプリでの優先順位が書かれている
-- [Hono Conference 2026 — Yusuke Wada](https://slides.yusu.ke/honoconf-2026) — 「AI のための Hono」という v5 の位置づけ、パッケージサイズの数字、外部 PR 受付停止の経緯
+- [Hono Conference 2026 — Yusuke Wada](https://slides.yusu.ke/honoconf-2026) — 「AI のための Hono」という v5 の位置づけと、パッケージサイズの数字
 - [honojs/hono releases](https://github.com/honojs/hono/releases) — `5.0.0-rc.0`（2026-10-08）と `5.0.0-rc.1`（2026-10-10）の公開日
 - [Honoでのサプライチェーン侵害対策 〜 3つのライブラリに学ぶ — Yusuke Wada](https://speakerdeck.com/yusukebe/honodenosapuraitienqin-hai-dui-ce-3tunoraiburarinixue-bu) — axios / TanStack / Mastra の攻撃経路と、Hono 側の対策。アダプター分離もここに挙がっている
 - [「OSS開発者は今何をするべきか？」参加レポート — kouki_engineer](https://qiita.com/kouki_engineer/items/fd371f4258941b3ae149) — 上の発表を含む勉強会（2026-06-23・GMO Flatt Security 主催）の参加者による記録
