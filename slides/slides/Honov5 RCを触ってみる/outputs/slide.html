@@ -476,6 +476,128 @@ body.overview #presenter {
   font-weight: 600;
 }
 
+/* ---------- presenter（p / 別ウィンドウ） ---------- */
+
+/* 発表者ノートは本番・一覧・PDF には出さない（発表者ビューが innerHTML を別途読む） */
+.notes {
+  display: none;
+}
+
+#presenter {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  box-sizing: border-box;
+  padding: 24px;
+  gap: 24px;
+  background: #1c1c1f;
+  color: #fff;
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+}
+body.presenter #presenter {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+body.presenter #deck,
+body.presenter #progress,
+body.presenter #counter,
+body.presenter #timer,
+body.presenter #hint,
+body.presenter #overview {
+  display: none;
+}
+
+.pv-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-slot:last-child {
+  opacity: 0.85;
+}
+.pv-slot:last-child .pv-frame {
+  width: 62%;
+}
+.pv-label {
+  font-size: 0.85rem;
+  color: #9a9aa0;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.pv-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+.pv-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#presenter .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+
+.pv-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.pv-elapsed {
+  font-size: 2.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.pv-wall {
+  font-size: 1rem;
+  color: #9a9aa0;
+  font-variant-numeric: tabular-nums;
+}
+.pv-controls {
+  display: flex;
+  gap: 10px;
+}
+.pv-controls button {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1.1rem;
+  color: #fff;
+  background: #2e2e33;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pv-controls button:hover {
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+}
+.pv-notes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: #242428;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.pv-notes .pv-empty {
+  color: #76767c;
+}
+
 /* ---------- PDF（ブラウザの印刷 → PDF に保存） ---------- */
 
 @media print {
@@ -530,169 +652,161 @@ body.overview #presenter {
 </head>
 <body>
 <div id="deck">
-<section class="slide title"><h1>Honov5 RCを触ってみる</h1><p>〜 v4 と並べて、何が壊れるのか確かめた 〜</p><p>田中博悠 / tanahiro2010</p></section>
-<section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>Hono Conference 2026 コアスタッフ</li><li>個人開発でずっと Hono を使ってる</li></ul><h1>Hono、好きです</h1></div><div><p><img src="img/tanahiro_hono.jpg" alt="tanahiro2010"></p></div></div></section>
-<section class="slide center"><p>Hono v5 RC、出ましたね</p></section>
-<section class="slide"><h2>v5 RC</h2><ul><li>10月8日 <span class="arrow">→</span> <code>5.0.0-rc.0</code></li><li>10月10日 <span class="arrow">→</span> <code>5.0.0-rc.1</code></li></ul><p class="note">honojs/hono releases</p></section>
-<section class="slide center" style="--slide-size:1.5;"><pre data-lang="sh"><code>npm i hono@next</code></pre></section>
-<section class="slide center"><p>もう触れます</p></section>
-<section class="slide center" style="--slide-size:2;background:#0d76bc;"><p>で</p></section>
-<section class="slide center"><p>あなたのアプリ、</p><p>v5 にしたら壊れますか？</p></section>
-<section class="slide center"><p>⋯</p></section>
-<section class="slide center" style="--slide-size:2;"><p><strong>僕のは壊れました</strong></p></section>
+<section class="slide title"><h1>Honov5 RCを触ってみる</h1><p>〜 v4 と並べて、何が壊れるのか確かめた 〜</p><p>田中博悠 / tanahiro2010</p><aside class="notes"><p>持ち時間を確認。巻くなら「性能」「サイズ」「設計」の3章を落とす。</p><p>タイトルコールだけして、すぐ次へ。</p></aside></section>
+<section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>Hono Conference 2026 コアスタッフ</li><li>個人開発でずっと Hono を使ってる</li></ul><h1>Hono、好きです</h1></div><div><p><img src="../img/tanahiro_hono.jpg" alt="tanahiro2010"></p></div></div><aside class="notes"><p>15秒。長くしない。</p><p>「Hono Conference のコアスタッフをやってます」まで言えば、<br>この話をする立場の説明は足りる。</p></aside></section>
+<section class="slide center"><p>Hono v5 RC、出ましたね</p><aside class="notes"><p>ここで会場に軽く聞いてもいい。「触った人？」</p></aside></section>
+<section class="slide"><h2>v5 RC</h2><ul><li>10月8日 <span class="arrow">→</span> <code>5.0.0-rc.0</code></li><li>10月10日 <span class="arrow">→</span> <code>5.0.0-rc.1</code></li></ul><p class="note">honojs/hono releases</p><aside class="notes"><p>rc.0 が 10/8、rc.1 が 10/10。2日で rc.1 が出た。</p><p>聞かれたら: latest はまだ 4.13.13 系。next タグで配られている。</p></aside></section>
+<section class="slide center" style="--slide-size:3;"><pre data-lang="sh"><code>npm i hono@next</code></pre></section>
+<section class="slide center"><p>もう触れます</p><aside class="notes"><p>ここから問いに入る。ひと呼吸おく。</p></aside></section>
+<section class="slide center" style="--slide-size:2;background:#0d76bc;"><p>で</p><aside class="notes"><p>黒背景に一文字。間を作るためだけのスライド。</p></aside></section>
+<section class="slide center"><p>あなたのアプリ、</p><p>v5 にしたら壊れますか？</p><aside class="notes"><p>ここが本題の入口。<strong>客席を見て、数秒待つ。</strong></p></aside></section>
+<section class="slide center"><p>⋯</p><aside class="notes"><p>焦らす。1〜2秒。</p></aside></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>僕のは壊れました</strong></p><aside class="notes"><p>笑いどころ。実際この後に出てくる型エラーの山が全部それ。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>方針</p></section>
-<section class="slide center"><p>Migration Guide の翻訳はしない</p></section>
-<section class="slide"><h2>やったこと</h2><ul><li>v4 と v5 の環境を<strong>別々に</strong>作る</li><li><strong>同じコードを両方で動かす</strong></li><li>差分だけを見る</li></ul></section>
+<section class="slide center"><p>Migration Guide の翻訳はしない</p><aside class="notes"><p>「公式読めば分かることは話しません」と宣言しておく。<br>この一言で以降の信頼が変わる。</p></aside></section>
+<section class="slide"><h2>やったこと</h2><ul><li>v4 と v5 の環境を<strong>別々に</strong>作る</li><li><strong>同じコードを両方で動かす</strong></li><li>差分だけを見る</li></ul><aside class="notes"><p>ここが発表の方法論。v4 と v5 を別ディレクトリに入れて、<br>同じ .ts を両方で tsc にかけ、同じリクエストを両方に流した。</p></aside></section>
 <section class="slide center"><p>「ドキュメントにこう書いてある」</p><p>↓</p><p>「実際にこうなった」</p></section>
-<section class="slide"><h2>環境</h2><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>v4</td><td><code>hono@4.13.13</code></td></tr><tr><td>v5</td><td><code>hono@5.0.0-rc.1</code></td></tr><tr><td>Node.js</td><td>v24.22.0</td></tr><tr><td>TypeScript</td><td>7.0.2</td></tr></tbody></table><p class="note">Apple M4 / 2026-10-18 時点</p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide"><h2>環境</h2><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>v4</td><td><code>hono@4.13.13</code></td></tr><tr><td>v5</td><td><code>hono@5.0.0-rc.1</code></td></tr><tr><td>Node.js</td><td>v24.22.0</td></tr><tr><td>TypeScript</td><td>7.0.2</td></tr></tbody></table><p class="note">Apple M4 / 2026-10-18 時点</p><aside class="notes"><p><strong>読み上げない。</strong> 「手元の環境はこれです」で次へ。</p><p>RC である注意だけは口頭で添える。正式版で変わる可能性がある。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>型</p></section>
 <section class="slide"><h2><code>c.req.json()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">post</span>(<span class="hl-s">'/users'</span>, <span class="hl-k">async</span> (c) =&gt; {
   <span class="hl-k">const</span> body = <span class="hl-k">await</span> c.req.<span class="hl-f">json</span>()
 
 <span class="hl-mark">  <span class="hl-k">return</span> c.<span class="hl-f">json</span>({ name: body.name.<span class="hl-f">toUpperCase</span>() })</span>
-})</code></pre><ul><li>v4 <span class="arrow">→</span> <code>any</code></li><li>v5 <span class="arrow">→</span> <code>unknown</code></li></ul></section>
-<section class="slide center"><p>v4 では、このコードが通る</p></section>
-<section class="slide"><h2>v5</h2><pre><code><span class="hl-out">error TS18046: 'body' is of type 'unknown'.</span></code></pre></section>
+})</code></pre><ul><li>v4 <span class="arrow">→</span> <code>any</code></li><li>v5 <span class="arrow">→</span> <code>unknown</code></li></ul><aside class="notes"><p>v4 は any、v5 は unknown。</p><p>ハイライトしている行が、v4 では<strong>型チェックを通ってしまう</strong>ところ。</p></aside></section>
+<section class="slide center"><p>v4 では、このコードが通る</p><aside class="notes"><p>name に数値が来たら実行時に落ちる。型が守ってくれていない。</p></aside></section>
+<section class="slide"><h2>v5</h2><pre><code><span class="hl-out">error TS18046: 'body' is of type 'unknown'.</span></code></pre><aside class="notes"><p>同じ表を v5 で取り直した。</p></aside></section>
 <section class="slide center"><p>ちゃんと止まった</p></section>
-<section class="slide center"><p>もうひとつ気になってたのが</p></section>
+<section class="slide center"><p>もうひとつ気になってたのが</p><aside class="notes"><p>ここから query の話。こっちの方が影響範囲は広い。</p></aside></section>
 <section class="slide"><h2><code>c.req.query()</code></h2><pre data-lang="ts"><code><span class="hl-k">const</span> { name } = c.req.<span class="hl-f">query</span>()
-<span class="hl-k">const</span> upper: string = name.<span class="hl-f">toUpperCase</span>()</code></pre><ul><li>v4 <span class="arrow">→</span> <code>Record&lt;string, string&gt;</code></li><li>v5 <span class="arrow">→</span> <code>Record&lt;string, string | undefined&gt;</code></li></ul></section>
-<section class="slide center"><p>これ、分割代入してるコードが</p><p><strong>全部赤くなるのでは？</strong></p></section>
+<span class="hl-k">const</span> upper: string = name.<span class="hl-f">toUpperCase</span>()</code></pre><ul><li>v4 <span class="arrow">→</span> <code>Record&lt;string, string&gt;</code></li><li>v5 <span class="arrow">→</span> <code>Record&lt;string, string | undefined&gt;</code></li></ul><aside class="notes"><p>キー無しで呼んだときの戻り値の型が変わった。</p></aside></section>
+<section class="slide center"><p>これ、分割代入してるコードが</p><p><strong>全部赤くなるのでは？</strong></p><aside class="notes"><p><strong>ここは問いかけとして言う。</strong> 実際どうなったかは次のスライド。</p></aside></section>
 <section class="slide"><h2>v5</h2><pre><code><span class="hl-out">error TS18048: 'name' is possibly 'undefined'.</span>
 <span class="hl-out">error TS2322: Type 'string[] | undefined' is not</span>
 <span class="hl-out">  assignable to type 'string[]'.</span></code></pre></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>全部赤くなった</strong></p></section>
-<section class="slide center"><p>でも、ここで面白いことに気づいた</p></section>
-<section class="slide"><h2>実行時の値を比べてみる</h2><p><code>GET /q?a=1&amp;a=2</code></p><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>query()</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td></tr><tr><td><code>queries()</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td></tr></tbody></table></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>完全に同じ</strong></p></section>
-<section class="slide"><h2>わかったこと</h2><ul><li>v5 は挙動を<strong>変えていない</strong></li><li>v4 でも <code>undefined</code> は返っていた</li><li>型が嘘をついていただけ</li></ul></section>
-<section class="slide center"><p>赤くなった箇所は、</p><p><strong>v4 の時点でバグり得た箇所</strong></p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>全部赤くなった</strong></p><aside class="notes"><p>TS18048 と TS2322。分割代入してる箇所は全部。</p></aside></section>
+<section class="slide center"><p>でも、ここで面白いことに気づいた</p><aside class="notes"><p>ここが型の章のオチ。</p></aside></section>
+<section class="slide"><h2>実行時の値を比べてみる</h2><p><code>GET /q?a=1&amp;a=2</code></p><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>query()</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td></tr><tr><td><code>queries()</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td></tr></tbody></table><aside class="notes"><p>同じクエリを両方に投げて、返ってきた値を比べた。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>完全に同じ</strong></p><aside class="notes"><p><strong>この章で一番言いたいところ。</strong></p></aside></section>
+<section class="slide"><h2>わかったこと</h2><ul><li>v5 は挙動を<strong>変えていない</strong></li><li>v4 でも <code>undefined</code> は返っていた</li><li>型が嘘をついていただけ</li></ul><aside class="notes"><p>Router の方も3ラウンド<span class="arrow">→</span>12ラウンドで3.3%<span class="arrow">→</span>7.1%に変わった。<br>自分で踏んだので説得力はあるはず。</p></aside></section>
+<section class="slide center"><p>赤くなった箇所は、</p><p><strong>v4 の時点でバグり得た箇所</strong></p><aside class="notes"><p>この一文を言ってから次の章へ。<br>あとで「まとめ」でもう一度使う。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>エラー</p></section>
-<section class="slide center"><p>ここが v5 で一番面白い</p></section>
+<section class="slide center"><p>ここが v5 で一番面白い</p><aside class="notes"><p>個人的な推しだと言っていい。</p></aside></section>
 <section class="slide"><h2>v4 の <code>onError()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>((err, c) =&gt; {
   console.<span class="hl-f">error</span>(err.message)
   <span class="hl-k">return</span> c.<span class="hl-f">json</span>({ error: <span class="hl-s">'Internal Server Error'</span> }, <span class="hl-n">500</span>)
-})</code></pre><ul><li>アプリ全体に1つだけ</li><li>シグネチャは <code>(err, c)</code></li></ul></section>
+})</code></pre><ul><li>アプリ全体に1つだけ</li><li>シグネチャは <code>(err, c)</code></li></ul><aside class="notes"><p>アプリ全体に1つだけ。シグネチャは (err, c)。</p></aside></section>
 <section class="slide"><h2>v5 の <code>onError()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>(<span class="hl-s">'/api/*'</span>, <span class="hl-k">async</span> (c, next) =&gt; {
 <span class="hl-mark">  console.<span class="hl-f">error</span>(c.error?.message)</span>
   c.<span class="hl-f">header</span>(<span class="hl-s">'X-Error-Handler'</span>, <span class="hl-s">'api'</span>)
   <span class="hl-k">await</span> <span class="hl-f">next</span>()
 })
 
-app.<span class="hl-f">onError</span>((c) =&gt; c.<span class="hl-f">json</span>({ error: <span class="hl-s">'Error'</span> }, <span class="hl-n">500</span>))</code></pre><ul><li><code>(c, next)</code> <span class="arrow">→</span> 普通のミドルウェア</li><li>エラーは <code>c.error</code> から読む</li><li><strong>パスで絞れる</strong></li></ul></section>
-<section class="slide"><h2>設計意図</h2><blockquote><p>エラー処理を Hono の<strong>ルーティングシステムの上に</strong><br>モデル化する</p></blockquote><ul><li>内部では <code>@ERROR</code> / <code>@NOT_FOUND</code> という</li></ul><p>  予約メソッドで Router に登録されている</p><p class="note">honojs/hono#5541</p></section>
-<section class="slide center"><p>本当にパスで絞れるのか？</p></section>
-<section class="slide"><h2>動かしてみた</h2><table><thead><tr><th>リクエスト</th><th>ヘッダ</th><th>status</th></tr></thead><tbody><tr><td><code>/api/error</code></td><td><strong><code>api</code></strong></td><td>500</td></tr><tr><td><code>/other/error</code></td><td>なし</td><td>500</td></tr></tbody></table></section>
+app.<span class="hl-f">onError</span>((c) =&gt; c.<span class="hl-f">json</span>({ error: <span class="hl-s">'Error'</span> }, <span class="hl-n">500</span>))</code></pre><ul><li><code>(c, next)</code> <span class="arrow">→</span> 普通のミドルウェア</li><li>エラーは <code>c.error</code> から読む</li><li><strong>パスで絞れる</strong></li></ul><aside class="notes"><p>(c, next) になって、エラーは c.error から読む。<br>そしてパスで絞れる。</p></aside></section>
+<section class="slide"><h2>設計意図</h2><blockquote><p>エラー処理を Hono の<strong>ルーティングシステムの上に</strong><br>モデル化する</p></blockquote><ul><li>内部では <code>@ERROR</code> / <code>@NOT_FOUND</code> という</li></ul><p>  予約メソッドで Router に登録されている</p><p class="note">honojs/hono#5541</p><aside class="notes"><p>PR #5541 の本文から。マイグレーションガイドには載っていない。</p><p><strong>聞かれたら:</strong> 内部では @ERROR / @NOT_FOUND という予約メソッドで<br>Router に登録されている。だから普通のルートと同じ仕組みで引かれる。</p></aside></section>
+<section class="slide center"><p>本当にパスで絞れるのか？</p><aside class="notes"><p>ドキュメントを読んだだけでは分からないので動かした。</p></aside></section>
+<section class="slide"><h2>動かしてみた</h2><table><thead><tr><th>リクエスト</th><th>ヘッダ</th><th>status</th></tr></thead><tbody><tr><td><code>/api/error</code></td><td><strong><code>api</code></strong></td><td>500</td></tr><tr><td><code>/other/error</code></td><td>なし</td><td>500</td></tr></tbody></table><aside class="notes"><p>/api/* のときだけヘッダが付いて、最終的なレスポンスは共通のハンドラ。</p></aside></section>
 <section class="slide center"><p>効いた</p></section>
 <section class="slide center"><p>ちなみに v4 で同じことを書くと</p></section>
-<section class="slide"><h2>v4</h2><pre><code><span class="hl-out">this.errorHandler is not a function</span></code></pre><ul><li>パス文字列をハンドラとして保存してしまう</li><li><strong>登録時ではなくリクエスト時に落ちる</strong></li></ul></section>
-<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここからが本番</p></section>
-<section class="slide center"><p><code>onError()</code> を 2回登録したら</p><p>どうなる？</p></section>
+<section class="slide"><h2>v4</h2><pre><code><span class="hl-out">this.errorHandler is not a function</span></code></pre><ul><li>パス文字列をハンドラとして保存してしまう</li><li><strong>登録時ではなくリクエスト時に落ちる</strong></li></ul><aside class="notes"><p><strong>表は読み上げない。</strong> 割れている3ケースだけ指す。<br>特に /wild/*/card は TrieRouter だけマッチする。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここからが本番</p><aside class="notes"><p>章の中のヤマ場。色を変えてある。</p></aside></section>
+<section class="slide center"><p><code>onError()</code> を 2回登録したら</p><p>どうなる？</p><aside class="notes"><p>問いかけ。少し待つ。</p></aside></section>
 <section class="slide"><h2>実験</h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>((c) =&gt; { order.<span class="hl-f">push</span>(<span class="hl-s">'first'</span>);  ... })
 app.<span class="hl-f">onError</span>((c) =&gt; { order.<span class="hl-f">push</span>(<span class="hl-s">'second'</span>); ... })</code></pre></section>
-<section class="slide"><h2>結果</h2><table><thead><tr><th></th><th>実行されたハンドラ</th></tr></thead><tbody><tr><td><strong>v4</strong></td><td><code>[&quot;second&quot;]</code></td></tr><tr><td><strong>v5</strong></td><td><code>[&quot;first&quot;, &quot;second&quot;]</code></td></tr></tbody></table></section>
-<section class="slide center" style="--slide-size:1.5;"><p>v4 は<strong>上書き</strong></p><p>v5 は<strong>合成</strong></p></section>
-<section class="slide"><h2>敗因になりそうなところ</h2><ul><li>v4 <span class="arrow">→</span> 「あとから登録して潰す」が書けた</li><li>v5 <span class="arrow">→</span> <strong>両方走る</strong></li><li>しかも⋯</li></ul></section>
-<section class="slide center" style="--slide-size:2;"><p><strong>型エラーにならない</strong></p></section>
+<section class="slide"><h2>結果</h2><table><thead><tr><th></th><th>実行されたハンドラ</th></tr></thead><tbody><tr><td><strong>v4</strong></td><td><code>[&quot;second&quot;]</code></td></tr><tr><td><strong>v5</strong></td><td><code>[&quot;first&quot;, &quot;second&quot;]</code></td></tr></tbody></table><aside class="notes"><p><strong>v4 は後勝ちの上書き、v5 は合成。</strong></p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v4 は<strong>上書き</strong></p><p>v5 は<strong>合成</strong></p><aside class="notes"><p>ここが移行で一番事故ると思っているところ。</p></aside></section>
+<section class="slide"><h2>敗因になりそうなところ</h2><ul><li>v4 <span class="arrow">→</span> 「あとから登録して潰す」が書けた</li><li>v5 <span class="arrow">→</span> <strong>両方走る</strong></li><li>しかも⋯</li></ul><aside class="notes"><p>v4 では「あとから登録して潰す」が書けた。</p></aside></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>型エラーにならない</strong></p><aside class="notes"><p><strong>ここが怖いポイント。</strong> シグネチャさえ直せば tsc は通る。<br>実際に動かすまで気づけない。</p></aside></section>
 <section class="slide center"><p>シグネチャさえ直せば <code>tsc</code> は通る</p></section>
-<section class="slide center"><p>じゃあ v4 の書き方のまま</p><p>動かしたらどうなる？</p></section>
+<section class="slide center"><p>じゃあ v4 の書き方のまま</p><p>動かしたらどうなる？</p><aside class="notes"><p>ここは実演すると強い。時間があれば。</p></aside></section>
 <section class="slide"><h2>型チェックは止めてくれる</h2><pre><code><span class="hl-out">error TS2339: Property 'message' does not exist</span>
 <span class="hl-out">  on type 'Context&lt;BlankEnv, string, any&gt;'.</span>
 <span class="hl-out">error TS2339: Property 'json' does not exist</span>
-<span class="hl-out">  on type 'Next'.</span></code></pre><ul><li>第1引数が <code>Context</code>、第2引数が <code>Next</code></li></ul></section>
+<span class="hl-out">  on type 'Next'.</span></code></pre><ul><li>第1引数が <code>Context</code>、第2引数が <code>Next</code></li></ul><aside class="notes"><p>TS2339 が2つ。第1引数が Context、第2引数が Next。<br><strong>型を見ていれば必ず気づける。</strong></p></aside></section>
 <section class="slide center"><p>問題は、これを握りつぶしたとき</p></section>
 <section class="slide"><h2>実行すると</h2><pre><code><span class="hl-out">Context is not finalized.</span>
 <span class="hl-out">Did you forget to return a Response object</span>
-<span class="hl-out">or `await next()`?</span></code></pre></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>原因を指していない</strong></p></section>
+<span class="hl-out">or `await next()`?</span></code></pre><aside class="notes"><p>これを握りつぶして実行したときに出るメッセージ。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>原因を指していない</strong></p><aside class="notes"><p>c のつもりで触っているものが next 関数。だから c.text() が無い。<br>結果として Context が確定しないまま終わる。</p></aside></section>
 <section class="slide"><h2>何が起きてるか</h2><ul><li><code>c</code> のつもりで触ってるものが <code>next</code> 関数</li><li><code>c.text()</code> が無い <span class="arrow">→</span> 例外</li><li><span class="arrow">→</span> Context が確定しないまま終わる</li></ul><p class="note">型エラーを消すと、デバッグが遠回りになる</p></section>
-<section class="slide"><h2>非 Error を <code>throw</code> したら</h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>throw 'oops'</code></td><td>外に漏れる</td><td><code>message</code> / <code>cause</code> に <code>'oops'</code></td></tr><tr><td><code>throw { code: 42 }</code></td><td>外に漏れる</td><td><code>message</code> は <strong>空</strong></td></tr></tbody></table><ul><li>オブジェクトは <code>cause</code> にしか入らない</li><li><span class="arrow">→</span> <code>c.error.message</code> だけログに出すと何も分からない</li></ul></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide"><h2>非 Error を <code>throw</code> したら</h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>throw 'oops'</code></td><td>外に漏れる</td><td><code>message</code> / <code>cause</code> に <code>'oops'</code></td></tr><tr><td><code>throw { code: 42 }</code></td><td>外に漏れる</td><td><code>message</code> は <strong>空</strong></td></tr></tbody></table><ul><li>オブジェクトは <code>cause</code> にしか入らない</li><li><span class="arrow">→</span> <code>c.error.message</code> だけログに出すと何も分からない</li></ul><aside class="notes"><p>オブジェクトを投げると message が空になる。<br>ログに c.error.message だけ出していると何も分からない。cause を見る。</p></aside></section>
 <section class="slide center" style="--slide-size:1.5;background:#c0392b;"><p>地雷</p></section>
-<section class="slide center"><p>型でも捕まらないやつ</p></section>
-<section class="slide"><h2><code>c.json(undefined)</code></h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>c.json(undefined)</code></td><td>200 / 空ボディ</td><td><strong>500</strong></td></tr><tr><td><code>c.json(() =&gt; 1)</code></td><td>200 / 空</td><td><strong>500</strong></td></tr></tbody></table><pre><code><span class="hl-out">TypeError: Value is not JSON serializable</span></code></pre></section>
+<section class="slide center"><p>型でも捕まらないやつ</p><aside class="notes"><p>章のタイトル通り。ここだけ赤。</p></aside></section>
+<section class="slide"><h2><code>c.json(undefined)</code></h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>c.json(undefined)</code></td><td>200 / 空ボディ</td><td><strong>500</strong></td></tr><tr><td><code>c.json(() =&gt; 1)</code></td><td>200 / 空</td><td><strong>500</strong></td></tr></tbody></table><pre><code><span class="hl-out">TypeError: Value is not JSON serializable</span></code></pre><aside class="notes"><p>v4 は 200 で空ボディ、v5 は 500。</p></aside></section>
 <section class="slide center" style="--slide-size:2;"><p><strong>型エラーにならない</strong></p></section>
 <section class="slide"><h2>どこで踏むか</h2><pre data-lang="ts"><code><span class="hl-k">const</span> user = <span class="hl-k">await</span> db.query.users.<span class="hl-f">findFirst</span>({ ... })
-<span class="hl-mark"><span class="hl-k">return</span> c.<span class="hl-f">json</span>(user) <span class="hl-c">// 見つからなければ undefined</span></span></code></pre><ul><li>v4 <span class="arrow">→</span> 404 のつもりが 200 で空ボディ</li><li>v5 <span class="arrow">→</span> <strong>500</strong></li></ul></section>
+<span class="hl-mark"><span class="hl-k">return</span> c.<span class="hl-f">json</span>(user) <span class="hl-c">// 見つからなければ undefined</span></span></code></pre><ul><li>v4 <span class="arrow">→</span> 404 のつもりが 200 で空ボディ</li><li>v5 <span class="arrow">→</span> <strong>500</strong></li></ul><aside class="notes"><p><strong>一番ありそうなのがこれ。</strong> DB から引いた1件をそのまま渡すコード。</p></aside></section>
 <section class="slide center"><p>つまり</p></section>
-<section class="slide center" style="--slide-size:1.5;"><p>v5 で 500 が出る箇所は</p><p><strong>v4 の時点でバグっていた箇所</strong></p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v5 で 500 が出る箇所は</p><p><strong>v4 の時点でバグっていた箇所</strong></p><aside class="notes"><p><strong>この章の結論。</strong> 壊れたんじゃなくて、隠れてたバグが出ただけ。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>ルーター</p></section>
-<section class="slide center"><p>ワイルドカードが統一された</p></section>
-<section class="slide center"><p>v4 は Router ごとにバラバラだった</p></section>
+<section class="slide center"><p>ワイルドカードが統一された</p><aside class="notes"><p>ここから Router の話。発表の山場。</p></aside></section>
+<section class="slide center"><p>v4 は Router ごとにバラバラだった</p><aside class="notes"><p>Hono には Router が4種類ある。SmartRouter が自動で選ぶ。</p></aside></section>
 <section class="slide wide"><h2>v4</h2><table><thead><tr><th>ルート</th><th>パス</th><th>Smart</th><th>RegExp</th><th>Trie</th><th>Pattern</th></tr></thead><tbody><tr><td><code>/x*/y</code></td><td><code>/x/y</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr><tr><td><code>/x*/y</code></td><td><code>/xz/y</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr><tr><td><code>/x*y</code></td><td><code>/xay</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr><tr><td><code>/wild/*/card</code></td><td><code>/wild//card</code></td><td>❌</td><td>❌</td><td>✅</td><td>❌</td></tr></tbody></table><p class="note">6ケース中3ケースで割れている</p></section>
 <section class="slide wide"><h2>v5</h2><table><thead><tr><th>ルート</th><th>パス</th><th>Smart</th><th>RegExp</th><th>Trie</th><th>Pattern</th></tr></thead><tbody><tr><td><code>/x*/y</code></td><td><code>/x/y</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr><tr><td><code>/x*/y</code></td><td><code>/xz/y</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr><tr><td><code>/x*y</code></td><td><code>/xay</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr><tr><td><code>/wild/*/card</code></td><td><code>/wild//card</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr></tbody></table></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>4つとも一致</strong></p></section>
-<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここが一番おいしい</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>4つとも一致</strong></p><aside class="notes"><p>公式ドキュメントの表とも完全に同じだった。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここが一番おいしい</p><aside class="notes"><p><strong>ここが今日一番話したいところ。</strong></p></aside></section>
 <section class="slide"><h2>競合するルートを書いてみる</h2><pre data-lang="ts"><code>app.<span class="hl-f">get</span>(<span class="hl-s">'/x*/y'</span>, (c) =&gt; c.<span class="hl-f">text</span>(<span class="hl-s">'a'</span>))
-app.<span class="hl-f">get</span>(<span class="hl-s">'/x/*'</span>,  (c) =&gt; c.<span class="hl-f">text</span>(<span class="hl-s">'b'</span>))</code></pre></section>
-<section class="slide"><h2>v5 の RegExpRouter</h2><pre><code><span class="hl-out">UnsupportedPathError: /x/*</span></code></pre><ul><li>両方を同時に登録できない</li></ul></section>
-<section class="slide center"><p>じゃあ SmartRouter はどうなる？</p></section>
-<section class="slide"><h2>選ばれた Router</h2><table><thead><tr><th>登録したルート</th><th>Router</th></tr></thead><tbody><tr><td><code>/x/*</code> だけ</td><td><code>SmartRouter + RegExpRouter</code></td></tr><tr><td><code>/x*/y</code> + <code>/x/*</code></td><td><strong><code>SmartRouter + TrieRouter</code></strong></td></tr></tbody></table></section>
-<section class="slide center" style="--slide-size:1.5;"><p>ルートを<strong>1行足しただけ</strong>で</p><p>Router が入れ替わった</p></section>
+app.<span class="hl-f">get</span>(<span class="hl-s">'/x/*'</span>,  (c) =&gt; c.<span class="hl-f">text</span>(<span class="hl-s">'b'</span>))</code></pre><aside class="notes"><p>この2行を同時に登録する。それだけ。</p></aside></section>
+<section class="slide"><h2>v5 の RegExpRouter</h2><pre><code><span class="hl-out">UnsupportedPathError: /x/*</span></code></pre><ul><li>両方を同時に登録できない</li></ul><aside class="notes"><p>UnsupportedPathError。両方を同時に登録できない。</p></aside></section>
+<section class="slide center"><p>じゃあ SmartRouter はどうなる？</p><aside class="notes"><p>問いかけ。</p></aside></section>
+<section class="slide"><h2>選ばれた Router</h2><table><thead><tr><th>登録したルート</th><th>Router</th></tr></thead><tbody><tr><td><code>/x/*</code> だけ</td><td><code>SmartRouter + RegExpRouter</code></td></tr><tr><td><code>/x*/y</code> + <code>/x/*</code></td><td><strong><code>SmartRouter + TrieRouter</code></strong></td></tr></tbody></table><aside class="notes"><p><strong>RegExpRouter から TrieRouter に落ちた。</strong></p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ルートを<strong>1行足しただけ</strong>で</p><p>Router が入れ替わった</p><aside class="notes"><p>ここで一拍おく。</p></aside></section>
 <section class="slide center"><p>性能も変わるのでは？</p></section>
-<section class="slide"><h2>測った</h2><p><code>GET /users/:id</code> × 50,000回 × 12ラウンド</p><table><thead><tr><th></th><th class="num">中央値</th><th class="num">最小</th></tr></thead><tbody><tr><td>RegExpRouter</td><td class="num">138.68 ms</td><td class="num">132.35 ms</td></tr><tr><td>Trie フォールバック</td><td class="num">148.57 ms</td><td class="num">146.25 ms</td></tr><tr><td><strong>差</strong></td><td class="num"><strong>+7.1%</strong></td><td class="num"><strong>+10.5%</strong></td></tr></tbody></table></section>
+<section class="slide"><h2>測った</h2><p><code>GET /users/:id</code> × 50,000回 × 12ラウンド</p><table><thead><tr><th></th><th class="num">中央値</th><th class="num">最小</th></tr></thead><tbody><tr><td>RegExpRouter</td><td class="num">138.68 ms</td><td class="num">132.35 ms</td></tr><tr><td>Trie フォールバック</td><td class="num">148.57 ms</td><td class="num">146.25 ms</td></tr><tr><td><strong>差</strong></td><td class="num"><strong>+7.1%</strong></td><td class="num"><strong>+10.5%</strong></td></tr></tbody></table><aside class="notes"><p>50,000回 × 12ラウンド。中央値で7.1%、最小値で10.5%。</p><p><strong>聞かれたら:</strong> 最初3ラウンドで測ったときは3.3%しか出なかった。<br>ラウンド数が足りなかった。</p></aside></section>
 <section class="slide center"><p>遅くなった</p></section>
-<section class="slide"><h2>でも問題はそこじゃない</h2><ul><li>7〜10% は正直どうでもいい</li><li>問題は<strong>無言で切り替わる</strong>こと</li><li>ログにも型にも出ない</li></ul></section>
+<section class="slide"><h2>でも問題はそこじゃない</h2><ul><li>7〜10% は正直どうでもいい</li><li>問題は<strong>無言で切り替わる</strong>こと</li><li>ログにも型にも出ない</li></ul><aside class="notes"><p><strong>数字より、無言で切り替わることの方が問題。</strong></p></aside></section>
 <section class="slide center"><p>しかも</p></section>
-<section class="slide"><h2>マッチするハンドラも変わる</h2><p>同じ競合ルートに <code>/x/y</code> を投げると</p><table><thead><tr><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>/x/*</code> の方</td><td><code>/x*/y</code> の方</td></tr></tbody></table></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide"><h2>マッチするハンドラも変わる</h2><p>同じ競合ルートに <code>/x/y</code> を投げると</p><table><thead><tr><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>/x/*</code> の方</td><td><code>/x*/y</code> の方</td></tr></tbody></table><aside class="notes"><p>同じコードで v4 と v5 で返るものが違う。<br>型でもテストでも気づきにくい。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>性能</p></section>
-<section class="slide center"><p>v5、速くなったの？</p></section>
+<section class="slide center"><p>v5、速くなったの？</p><aside class="notes"><p>素朴な疑問として。</p></aside></section>
 <section class="slide"><h2>測った</h2><p><code>GET /users/:id</code> × 100,000回 × 10ラウンド</p><table><thead><tr><th></th><th class="num">中央値</th><th class="num">最小</th></tr></thead><tbody><tr><td>v4</td><td class="num">270.53 ms</td><td class="num">258.31 ms</td></tr><tr><td>v5</td><td class="num">266.50 ms</td><td class="num">255.59 ms</td></tr></tbody></table><p class="note"><code>app.fetch()</code> のインプロセス計測。実サーバーの性能ではない</p></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>誤差</strong></p></section>
-<section class="slide"><h2>分布が重なっている</h2><ul><li>v4 の最小 <strong>258.31 ms</strong></li><li>v5 の中央値 <strong>266.50 ms</strong></li><li><span class="arrow">→</span> v4 の方が速いラウンドがある</li></ul></section>
-<section class="slide center"><p>ここで、恥ずかしい話を</p></section>
-<section class="slide"><h2>敗因</h2><ul><li>最初 <strong>5ラウンド</strong>で測った <span class="arrow">→</span> 差 <strong>2.9%</strong></li><li><strong>10ラウンド</strong>に増やした <span class="arrow">→</span> 差 <strong>1.5%</strong></li><li>同じコード、同じマシン、同じ日</li></ul></section>
-<section class="slide center" style="--slide-size:1.5;"><p>ラウンド数を変えただけで</p><p><strong>結論が倍違った</strong></p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>誤差</strong></p><aside class="notes"><p>期待させてから落とす。</p></aside></section>
+<section class="slide"><h2>分布が重なっている</h2><ul><li>v4 の最小 <strong>258.31 ms</strong></li><li>v5 の中央値 <strong>266.50 ms</strong></li><li><span class="arrow">→</span> v4 の方が速いラウンドがある</li></ul><aside class="notes"><p>v4 の最速ラウンドが v5 の中央値より速い。</p></aside></section>
+<section class="slide center"><p>ここで、恥ずかしい話を</p><aside class="notes"><p>自分の失敗の話に入る。</p></aside></section>
+<section class="slide"><h2>敗因</h2><ul><li>最初 <strong>5ラウンド</strong>で測った <span class="arrow">→</span> 差 <strong>2.9%</strong></li><li><strong>10ラウンド</strong>に増やした <span class="arrow">→</span> 差 <strong>1.5%</strong></li><li>同じコード、同じマシン、同じ日</li></ul><aside class="notes"><p>5ラウンドで2.9%、10ラウンドで1.5%。同じコード、同じマシン、同じ日。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ラウンド数を変えただけで</p><p><strong>結論が倍違った</strong></p><aside class="notes"><p><strong>ここは教訓として言う。</strong></p></aside></section>
 <section class="slide"><h2>わかったこと</h2><ul><li>マイクロベンチで数%を語るなら</li></ul><p>  <strong>ラウンド数と分布</strong>を出す</p><ul><li>Router の方も 3ラウンド <span class="arrow">→</span> 12ラウンドで</li></ul><p>  3.3% <span class="arrow">→</span> 7.1% に変わった</p></section>
-<section class="slide center"><p>コアの性能は<strong>据え置き</strong></p></section>
+<section class="slide center"><p>コアの性能は<strong>据え置き</strong></p><aside class="notes"><p>これは悪い結論ではない。v5 の変更は性能のためではないので。</p></aside></section>
 <section class="slide center"><p>v5 の変更は、性能のためじゃない</p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>サイズ</p></section>
-<section class="slide center"><p>「アダプタ分離で軽くなった」</p><p>本当？</p></section>
-<section class="slide"><h2>インストールサイズ</h2><table><thead><tr><th></th><th class="num">展開後</th><th class="num">ファイル数</th></tr></thead><tbody><tr><td>v4</td><td class="num">1.23 MB</td><td class="num">574</td></tr><tr><td>v5</td><td class="num"><strong>0.66 MB</strong></td><td class="num"><strong>310</strong></td></tr></tbody></table><p class="note">npm registry の unpackedSize</p></section>
+<section class="slide center"><p>「アダプタ分離で軽くなった」</p><p>本当？</p><aside class="notes"><p>よく見る煽り文句。本当か確かめた。</p></aside></section>
+<section class="slide"><h2>インストールサイズ</h2><table><thead><tr><th></th><th class="num">展開後</th><th class="num">ファイル数</th></tr></thead><tbody><tr><td>v4</td><td class="num">1.23 MB</td><td class="num">574</td></tr><tr><td>v5</td><td class="num"><strong>0.66 MB</strong></td><td class="num"><strong>310</strong></td></tr></tbody></table><p class="note">npm registry の unpackedSize</p><aside class="notes"><p>npm registry の unpackedSize と fileCount。</p></aside></section>
 <section class="slide center" style="--slide-size:1.5;"><p><strong>-46%</strong></p></section>
-<section class="slide"><h2>3つの測り方が一致した</h2><ul><li>npm registry <span class="arrow">→</span> <strong>-46%</strong></li><li>手元の <code>du -sh</code>（2.8M <span class="arrow">→</span> 1.5M）<span class="arrow">→</span> <strong>-46%</strong></li><li>yusukebeさんの資料（1.29MB <span class="arrow">→</span> 0.70MB）<span class="arrow">→</span> <strong>-46%</strong></li></ul><p class="note">ファイル数 574 <span class="arrow">→</span> 310 は完全一致</p></section>
-<section class="slide center"><p>じゃあバンドルは？</p></section>
+<section class="slide"><h2>3つの測り方が一致した</h2><ul><li>npm registry <span class="arrow">→</span> <strong>-46%</strong></li><li>手元の <code>du -sh</code>（2.8M <span class="arrow">→</span> 1.5M）<span class="arrow">→</span> <strong>-46%</strong></li><li>yusukebeさんの資料（1.29MB <span class="arrow">→</span> 0.70MB）<span class="arrow">→</span> <strong>-46%</strong></li></ul><p class="note">ファイル数 574 <span class="arrow">→</span> 310 は完全一致</p><aside class="notes"><p><strong>ファイル数 574 <span class="arrow">→</span> 310 は完全一致した。</strong></p><p>登壇資料の数字と自分の実測が合うと気持ちいい。</p></aside></section>
+<section class="slide center"><p>じゃあバンドルは？</p><aside class="notes"><p>ここで引っ掛ける。</p></aside></section>
 <section class="slide"><h2>バンドルサイズ</h2><table><thead><tr><th></th><th class="num">v4</th><th class="num">v5</th><th class="num">差</th></tr></thead><tbody><tr><td>コアのみ</td><td class="num">18,528 B</td><td class="num">18,830 B</td><td class="num"><strong>+302 B</strong></td></tr><tr><td>アダプタ込み</td><td class="num">22,760 B</td><td class="num">22,923 B</td><td class="num"><strong>+163 B</strong></td></tr></tbody></table></section>
-<section class="slide center" style="--slide-size:1.5;"><p><strong>増えた</strong></p></section>
-<section class="slide"><h2>考えてみれば当たり前</h2><ul><li>減ったのは CJS ビルドとアダプタの分離</li><li>CJS はそもそもバンドルに入らない</li><li><code>@hono/bun</code> を入れれば同じコードが入る</li></ul></section>
-<section class="slide center"><p>「軽くなった」は</p><p><strong>インストールサイズの話</strong></p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>増えた</strong></p><aside class="notes"><p>302バイト。減るどころか増えた。</p></aside></section>
+<section class="slide"><h2>考えてみれば当たり前</h2><ul><li>減ったのは CJS ビルドとアダプタの分離</li><li>CJS はそもそもバンドルに入らない</li><li><code>@hono/bun</code> を入れれば同じコードが入る</li></ul><aside class="notes"><p>CJS はそもそもバンドルに入らない。<br>アダプタも @hono/bun を入れれば同じコードが入る。</p></aside></section>
+<section class="slide center"><p>「軽くなった」は</p><p><strong>インストールサイズの話</strong></p><aside class="notes"><p><strong>書くときに区別が要る、という話。</strong></p><p><strong>聞かれたら:</strong> hono は v4 の時点で依存ゼロ。<br>だから「依存を減らした」ではなく「配るコードを減らした」が正確。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>設計</p></section>
-<section class="slide center"><p>ここまで全部、同じ方向を向いてる</p></section>
-<section class="slide"><h2>v5 = AIのためのHono</h2><blockquote><p>抽象化されていて、選択肢が少ない</p></blockquote><p class="note">Yusuke Wada / Hono Conference 2026</p></section>
-<section class="slide"><h2>なぜ型を厳しくするのか</h2><ul><li>人間は「ここは <code>any</code> だけど大丈夫」と空気を読む</li><li><strong>LLM は読まない</strong></li><li>型が嘘をつけば、嘘のまま出てくる</li></ul></section>
+<section class="slide center"><p>ここまで全部、同じ方向を向いてる</p><aside class="notes"><p>ここで全部を束ねる。</p></aside></section>
+<section class="slide"><h2>v5 = AIのためのHono</h2><blockquote><p>抽象化されていて、選択肢が少ない</p></blockquote><p class="note">Yusuke Wada / Hono Conference 2026</p><aside class="notes"><p>Hono Conference 2026 での yusukebe さんの言葉。</p></aside></section>
+<section class="slide"><h2>なぜ型を厳しくするのか</h2><ul><li>人間は「ここは <code>any</code> だけど大丈夫」と空気を読む</li><li><strong>LLM は読まない</strong></li><li>型が嘘をつけば、嘘のまま出てくる</li></ul><aside class="notes"><p>人間は空気を読むが LLM は読まない。<br>型が嘘をつけば嘘のまま出てくる。</p></aside></section>
 <section class="slide center"><p>それが一番出てるのが</p></section>
-<section class="slide"><h2><code>defineHandler()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">get</span>(<span class="hl-s">'/ping'</span>, <span class="hl-f">defineHandler</span>(() =&gt; ({ pong: <span class="hl-n">true</span> })))</code></pre><pre><code><span class="hl-out">ping -&gt; 200 {&quot;pong&quot;:true}</span></code></pre><ul><li><code>c.json()</code> を呼んでいない</li><li><strong>返した値が Response になる</strong></li></ul></section>
+<section class="slide"><h2><code>defineHandler()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">get</span>(<span class="hl-s">'/ping'</span>, <span class="hl-f">defineHandler</span>(() =&gt; ({ pong: <span class="hl-n">true</span> })))</code></pre><pre><code><span class="hl-out">ping -&gt; 200 {&quot;pong&quot;:true}</span></code></pre><ul><li><code>c.json()</code> を呼んでいない</li><li><strong>返した値が Response になる</strong></li></ul><aside class="notes"><p>c.json() を呼んでいない。返した値が Response になる。</p></aside></section>
 <section class="slide"><h2>検証も1か所で書ける</h2><pre data-lang="ts"><code>app.<span class="hl-f">post</span>(<span class="hl-s">'/users'</span>, <span class="hl-f">defineHandler</span>({ json: <span class="hl-t">NameSchema</span> })(
   (c, input) =&gt; ({ name: input.json.name.<span class="hl-f">toUpperCase</span>() })
-))</code></pre><pre><code><span class="hl-out">400 {&quot;error&quot;:&quot;Validation failed&quot;,&quot;issues&quot;:[...]}</span></code></pre><ul><li>Standard Schema <span class="arrow">→</span> Zod / Valibot ...</li></ul></section>
-<section class="slide"><h2>ハマった</h2><ul><li>普通の検証関数で <code>throw</code> すると</li></ul><p>  400 ではなく <strong>500</strong> になる</p><ul><li>400 にしてくれるのは Standard Schema のルートだけ</li></ul></section>
-<section class="slide"><h2>型定義のコメント</h2><blockquote><p>A JSON Response by <code>c.json()</code> is not accepted,<br>because it bypasses the response validation.</p></blockquote><ul><li><code>c.json()</code> を返すことを<strong>型で禁止</strong>している</li></ul></section>
-<section class="slide center"><p>やり方が複数あって、どれでも動く</p><p>↓</p><p><strong>正しいやり方が1つで、他は型で止まる</strong></p></section>
-<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+))</code></pre><pre><code><span class="hl-out">400 {&quot;error&quot;:&quot;Validation failed&quot;,&quot;issues&quot;:[...]}</span></code></pre><ul><li>Standard Schema <span class="arrow">→</span> Zod / Valibot ...</li></ul><aside class="notes"><p>Standard Schema なので Zod や Valibot がそのまま使える。</p></aside></section>
+<section class="slide"><h2>ハマった</h2><ul><li>普通の検証関数で <code>throw</code> すると</li></ul><p>  400 ではなく <strong>500</strong> になる</p><ul><li>400 にしてくれるのは Standard Schema のルートだけ</li></ul><aside class="notes"><p>検証関数で throw すると 400 ではなく 500 になった。<br>400 にしてくれるのは Standard Schema のルートだけ。</p></aside></section>
+<section class="slide"><h2>型定義のコメント</h2><blockquote><p>A JSON Response by <code>c.json()</code> is not accepted,<br>because it bypasses the response validation.</p></blockquote><ul><li><code>c.json()</code> を返すことを<strong>型で禁止</strong>している</li></ul><aside class="notes"><p><strong>c.json() を返すことを型で禁止している。</strong><br>レスポンス検証を迂回できてしまうから。</p></aside></section>
+<section class="slide center"><p>やり方が複数あって、どれでも動く</p><p>↓</p><p><strong>正しいやり方が1つで、他は型で止まる</strong></p><aside class="notes"><p>この対比が v5 全体の思想。</p></aside></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>まとめ</p></section>
-<section class="slide"><h2>移行チェックリスト</h2><p><strong>①まず <code>tsc --strict</code> を通す</strong></p><ul><li><code>c.req.json()</code> の直アクセス</li><li><code>c.req.query()</code> の分割代入</li><li><code>onError((err, c) =&gt; ...)</code></li></ul><p><span class="arrow">→</span> 機械的に潰せる</p></section>
-<section class="slide"><h2>移行チェックリスト</h2><p><strong>②型では捕まらない3つ</strong></p><ul><li><code>c.json(undefined)</code> <span class="arrow">→</span> 500</li><li><code>onError()</code> の合成化 <span class="arrow">→</span> 両方走る</li><li>ワイルドカードのマッチ変更</li></ul><p><span class="arrow">→</span> <strong>ここが本番</strong></p></section>
-<section class="slide"><h2>移行チェックリスト</h2><p><strong>③import を書き換える</strong></p><ul><li><code>hono/&lt;runtime&gt;</code> <span class="arrow">→</span> <code>@hono/&lt;runtime&gt;</code></li><li><code>hono/cloudflare-pages</code> <span class="arrow">→</span> <strong>代替なし</strong></li><li><code>app.mount()</code> <span class="arrow">→</span> <code>hono/mount</code></li><li><code>app.fire()</code> <span class="arrow">→</span> <code>@hono/service-worker</code></li></ul></section>
-<section class="slide"><h2>まとめ</h2><ul><li>型 <span class="arrow">→</span> 嘘をつかなくなった。実行時の値は同じ</li><li>エラー <span class="arrow">→</span> 上書きから<strong>合成</strong>へ</li><li>地雷 <span class="arrow">→</span> <code>c.json(undefined)</code> が 500</li><li>ルーター <span class="arrow">→</span> 統一された。でも無言で入れ替わる</li><li>性能 <span class="arrow">→</span> 据え置き。ラウンド数を書こう</li><li>サイズ <span class="arrow">→</span> install は -46%、バンドルは微増</li></ul></section>
-<section class="slide center" style="--slide-size:1.5;"><p>v5 で壊れるのは</p><p><strong>v4 が緩かったところ</strong></p></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>①まず <code>tsc --strict</code> を通す</strong></p><ul><li><code>c.req.json()</code> の直アクセス</li><li><code>c.req.query()</code> の分割代入</li><li><code>onError((err, c) =&gt; ...)</code></li></ul><p><span class="arrow">→</span> 機械的に潰せる</p><aside class="notes"><p>ここは機械的に潰せる。</p></aside></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>②型では捕まらない3つ</strong></p><ul><li><code>c.json(undefined)</code> <span class="arrow">→</span> 500</li><li><code>onError()</code> の合成化 <span class="arrow">→</span> 両方走る</li><li>ワイルドカードのマッチ変更</li></ul><p><span class="arrow">→</span> <strong>ここが本番</strong></p><aside class="notes"><p><strong>ここだけ覚えて帰ってほしい。</strong></p></aside></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>③import を書き換える</strong></p><ul><li><code>hono/&lt;runtime&gt;</code> <span class="arrow">→</span> <code>@hono/&lt;runtime&gt;</code></li><li><code>hono/cloudflare-pages</code> <span class="arrow">→</span> <strong>代替なし</strong></li><li><code>app.mount()</code> <span class="arrow">→</span> <code>hono/mount</code></li><li><code>app.fire()</code> <span class="arrow">→</span> <code>@hono/service-worker</code></li></ul><aside class="notes"><p>cloudflare-pages だけ代替がない。Workers への移行が必要。</p></aside></section>
+<section class="slide"><h2>まとめ</h2><ul><li>型 <span class="arrow">→</span> 嘘をつかなくなった。実行時の値は同じ</li><li>エラー <span class="arrow">→</span> 上書きから<strong>合成</strong>へ</li><li>地雷 <span class="arrow">→</span> <code>c.json(undefined)</code> が 500</li><li>ルーター <span class="arrow">→</span> 統一された。でも無言で入れ替わる</li><li>性能 <span class="arrow">→</span> 据え置き。ラウンド数を書こう</li><li>サイズ <span class="arrow">→</span> install は -46%、バンドルは微増</li></ul><aside class="notes"><p>章ごとに一行ずつ。読み上げてよい。</p></aside></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v5 で壊れるのは</p><p><strong>v4 が緩かったところ</strong></p><aside class="notes"><p><strong>この発表の結論。</strong></p></aside></section>
 <section class="slide center"><p>壊れたんじゃなくて、</p><p>隠れてたバグが出てきただけ</p></section>
-<section class="slide center"><p>本番投入は RC なので待ちます</p></section>
-<section class="slide center"><p>でも <code>hono@next</code> で1回ビルドするのは</p><p><strong>今やる価値がある</strong></p></section>
+<section class="slide center"><p>本番投入は RC なので待ちます</p><aside class="notes"><p>正直に。</p></aside></section>
+<section class="slide center"><p>でも <code>hono@next</code> で1回ビルドするのは</p><p><strong>今やる価値がある</strong></p><aside class="notes"><p>ここが持ち帰ってほしいアクション。</p></aside></section>
 <section class="slide center"><p>型エラーの量を見れば、</p><p>移行コストがその場で分かる</p></section>
-<section class="slide center" style="--slide-size:1.5;"><p>ありがとうございました</p></section>
-<section class="slide center light" style="background:#fafafa;"><p>One more thing</p></section>
-<section class="slide center"><p>正式リリースまでの予想</p></section>
-<section class="slide"><h2>ひっくり返るとしたら</h2><p><strong><code>defineHandler()</code></strong> だと思う</p><ul><li>唯一 experimental と明記されている</li><li>検証関数で 500 になる角が残っている</li><li><code>onError()</code> とワイルドカードはこのまま出る</li></ul></section>
-<section class="slide"><h2>一番詰まるのは</h2><p><strong><code>hono/cloudflare-pages</code> の削除</strong></p><ul><li>他は書き換えれば済む</li><li>これだけ<strong>代替がない</strong></li><li>型エラーの数なら <code>c.req.query()</code> が圧倒的</li><li>でも時間を食うのは<strong>数じゃなくて1件</strong></li></ul></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ありがとうございました</p><aside class="notes"><p>時間が無ければここで終わる。</p></aside></section>
+<section class="slide center light" style="background:#fafafa;"><p>One more thing</p><aside class="notes"><p>時間があれば。無ければ切ってよい。</p></aside></section>
+<section class="slide center"><p>正式リリースまでの予想</p><aside class="notes"><p>外れてもいい、という前提で話す。</p></aside></section>
+<section class="slide"><h2>ひっくり返るとしたら</h2><p><strong><code>defineHandler()</code></strong> だと思う</p><ul><li>唯一 experimental と明記されている</li><li>検証関数で 500 になる角が残っている</li><li><code>onError()</code> とワイルドカードはこのまま出る</li></ul><aside class="notes"><p>defineHandler は唯一 experimental と明記されている。</p></aside></section>
+<section class="slide"><h2>一番詰まるのは</h2><p><strong><code>hono/cloudflare-pages</code> の削除</strong></p><ul><li>他は書き換えれば済む</li><li>これだけ<strong>代替がない</strong></li><li>型エラーの数なら <code>c.req.query()</code> が圧倒的</li><li>でも時間を食うのは<strong>数じゃなくて1件</strong></li></ul><aside class="notes"><p>型エラーの数なら query が圧倒的だが、機械的に潰せる。<br>時間を食うのは数ではなく、代替のない1件。</p></aside></section>
 <section class="slide center"><p>外れるかもしれません</p></section>
-<section class="slide center"><p>正式版が出たら、答え合わせします</p></section>
-<section class="slide center" style="--slide-size:1.5;"><pre data-lang="sh"><code>npm i hono@next</code></pre><p class="note"><a href="https://hono.dev/docs/guides/migrating-to-v5" target="_blank" rel="noopener">hono.dev/docs/guides/migrating-to-v5</a></p></section>
+<section class="slide center"><p>正式版が出たら、答え合わせします</p><aside class="notes"><p>締め。</p></aside></section>
+<section class="slide center" style="--slide-size:3;"><pre data-lang="sh"><code>npm i hono@next</code></pre><p class="note"><a href="https://hono.dev/docs/guides/migrating-to-v5" target="_blank" rel="noopener">hono.dev/docs/guides/migrating-to-v5</a></p></section>
 </div>
 <div id="overview"></div>
 <div id="presenter"></div>
