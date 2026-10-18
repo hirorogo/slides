@@ -49,6 +49,13 @@ const charWidth = (ch) => {
   return 0.5;
 };
 
+/** 文字列の幅をフォントサイズ基準で見積もる。全角を半角幅で数えると要素が重なる。 */
+const textWidth = (s, size) => {
+  let em = 0;
+  for (const ch of String(s)) em += charWidth(ch);
+  return em * size;
+};
+
 /** 指定した em 幅で折り返す。行数は maxLines まで、あふれたら末尾を … にする。 */
 const wrap = (text, maxEm, maxLines) => {
   const lines = [];
@@ -83,21 +90,31 @@ const wrap = (text, maxEm, maxLines) => {
  */
 const SUBSETS = ["japanese", "latin", "latin-ext"];
 
+/**
+ * 400 だけ渡すと font-weight="700" が黙って無視され、太字指定が効かない。
+ * 見出しを太くするには 700 のファイルも渡す必要がある。
+ */
+const WEIGHTS = ["400", "700"];
+
 /** woff2 の Noto Sans JP を TTF に戻して一時ファイルに置く。resvg はパスしか受け取らない。 */
 const prepareFonts = async () => {
   const { decompress } = require("wawoff2");
   const paths = [];
 
   for (const subset of SUBSETS) {
-    const woff2 = fs.readFileSync(
-      require.resolve(`@fontsource/noto-sans-jp/files/noto-sans-jp-${subset}-400-normal.woff2`),
-    );
-    // 中身が変われば長さも変わるので、ファイル名に入れて作り直しの判定にする。
-    const ttfPath = path.join(os.tmpdir(), `ssg-nsjp-${subset}-${woff2.length}.ttf`);
-    if (!fs.existsSync(ttfPath)) {
-      fs.writeFileSync(ttfPath, Buffer.from(await decompress(woff2)));
+    for (const weight of WEIGHTS) {
+      const woff2 = fs.readFileSync(
+        require.resolve(
+          `@fontsource/noto-sans-jp/files/noto-sans-jp-${subset}-${weight}-normal.woff2`,
+        ),
+      );
+      // 中身が変われば長さも変わるので、ファイル名に入れて作り直しの判定にする。
+      const ttfPath = path.join(os.tmpdir(), `ssg-nsjp-${subset}-${weight}-${woff2.length}.ttf`);
+      if (!fs.existsSync(ttfPath)) {
+        fs.writeFileSync(ttfPath, Buffer.from(await decompress(woff2)));
+      }
+      paths.push(ttfPath);
     }
-    paths.push(ttfPath);
   }
   return paths;
 };
@@ -110,25 +127,40 @@ export async function createOgRenderer(site) {
   const fontFiles = await prepareFonts();
   const { Resvg } = require("@resvg/resvg-js");
 
-  return function renderOg({ title, label = site.name, date = "" }) {
-    const titleSize = 64;
-    const lines = wrap(normalize(title), (WIDTH - PADDING * 2) / titleSize, 3);
-    const lineHeight = titleSize * 1.35;
-    // タイトルが縦に伸びるぶん、上を詰めて全体を中央寄りに保つ。
-    const top = 300 - (lines.length - 1) * (lineHeight / 2);
+  return function renderOg({ title, label = site.name }) {
+    const titleSize = 54;
+    const lines = wrap(normalize(title), (WIDTH - PADDING * 2 - 8) / titleSize, 3);
+    const lineHeight = titleSize * 1.42;
+
+    // 著者名とハンドルは色を変えたいので別々に置く。
+    // 後ろの開始位置は実測ではなく見積もりなので、全角込みで数える。
+    const name = normalize(site.author).split("/")[0].trim();
+    // SVG のテキストは先頭の空白を落とすので、間隔は x 座標でとる。
+    const handle = site.twitter ? `/ ${site.twitter}` : "";
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
 <rect width="${WIDTH}" height="${HEIGHT}" fill="#ffffff"/>
-<rect x="${PADDING}" y="${top - 118}" width="72" height="6" fill="#0645ad"/>
-<text x="${PADDING}" y="${top - 70}" font-family="${FONT_FAMILY}" font-size="26" fill="#555555" letter-spacing="3">${esc(normalize(label).toUpperCase())}</text>
+
+<!-- 四隅の飾り。濃さを変えて白黒のまま奥行きを出す -->
+<path d="M0 0 L150 0 L0 150 Z" fill="#2b2b2b"/>
+<path d="M${WIDTH} 0 A 120 120 0 0 1 ${WIDTH - 120} 120 L ${WIDTH} 120 Z" fill="#c9c9c9"/>
+<path d="M0 ${HEIGHT} A 110 110 0 0 1 110 ${HEIGHT} Z" fill="#ececec"/>
+<rect x="${WIDTH - 130}" y="${HEIGHT - 130}" width="130" height="130" fill="#f0f0f0"/>
+
+<rect x="${WIDTH / 2 - 90}" y="36" width="180" height="52" rx="6" fill="#2b2b2b"/>
+<text x="${WIDTH / 2}" y="72" font-family="${FONT_FAMILY}" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="4">${esc(normalize(label).toUpperCase())}</text>
+
 ${lines
   .map(
     (line, i) =>
-      `<text x="${PADDING}" y="${top + i * lineHeight}" font-family="${FONT_FAMILY}" font-size="${titleSize}" font-weight="700" fill="#111111">${esc(line)}</text>`,
+      `<text x="100" y="${210 + i * lineHeight}" font-family="${FONT_FAMILY}" font-size="${titleSize}" font-weight="700" fill="#111111">${esc(line)}</text>`,
   )
   .join("\n")}
-<text x="${PADDING}" y="${HEIGHT - 64}" font-family="${FONT_FAMILY}" font-size="28" fill="#555555">${esc(normalize(site.author))}</text>
-<text x="${WIDTH - PADDING}" y="${HEIGHT - 64}" font-family="${FONT_FAMILY}" font-size="28" fill="#555555" text-anchor="end">${esc(date)}</text>
+
+<!-- 左上の三角と同じ形。アイコン代わりの記号 -->
+<path d="M100 ${HEIGHT - 136} L148 ${HEIGHT - 136} L100 ${HEIGHT - 88} Z" fill="#2b2b2b"/>
+<text x="168" y="${HEIGHT - 104}" font-family="${FONT_FAMILY}" font-size="28" font-weight="500" fill="#111111">${esc(name)}</text>
+<text x="${168 + textWidth(name, 28) + 12}" y="${HEIGHT - 104}" font-family="${FONT_FAMILY}" font-size="28" fill="#777777">${esc(handle)}</text>
 </svg>`;
 
     return new Resvg(svg, {
