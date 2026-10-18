@@ -1,5 +1,5 @@
 ---
-published: false
+published: true
 summary: Hono v5 RC と v4を比較してみる
 ---
 
