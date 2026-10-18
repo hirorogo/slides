@@ -53,15 +53,20 @@ jobs:
             exit 0
           fi
 
-          files=$(git diff --name-only "$BEFORE" "${{ github.sha }}")
+          # core.quotePath を切らないと、日本語を含むパスが
+          # "slides/speakerdeck/Google\343\201\214.../article.md" のように
+          # クォート + 8進エスケープで出てきて、下のパターンに一切当たらない。
+          # デッキのフォルダ名はすべて日本語なので、これを忘れると
+          # 内容だけ直したコミットが黙ってスキップされる。
+          files=$(git -c core.quotePath=false diff --name-only "$BEFORE" "${{ github.sha }}")
 
           # 自分のアプリ・共有パッケージ・ワークフローは常に対象。
-          # 記事側が slide.md も見ているのは、slug と date をデッキから
-          # 継承しているため。slide.md だけ直して articles を飛ばすと
-          # 記事の URL が古いままになる。
-          # 画像などの素材は両方が参照しうるので両方の対象に入れる。
+          # slides/ 配下は両方が article.md と slide.md を見ている:
+          #   - 記事は slug と date をデッキから継承する
+          #   - デッキは記事が published なら「記事版を読む」を出す
+          # 画像などの素材も両方が参照しうるので両方の対象に入れる。
           case "${{ matrix.app }}" in
-            slides)   own='^apps/slides/|^packages/|^\.marp/|^\.github/workflows/|^slides/.*/slide\.md$' ;;
+            slides)   own='^apps/slides/|^packages/|^\.marp/|^\.github/workflows/|^slides/.*/(article|slide)\.md$' ;;
             articles) own='^apps/articles/|^packages/|^\.github/workflows/|^slides/.*/(article|slide)\.md$' ;;
           esac
           shared='^slides/[^/]+/[^/]+/(img|images|assets)/'
