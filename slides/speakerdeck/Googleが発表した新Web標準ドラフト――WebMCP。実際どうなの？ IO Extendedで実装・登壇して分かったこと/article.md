@@ -1,6 +1,6 @@
 ---
 published: true
-summary: I/O Extended で WebMCP のハンズオン講師をして、今はまだいらないと思った
+summary: WebMCP のハンズオン講師をして、今はまだいらないと思った
 ---
 
 # Googleが発表した新Web標準ドラフト――WebMCP。実際どうなの？ IO Extendedで実装・登壇して分かったこと
