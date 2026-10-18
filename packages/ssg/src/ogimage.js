@@ -15,6 +15,16 @@ const WIDTH = 1200;
 const HEIGHT = 630;
 const PADDING = 96;
 const FONT_FAMILY = "Noto Sans JP";
+/**
+ * タイトルの文字サイズの候補。大きい順に試して、3行以内かつ帯に収まる
+ * 最初のものを使う。短いタイトルがカードの中で小さく浮かないようにする。
+ */
+const TITLE_SIZES = [76, 68, 60, 54];
+const MAX_LINES = 3;
+
+/** タイトルを置ける縦の帯。上はラベル箱の下、下は著者行の上。 */
+const BAND_TOP = 128;
+const BAND_BOTTOM = HEIGHT - 170;
 
 /**
  * Noto Sans JP の配布サブセットに入っていない約物を、見た目の近い字に寄せる。
@@ -128,9 +138,28 @@ export async function createOgRenderer(site) {
   const { Resvg } = require("@resvg/resvg-js");
 
   return function renderOg({ title, label = site.name }) {
-    const titleSize = 54;
-    const lines = wrap(normalize(title), (WIDTH - PADDING * 2 - 8) / titleSize, 3);
-    const lineHeight = titleSize * 1.42;
+    const text = normalize(title);
+    const band = BAND_BOTTOM - BAND_TOP;
+
+    // 入る中で一番大きいサイズを選ぶ。最後の候補は収まらなくても使う（…で切れる）。
+    let size = TITLE_SIZES[TITLE_SIZES.length - 1];
+    let lines = wrap(text, (WIDTH - PADDING * 2 - 8) / size, MAX_LINES);
+    for (const candidate of TITLE_SIZES) {
+      const wrapped = wrap(text, (WIDTH - PADDING * 2 - 8) / candidate, MAX_LINES);
+      const needed = (wrapped.length - 1) * candidate * 1.42 + candidate;
+      const fits = wrapped.join("").length === text.length && needed <= band;
+      if (fits) {
+        size = candidate;
+        lines = wrapped;
+        break;
+      }
+    }
+
+    const lineHeight = size * 1.42;
+    // 行数が変わってもタイトルの塊が帯の中心に来るようにする。
+    // y は baseline なので、見た目の中心に合わせるぶんだけ下げる。
+    const blockHeight = (lines.length - 1) * lineHeight;
+    const firstBaseline = (BAND_TOP + BAND_BOTTOM) / 2 - blockHeight / 2 + size * 0.36;
 
     // 著者名とハンドルは色を変えたいので別々に置く。
     // 後ろの開始位置は実測ではなく見積もりなので、全角込みで数える。
@@ -153,7 +182,7 @@ export async function createOgRenderer(site) {
 ${lines
   .map(
     (line, i) =>
-      `<text x="100" y="${210 + i * lineHeight}" font-family="${FONT_FAMILY}" font-size="${titleSize}" font-weight="700" fill="#111111">${esc(line)}</text>`,
+      `<text x="100" y="${firstBaseline + i * lineHeight}" font-family="${FONT_FAMILY}" font-size="${size}" font-weight="700" fill="#111111">${esc(line)}</text>`,
   )
   .join("\n")}
 
