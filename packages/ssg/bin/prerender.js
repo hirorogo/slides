@@ -38,6 +38,32 @@ for (const route of routes) {
   await writeFile(outFile, page);
 }
 
-console.log(`prerendered ${routes.length} route(s) -> dist/`);
+// Cloudflare Pages は 404.html が無いと、未知のパスに index.html を 200 で返す。
+// 消したページや打ち間違いがソフト404になり、検索側に「中身のある別ページ」として
+// 扱われてしまうので、本物の 404 を置く。
+const notFound = template
+  .replace(
+    "<!--app-head-->",
+    renderHead({
+      site,
+      title: `404 — ページが見つかりません | ${site.title}`,
+      description: "お探しのページは見つかりませんでした。",
+      pathname: "/404.html",
+      noindex: true,
+    }),
+  )
+  .replace(
+    "<!--app-html-->",
+    `<main>
+<h1>404</h1>
+<p>お探しのページは見つかりませんでした。</p>
+<ul>
+<li><a href="/">トップへ戻る</a></li>
+</ul>
+</main>`,
+  );
+await writeFile(path.join(clientDir, "404.html"), notFound);
+
+console.log(`prerendered ${routes.length} route(s) + 404.html -> dist/`);
 
 await rm(serverDir, { recursive: true, force: true });
