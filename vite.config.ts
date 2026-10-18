@@ -8,6 +8,7 @@ const ignorePatterns = [
   "slides/**",
   "ippon-slides/**",
   ".agents/**",
+  ".claude/**",
   ".claat/**",
   ".marp/**",
   "**/dist/**",
