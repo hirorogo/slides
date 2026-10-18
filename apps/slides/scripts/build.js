@@ -97,6 +97,11 @@ const getSlides = () => {
         // OGP カードの見出し。長いタイトルは card に収まらないので
         // frontmatter の summary を優先する。
         summary: meta.frontmatter.summary || "",
+        // 一覧と OGP に出す短い見出し。`――` より前で足りることが多い。
+        // 元にするのは frontmatter の title ではなくフォルダ名。
+        // slide.md の title は表紙用に崩してあることがある
+        // （例: フォルダ「個人開発者よ、Honoを使え」/ 表紙「個人開発者チャン、…」）。
+        heading: meta.frontmatter.summary || folder.split("――")[0].trim() || folder,
         image: `/og/${meta.slug}.png`,
         // 両方公開されているときだけ、記事版への導線を出す。
         articleUrl: hasPublishedArticle(path.join(dir, folder))

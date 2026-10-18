@@ -3,15 +3,12 @@ import articlesData from "../data/articles.json";
 type Article = {
   slug: string;
   title: string;
-  /** frontmatter の summary。一覧と OGP はこちらを優先する。 */
-  summary: string;
+  /** 一覧と OGP に出す見出し。build.js が summary と title から決める。 */
+  heading: string;
   date: string;
   description: string;
   path: string;
 };
-
-/** 一覧に出す見出し。長い本タイトルより summary の方が一覧では読みやすい。 */
-const listTitle = (article: Article) => article.summary || article.title;
 
 const articles: Article[] = articlesData.articles;
 
@@ -49,7 +46,7 @@ const Index = () => (
           <ul className="slide-list">
             {byYear[year].map((article) => (
               <li key={article.slug}>
-                <a href={article.path}>{listTitle(article)}</a>{" "}
+                <a href={article.path}>{article.heading}</a>{" "}
                 <span className="meta">{article.date}</span>
               </li>
             ))}

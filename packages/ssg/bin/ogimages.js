@@ -34,14 +34,12 @@ fs.writeFileSync(
 );
 
 let count = 0;
-const noSummary = [];
 for (const item of items) {
   if (!item.slug) continue;
-  if (!item.summary) noSummary.push(item.slug);
   fs.writeFileSync(
     path.join(outDir, `${item.slug}.png`),
     render({
-      title: item.summary || item.title || item.name,
+      title: item.heading || item.summary || item.title || item.name,
       label: site.name,
       date: item.date ?? "",
     }),
@@ -50,9 +48,3 @@ for (const item of items) {
 }
 
 console.log(`wrote ${count} OGP 画像 -> dist/og/ (+ ${path.basename(site.ogImage)})`);
-if (noSummary.length > 0) {
-  console.log(
-    `  note: summary 未設定が ${noSummary.length} 件。タイトルで代用しています` +
-      `（${noSummary.slice(0, 3).join(", ")}${noSummary.length > 3 ? " ほか" : ""}）`,
-  );
-}

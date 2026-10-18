@@ -34,6 +34,14 @@ const slideMetaOf = (repoRoot, relDir, folder, dir) => {
   return readDocMeta({ repoRoot, relDir, folder, file });
 };
 
+/**
+ * 一覧と OGP カードに出す見出し。
+ *
+ * ほとんどのタイトルは `――` の前だけで十分短い。それでも長い、あるいは
+ * `――` で切ると要点が落ちるものだけ、frontmatter に summary を書く。
+ */
+const displayHeading = (title, summary) => summary || title.split("――")[0].trim() || title;
+
 /** 本文先頭の `# 見出し` をタイトルに使う。 */
 const headingOf = (md) => {
   const body = md.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
@@ -119,15 +127,20 @@ const collect = () => {
       // slug は記事 > デッキ > フォルダ名の順。デッキと URL を揃えたいので借りる。
       const slug = meta.frontmatter.slug || slide.frontmatter.slug || folder;
 
+      const title = meta.frontmatter.title || headingOf(source) || folder;
+
       articles.push({
         name: folder,
         slug,
-        title: meta.frontmatter.title || headingOf(source) || folder,
+        title,
+        // 一覧と OGP が使う短い見出し。
+        heading: displayHeading(title, meta.frontmatter.summary || ""),
         // 日付は記事 > デッキの順。記事側に書いていなければ登壇日を使う。
         date: normalizeDate(meta.frontmatter.date) || slide.date || meta.date,
         updated: meta.updated,
         description: meta.frontmatter.description || excerptOf(source),
         summary: meta.frontmatter.summary || "",
+
         image: `/og/${slug}.png`,
         // 記事は必ずデッキと同じフォルダにあるので、スライド版へ必ず飛べる。
         slideUrl: fs.existsSync(path.join(dir, folder, "slide.md"))
