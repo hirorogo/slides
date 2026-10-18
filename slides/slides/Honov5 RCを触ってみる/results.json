@@ -1,0 +1,556 @@
+{
+  "meta": {
+    "title": "Hono v5 RC 検証結果",
+    "measuredAt": "2026-10-18",
+    "env": {
+      "node": "v24.22.0",
+      "typescript": "7.0.2",
+      "tsx": "4.23.15",
+      "machine": "Apple M4 (arm64), macOS Darwin 25.5.0"
+    },
+    "versions": {
+      "v4": "hono@4.13.13",
+      "v5": "hono@5.0.0-rc.1",
+      "adapter": "@hono/bun@1.0.1"
+    },
+    "note": "v5 は RC 版。正式リリース時に挙動が変わる可能性がある。ベンチは app.fetch() によるインプロセス計測で、実 HTTP サーバーや Workers 本番の性能ではない。",
+    "sources": [
+      "https://hono.dev/docs/guides/migrating-to-v5"
+    ]
+  },
+  "experiment1_typeSafety": {
+    "description": "c.req.json() / c.req.query() の型変更を tsc --strict で検証",
+    "command": "npx tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 src/<file>.ts",
+    "results": {
+      "typecheck-json": {
+        "v4": {
+          "passed": true,
+          "output": []
+        },
+        "v5": {
+          "passed": false,
+          "output": [
+            "src/typecheck-json.ts(9,11): error TS18046: 'body' is of type 'unknown'."
+          ]
+        }
+      },
+      "typecheck-query": {
+        "v4": {
+          "passed": true,
+          "output": []
+        },
+        "v5": {
+          "passed": false,
+          "output": [
+            "src/typecheck-query.ts(7,25): error TS18048: 'name' is possibly 'undefined'.",
+            "src/typecheck-query.ts(10,9): error TS2322: Type 'string[] | undefined' is not assignable to type 'string[]'.",
+            "  Type 'undefined' is not assignable to type 'string[]'."
+          ]
+        }
+      },
+      "typecheck-guard": {
+        "v4": {
+          "passed": true,
+          "output": []
+        },
+        "v5": {
+          "passed": true,
+          "output": []
+        }
+      },
+      "typecheck-onerror-v4style": {
+        "v4": {
+          "passed": true,
+          "output": []
+        },
+        "v5": {
+          "passed": false,
+          "output": [
+            "src/typecheck-onerror-v4style.ts(7,21): error TS2339: Property 'message' does not exist on type 'Context<BlankEnv, string, any>'.",
+            "src/typecheck-onerror-v4style.ts(8,12): error TS2339: Property 'json' does not exist on type 'Next'."
+          ]
+        }
+      }
+    },
+    "verdict": "v4 は 4 件すべて型エラーなし。v5 は json / query / v4スタイルonError が型エラーになり、型ガード版のみ通過。 v4スタイルの onError は型エラーで捕まるため、tsc を通していれば移行時に気づける。"
+  },
+  "experiment2_runtimeBehavior": {
+    "v4": {
+      "onError_path_arg": {
+        "accepted": false,
+        "error": "this.errorHandler is not a function"
+      },
+      "onError_composition": {
+        "order": [
+          "second"
+        ],
+        "status": 500,
+        "body": "second"
+      },
+      "throw_string": {
+        "escaped": true,
+        "escapedValue": "oops",
+        "seen": null
+      },
+      "throw_object": {
+        "escaped": true,
+        "escapedValue": "{\"code\":42}",
+        "seen": null
+      },
+      "notFound_path_arg": {
+        "accepted": true,
+        "status": 500,
+        "body": "Internal Server Error"
+      },
+      "json_undefined": {
+        "status": 200,
+        "bodyLength": 0
+      },
+      "json_function": {
+        "status": 200,
+        "body": ""
+      },
+      "query_runtime": {
+        "q": {
+          "a": "1"
+        },
+        "qs": {
+          "a": [
+            "1",
+            "2"
+          ]
+        }
+      }
+    },
+    "v5": {
+      "onError_path_arg": {
+        "accepted": true,
+        "api": {
+          "status": 500,
+          "header": "api",
+          "body": {
+            "error": "Internal Server Error"
+          }
+        },
+        "other": {
+          "status": 500,
+          "header": null,
+          "body": {
+            "error": "Internal Server Error"
+          }
+        }
+      },
+      "onError_composition": {
+        "order": [
+          "first",
+          "second"
+        ],
+        "status": 500,
+        "body": "second"
+      },
+      "onError_first_returns": {
+        "order": [
+          "first"
+        ],
+        "status": 500,
+        "body": "first"
+      },
+      "onError_v4_style": {
+        "observed": {
+          "firstArgCtor": "Context",
+          "firstArgIsContext": true,
+          "secondArgType": "function"
+        },
+        "threw": true,
+        "message": "Context is not finalized. Did you forget to return a Response object or `await next()`?"
+      },
+      "throw_string": {
+        "escaped": false,
+        "status": 500,
+        "seen": {
+          "ctor": "Error",
+          "message": "oops",
+          "cause": "oops"
+        }
+      },
+      "throw_object": {
+        "escaped": false,
+        "status": 500,
+        "seen": {
+          "ctor": "Error",
+          "message": "",
+          "cause": {
+            "code": 42
+          }
+        }
+      },
+      "notFound_path_arg": {
+        "accepted": true,
+        "api": {
+          "status": 404,
+          "header": "api",
+          "body": "API resource not found"
+        },
+        "other": {
+          "status": 404,
+          "header": null,
+          "body": "Not Found"
+        }
+      },
+      "json_undefined": {
+        "status": 500,
+        "bodyLength": 21
+      },
+      "json_function": {
+        "status": 500,
+        "body": "Internal Server Error"
+      },
+      "query_runtime": {
+        "q": {
+          "a": "1"
+        },
+        "qs": {
+          "a": [
+            "1",
+            "2"
+          ]
+        }
+      }
+    }
+  },
+  "experiment3_wildcard": {
+    "v4": {
+      "matrix": {
+        "SmartRouter": {
+          "/x*/y": {
+            "/x/y": "no-match(404)",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "match"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        },
+        "RegExpRouter": {
+          "/x*/y": {
+            "/x/y": "no-match(404)",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "match"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        },
+        "TrieRouter": {
+          "/x*/y": {
+            "/x/y": "no-match(404)",
+            "/xz/y": "no-match(404)",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "match",
+            "/wild/a/card": "match"
+          }
+        },
+        "PatternRouter": {
+          "/x*/y": {
+            "/x/y": "no-match(404)",
+            "/xz/y": "no-match(404)",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        }
+      },
+      "conflict": {
+        "SmartRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "b",
+          "router": "SmartRouter + RegExpRouter"
+        },
+        "RegExpRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "b",
+          "router": "RegExpRouter"
+        },
+        "TrieRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "b",
+          "router": "TrieRouter"
+        },
+        "PatternRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "b",
+          "router": "PatternRouter"
+        }
+      },
+      "smartRouterPicked": {
+        "simple": "SmartRouter + RegExpRouter",
+        "conflict": "SmartRouter + RegExpRouter"
+      }
+    },
+    "v5": {
+      "matrix": {
+        "SmartRouter": {
+          "/x*/y": {
+            "/x/y": "match",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        },
+        "RegExpRouter": {
+          "/x*/y": {
+            "/x/y": "match",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        },
+        "TrieRouter": {
+          "/x*/y": {
+            "/x/y": "match",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        },
+        "PatternRouter": {
+          "/x*/y": {
+            "/x/y": "match",
+            "/xz/y": "match",
+            "/x/z/y": "no-match(404)"
+          },
+          "/x*y": {
+            "/xay": "no-match(404)"
+          },
+          "/wild/*/card": {
+            "/wild//card": "no-match(404)",
+            "/wild/a/card": "match"
+          }
+        }
+      },
+      "conflict": {
+        "SmartRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "a",
+          "router": "SmartRouter + TrieRouter"
+        },
+        "RegExpRouter": {
+          "ok": false,
+          "error": "UnsupportedPathError: /x/*"
+        },
+        "TrieRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "a",
+          "router": "TrieRouter"
+        },
+        "PatternRouter": {
+          "ok": true,
+          "status": 200,
+          "body": "a",
+          "router": "PatternRouter"
+        }
+      },
+      "smartRouterPicked": {
+        "simple": "SmartRouter + RegExpRouter",
+        "conflict": "SmartRouter + TrieRouter"
+      }
+    }
+  },
+  "experiment4_benchmark": {
+    "description": "app.fetch() で GET /users/:id を 100,000 回。ウォームアップ 20,000 回。5 ラウンド交互実行。",
+    "iterations": 100000,
+    "warmup": 20000,
+    "rounds": 10,
+    "v4": {
+      "runsMs": [
+        272.7,
+        262.13,
+        269.22,
+        258.31,
+        267.46,
+        284.91,
+        271.84,
+        360.6,
+        271.85,
+        263.35
+      ],
+      "medianMs": 270.53,
+      "meanMs": 278.24,
+      "minMs": 258.31,
+      "maxMs": 360.6,
+      "medianRps": 369645
+    },
+    "v5": {
+      "runsMs": [
+        268.3,
+        259.35,
+        255.59,
+        263.16,
+        255.8,
+        269.94,
+        282.37,
+        315.01,
+        284.31,
+        264.7
+      ],
+      "medianMs": 266.5,
+      "meanMs": 271.85,
+      "minMs": 255.59,
+      "maxMs": 315.01,
+      "medianRps": 375235
+    },
+    "deltaMedianPercent": 1.49,
+    "verdict": "v5 が中央値で 1.5%、平均で 2.3%、最小値で 1.1% 速い。ただし両者の分布は大きく重なっており(v4 最小 258.31ms < v5 中央値 266.50ms)、この測り方では有意差とは言えない。コアのルーティング性能は実質同等。",
+    "deltaMeanPercent": 2.29,
+    "deltaMinPercent": 1.05
+  },
+  "experiment5_routerFallbackPerf": {
+    "description": "v5 で /x*/y と /x/* を同時登録し SmartRouter が TrieRouter にフォールバックした場合の性能差。GET /users/:id を 50,000 回、3 ラウンド。",
+    "iterations": 50000,
+    "rounds": 12,
+    "regExpRouter": {
+      "runsMs": [
+        141.1,
+        287.62,
+        138.12,
+        139.55,
+        149.7,
+        137.12,
+        132.35,
+        136.21,
+        138.02,
+        152.39,
+        135.95,
+        139.24
+      ],
+      "router": "SmartRouter + RegExpRouter",
+      "medianMs": 138.68,
+      "meanMs": 152.28,
+      "minMs": 132.35,
+      "maxMs": 287.62,
+      "medianRps": 360542
+    },
+    "trieFallback": {
+      "runsMs": [
+        148.49,
+        150.94,
+        146.71,
+        149.93,
+        146.25,
+        203.86,
+        146.51,
+        147.32,
+        159.77,
+        148.65,
+        270.96,
+        148.5
+      ],
+      "router": "SmartRouter + TrieRouter",
+      "medianMs": 148.57,
+      "meanMs": 163.99,
+      "minMs": 146.25,
+      "maxMs": 270.96,
+      "medianRps": 336530
+    },
+    "deltaPercent": 3.28,
+    "verdict": "フォールバック時は中央値で 7.1%、最小値で 10.5% 遅い。外れ値(GC 等)を含む生データでも方向は一貫している。ルートを 1 行足しただけで Router が変わり、性能特性も変わる。",
+    "deltaMedianPercent": 7.14,
+    "deltaMeanPercent": 7.69,
+    "deltaMinPercent": 10.5,
+    "caveat": "3 ラウンドで測った際は 3.3% しか差が出なかった。ラウンド数が少ないと結論がぶれるので 12 ラウンドで測り直した値を採用。"
+  },
+  "experiment6_size": {
+    "bundleCore": {
+      "description": "esbuild --bundle --platform=neutral --format=esm --minify (benchmark-app.ts)",
+      "v4": {
+        "bytes": 18528,
+        "gzipBytes": 7791
+      },
+      "v5": {
+        "bytes": 18830,
+        "gzipBytes": 7910
+      },
+      "deltaBytes": 302,
+      "deltaPercent": 1.63
+    },
+    "bundleWithAdapter": {
+      "description": "serveStatic を含む。v4=hono/bun, v5=@hono/bun。--platform=node",
+      "v4": {
+        "bytes": 22760,
+        "gzipBytes": 9512
+      },
+      "v5": {
+        "bytes": 22923,
+        "gzipBytes": 9570
+      },
+      "deltaBytes": 163,
+      "deltaPercent": 0.72
+    },
+    "installedPackage": {
+      "description": "node_modules 上の実サイズ (du -sh)",
+      "v4_hono": "2.8M",
+      "v5_hono": "1.5M",
+      "v5_adapter_@hono/bun": "60K",
+      "verdict": "v5 の hono 本体は約 46% 小さい。CJS ビルド削除とアダプター分離が効いている。"
+    },
+    "verdict": "インストールサイズは大幅減。ただし最終バンドルサイズはほぼ変わらず、むしろ微増した。"
+  },
+  "experiment7_moduleFormat": {
+    "v5_import_hono_bun": {
+      "result": "ERR_PACKAGE_PATH_NOT_EXPORTED",
+      "note": "v5 で hono/bun は解決できない。@hono/bun が必要。"
+    },
+    "v4_import_hono_bun": {
+      "result": "resolves"
+    },
+    "v4_require_hono": {
+      "result": "OK"
+    },
+    "v5_require_hono": {
+      "result": "OK",
+      "note": "ESM only だが Node.js 24.22.0 は ESM を require() できるため成功した。"
+    }
+  }
+}
