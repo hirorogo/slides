@@ -11,6 +11,7 @@
   "themeColor": "#ffffff",
   "ogImage": "/ogp.png",
   "feed": true,
-  "tagline": "ブログ",
-  "slidesUrl": "https://slides.tanahiro2010.com"
+  "tagline": "tanahiro2010 が書いたもの",
+  "slidesUrl": "https://slides.tanahiro2010.com",
+  "ogSubtitle": "Web 開発・セキュリティ・AI Agent について書いています"
 }

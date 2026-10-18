@@ -10,7 +10,8 @@
   "twitter": "@tanahiro2010",
   "themeColor": "#ffffff",
   "ogImage": "/ogp.png",
-  "tagline": "スライド",
+  "tagline": "tanahiro2010 の登壇・発表資料",
   "blogUrl": "https://blog.tanahiro2010.com",
-  "feed": true
+  "feed": true,
+  "ogSubtitle": "Hono・Cloudflare Workers・TypeScript・セキュリティ・AI Agent"
 }

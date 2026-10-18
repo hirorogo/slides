@@ -28,9 +28,16 @@ const outDir = path.join(distDir, "og");
 fs.mkdirSync(outDir, { recursive: true });
 
 // 一覧ページ用。site.ogImage が指す先を実体として置く。
+// 見出しだけだと帯の中に一語浮いて寂しいので、ogSubtitle を下に添える。
 fs.writeFileSync(
   path.join(distDir, path.basename(site.ogImage)),
-  render({ title: site.tagline || site.description, label: site.name }),
+  render({
+    title: site.tagline || site.description,
+    label: site.name,
+    subtitle: site.ogSubtitle ?? "",
+    // 見出しは短いブランド句。折り返すと語の途中で割れるので 1 行に収める。
+    maxLines: 1,
+  }),
 );
 
 let count = 0;

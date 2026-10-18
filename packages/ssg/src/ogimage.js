@@ -131,34 +131,61 @@ const prepareFonts = async () => {
 
 /**
  * @param {object} site site.config.json の中身
- * @returns {Promise<(item: {title: string, label?: string, date?: string}) => Buffer>}
+ * @returns {Promise<(item: {title: string, label?: string, date?: string, subtitle?: string, maxLines?: number}) => Buffer>}
  */
 export async function createOgRenderer(site) {
   const fontFiles = await prepareFonts();
   const { Resvg } = require("@resvg/resvg-js");
 
-  return function renderOg({ title, label = site.name }) {
+  // 一覧ページのカードは見出しが短いブランド句なので maxLines: 1 で呼ぶ。
+  // 折り返すと「…登壇・発 / 表資料」のように語の途中で割れる。
+  return function renderOg({ title, label = site.name, subtitle = "", maxLines = MAX_LINES }) {
     const text = normalize(title);
-    const band = BAND_BOTTOM - BAND_TOP;
+    const subText = normalize(subtitle);
+
+    // サブタイトルは見出しの下に添える。折り返さず 1 行。
+    // 一覧ページのカードは見出しが短く、帯の真ん中に一語だけ浮いて見えるため。
+    const subSize = 30;
+    const subGap = 34;
+    // 行数の計算に使う帯は、サブタイトルの分だけ狭くしておく。
+    const band = BAND_BOTTOM - BAND_TOP - (subText ? subGap + subSize : 0);
 
     // 入る中で一番大きいサイズを選ぶ。最後の候補は収まらなくても使う（…で切れる）。
+    //
+    // ただし最終行が極端に短いとき（`…もの` の `の` だけが落ちるような孤立行）は
+    // 一段小さいサイズを試す。行数が減るなら、文字が小さくなっても読みやすい。
+    const maxEm = (WIDTH - PADDING * 2 - 8) / 1;
+    const isOrphan = (wrapped, candidate) =>
+      wrapped.length > 1 &&
+      textWidth(wrapped[wrapped.length - 1], candidate) < (maxEm / candidate) * candidate * 0.15;
+
     let size = TITLE_SIZES[TITLE_SIZES.length - 1];
-    let lines = wrap(text, (WIDTH - PADDING * 2 - 8) / size, MAX_LINES);
+    let lines = wrap(text, (WIDTH - PADDING * 2 - 8) / size, maxLines);
+    let fallback = null;
     for (const candidate of TITLE_SIZES) {
-      const wrapped = wrap(text, (WIDTH - PADDING * 2 - 8) / candidate, MAX_LINES);
+      const wrapped = wrap(text, (WIDTH - PADDING * 2 - 8) / candidate, maxLines);
       const needed = (wrapped.length - 1) * candidate * 1.42 + candidate;
       const fits = wrapped.join("").length === text.length && needed <= band;
-      if (fits) {
-        size = candidate;
-        lines = wrapped;
-        break;
+      if (!fits) continue;
+      if (isOrphan(wrapped, candidate)) {
+        // 孤立行が出る。もっと小さいサイズで行数が減らなければ、これを使う。
+        fallback ??= { size: candidate, lines: wrapped };
+        continue;
       }
+      size = candidate;
+      lines = wrapped;
+      fallback = null;
+      break;
+    }
+    if (fallback && lines.length >= fallback.lines.length) {
+      ({ size, lines } = fallback);
     }
 
     const lineHeight = size * 1.42;
     // 行数が変わってもタイトルの塊が帯の中心に来るようにする。
     // y は baseline なので、見た目の中心に合わせるぶんだけ下げる。
-    const blockHeight = (lines.length - 1) * lineHeight;
+    // 見出しとサブタイトルを一つの塊として、帯の中央に置く。
+    const blockHeight = (lines.length - 1) * lineHeight + (subText ? subGap + subSize : 0);
     const firstBaseline = (BAND_TOP + BAND_BOTTOM) / 2 - blockHeight / 2 + size * 0.36;
 
     // 著者名とハンドルは色を変えたいので別々に置く。
@@ -166,6 +193,14 @@ export async function createOgRenderer(site) {
     const name = normalize(site.author).split("/")[0].trim();
     // SVG のテキストは先頭の空白を落とすので、間隔は x 座標でとる。
     const handle = site.twitter ? `/ ${site.twitter}` : "";
+
+    // サブタイトルはタイトルの最終行の下に置く。折り返さず 1 行に収める。
+    const lastBaseline = firstBaseline + (lines.length - 1) * lineHeight;
+    const subSvg = subText
+      ? `<text x="100" y="${lastBaseline + subGap + subSize * 0.36}" font-family="${FONT_FAMILY}" font-size="${subSize}" fill="#666666">${esc(
+          wrap(subText, (WIDTH - PADDING * 2 - 8) / subSize, 1)[0] ?? "",
+        )}</text>`
+      : "";
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
 <rect width="${WIDTH}" height="${HEIGHT}" fill="#ffffff"/>
@@ -185,6 +220,7 @@ ${lines
       `<text x="100" y="${firstBaseline + i * lineHeight}" font-family="${FONT_FAMILY}" font-size="${size}" font-weight="700" fill="#111111">${esc(line)}</text>`,
   )
   .join("\n")}
+${subSvg}
 
 <!-- 左上の三角と同じ形。アイコン代わりの記号 -->
 <path d="M100 ${HEIGHT - 136} L148 ${HEIGHT - 136} L100 ${HEIGHT - 88} Z" fill="#2b2b2b"/>
