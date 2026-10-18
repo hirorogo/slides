@@ -5,7 +5,7 @@
     "": {
       "name": "tanahiro2010-slides",
       "dependencies": {
-        "ippon-slides": "^0.1.2",
+        "ippon-slides": "^0.1.5",
       },
       "devDependencies": {
         "typescript": "~6.0.2",
@@ -39,7 +39,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@tanahiro2010/ssg": "workspace:*",
-        "ippon-slides": "^0.1.2",
+        "ippon-slides": "^0.1.5",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
       },
@@ -652,7 +652,7 @@
 
     "ip-address": ["ip-address@10.7.4", "https://npm.flatt.tech/ip-address/-/ip-address-10.7.4.tgz", {}, "sha512-DWBMKyeM25D70nrIiTkgQth59/G+naKOTep6huF9j+GmeK3DMD60Zvxg5d5qQnz+38AHgou6ean2LECX+lrKDg=="],
 
-    "ippon-slides": ["ippon-slides@0.1.2", "https://npm.flatt.tech/ippon-slides/-/ippon-slides-0.1.2.tgz", { "bin": { "ippon": "bin/ippon.js" } }, "sha512-0V6aH0vWd81nT/Cn/L+9KP/NjKufakFqcbLRYDTyQUUC8V7vMvqVxi+PnJ5nL5rgZop8Ymlzj0tcJdcsq+Pd8Q=="],
+    "ippon-slides": ["ippon-slides@0.1.5", "https://npm.flatt.tech/ippon-slides/-/ippon-slides-0.1.5.tgz", { "bin": { "ippon": "bin/ippon.js" } }, "sha512-5x0uvb6l1fZ3zEHtWE7+Bz0Ih/F2o1Mo158bYUyWx62xC89ysYQNYiDuixaXgGQ4d+NHUgG3yS/Nj4xDicbLTg=="],
 
     "is-arrayish": ["is-arrayish@0.2.1", "https://npm.flatt.tech/is-arrayish/-/is-arrayish-0.2.1.tgz", {}, "sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg=="],
 
