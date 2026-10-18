@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honov5 RCを触ってみる</title>
+<meta name="description" content="〜 v4 と並べて、何が壊れるのか確かめた 〜">
+<meta name="author" content="田中博悠 / tanahiro2010">
+<meta name="generator" content="ippon-slides">
+<style>:root {
+  --slide-bg: #000;
+  --slide-fg: #fff;
+  --slide-accent: #7b42bc; /* Terraform purple */
+  --slide-accent-2: #ff6a00;
+  --slide-muted: #8a8a8a;
+  --slide-code-bg: #0d0d0d;
+  --slide-border: rgba(255, 255, 255, 0.12);
+  --slide-font: -apple-system, 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  /* macOS には凸版文久見出しゴシックが入っている。ない環境では本文フォントに落ちる */
+  --slide-display-font: 'Toppan Bunkyu Midashi Gothic', '凸版文久見出しゴシック', var(--slide-font);
+  --slide-mono: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* 1280x720 で 16px。画面の短い辺に合わせて rem ごと拡大縮小する */
+html {
+  font-size: max(16px, min(1.25vw, 2.223vh));
+  touch-action: manipulation;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  font-family: var(--slide-font);
+  overflow: hidden;
+}
+#deck {
+  position: fixed;
+  inset: 0;
+}
+
+/* ---------- slide ---------- */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6vh 9vw;
+  box-sizing: border-box;
+  overflow: auto;
+  /* 日本語を文節で改行する（Chrome 119+） */
+  word-break: auto-phrase;
+}
+.slide pre {
+  word-break: normal;
+}
+.slide.active {
+  display: flex;
+  animation: slide-in 0.25s ease;
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide > :first-child {
+  margin-top: 0;
+}
+
+.slide h1 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(2.2rem, 5vw, 3.6rem) * var(--slide-size, 1));
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+}
+.slide h2 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4vw, 2.6rem) * var(--slide-size, 1));
+  line-height: 1.2;
+  margin: 0 0 2.2rem;
+}
+.slide h3 {
+  font-size: calc(clamp(1.4rem, 3vw, 1.9rem) * var(--slide-size, 1));
+  margin: 0 0 1rem;
+}
+.slide p,
+.slide li {
+  font-size: calc(clamp(1.1rem, 2.2vw, 1.5rem) * var(--slide-size, 1));
+  line-height: 1.6;
+}
+.slide ul,
+.slide ol {
+  padding-left: 1.4em;
+  margin: 0 0 1rem;
+}
+.slide li {
+  margin: 0.35em 0;
+}
+.slide li > ul {
+  margin: 0;
+}
+.slide li li {
+  font-size: 0.85em;
+  color: var(--slide-muted);
+}
+.slide a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+}
+/* 太字 = アクセントカラー */
+.slide strong {
+  font-weight: 700;
+  color: var(--slide-accent-2);
+}
+.slide strong code {
+  color: inherit;
+}
+.slide .arrow {
+  color: var(--slide-muted);
+  font-family: 'Hiragino Sans', system-ui, sans-serif;
+  font-weight: 800;
+}
+.slide img {
+  max-height: 58vh;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 6px;
+}
+.img-caption {
+  display: block;
+  text-align: center;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--slide-muted);
+}
+
+/* `::wide::` 左右の余白を詰める */
+.slide.wide {
+  padding-left: 3vw;
+  padding-right: 3vw;
+}
+
+/* `::right::` 2 カラム */
+.slide .cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  align-items: start;
+  width: 100%;
+}
+.slide .cols > * > :first-child {
+  margin-top: 0;
+}
+.slide .cols pre {
+  margin-top: 0;
+}
+
+/* `::center::` 1 枚 1 メッセージ */
+.slide.center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.slide.center h1,
+.slide.center h2 {
+  margin-bottom: 0.4em;
+}
+.slide.center p {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4.5vw, 3.5rem) * var(--slide-size, 1));
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.2em 0;
+}
+.slide.center ul,
+.slide.center ol {
+  text-align: left;
+}
+.slide.center pre {
+  text-align: left;
+  max-width: 100%;
+}
+
+/* `-# ` で始まる段落は小さい注釈 */
+.slide .note,
+.slide.center p.note {
+  font-family: var(--slide-font);
+  font-weight: 400;
+  color: var(--slide-muted);
+}
+.slide .note {
+  font-size: calc(clamp(0.95rem, 1.8vw, 1.25rem) * var(--slide-size, 1));
+}
+.slide.center p.note {
+  font-size: clamp(1.2rem, 2.6vw, 2.1rem);
+}
+
+/* `::title::` 表紙 */
+.slide.title {
+  padding-bottom: 8vh;
+}
+.slide.title h1 {
+  margin-top: auto;
+  font-size: calc(clamp(2.6rem, 7vw, 5.2rem) * var(--slide-size, 1));
+  line-height: 1.2;
+}
+.slide.title p {
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+.slide.title p:last-child {
+  margin-top: auto;
+  font-size: clamp(1rem, 1.8vw, 1.3rem);
+  color: var(--slide-muted);
+}
+
+/* `::bg=white::` 明るい背景 */
+.slide.light {
+  --slide-fg: #1f1f1f;
+  --slide-accent-2: #e85d00;
+  --slide-muted: #777;
+  --slide-border: rgba(0, 0, 0, 0.12);
+  --slide-code-bg: #f0f0f0;
+  color: var(--slide-fg);
+}
+
+.slide blockquote {
+  border-left: 4px solid var(--slide-accent-2);
+  margin: 0 0 1rem;
+  padding: 0.2rem 0 0.2rem 1.2rem;
+  color: var(--slide-muted);
+}
+
+.slide table {
+  border-collapse: collapse;
+  font-size: calc(clamp(1rem, 2vw, 1.35rem) * var(--slide-size, 1));
+  margin: 0 auto 1rem 0;
+}
+.slide.center table {
+  margin: 0 auto;
+}
+.slide th,
+.slide td {
+  padding: 0.5em 1.2em;
+  border-bottom: 1px solid var(--slide-border);
+  text-align: left;
+}
+.slide th {
+  color: var(--slide-muted);
+  font-weight: 600;
+}
+.slide td.num,
+.slide th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- code ---------- */
+
+.slide pre {
+  position: relative;
+  font-family: var(--slide-mono);
+  font-size: calc(clamp(0.8rem, 1.35vw, 1rem) * var(--slide-size, 1));
+  background: var(--slide-code-bg);
+  border: 1px solid var(--slide-border);
+  padding: 1.2rem 1.5rem;
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 64vh;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.slide pre code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.slide pre[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--slide-muted);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.slide :not(pre) > code {
+  font-family: var(--slide-mono);
+  background: rgba(127, 127, 127, 0.18);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ハイライト（atom-one-dark 寄り） */
+.hl-c {
+  color: #7f848e;
+  font-style: italic;
+}
+.hl-s {
+  color: #98c379;
+}
+.hl-k {
+  color: #c678dd;
+}
+.hl-n {
+  color: #d19a66;
+}
+.hl-f {
+  color: #61afef;
+}
+.hl-t {
+  color: #e5c07b;
+}
+.hl-i {
+  color: #56b6c2;
+}
+/* console */
+.hl-prompt {
+  color: var(--slide-accent-2);
+  user-select: none;
+}
+.hl-cmd {
+  color: #fff;
+  font-weight: 600;
+}
+.light .hl-cmd {
+  color: #1f1f1f;
+}
+.hl-out {
+  color: #abb2bf;
+}
+.hl-err {
+  color: #ef5350;
+  font-weight: 600;
+}
+.hl-ok {
+  color: #98c379;
+}
+/* `!! ` を付けた行は行全体を帯でハイライト */
+.hl-mark {
+  display: inline-block;
+  width: calc(100% + 3rem);
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  background: rgba(255, 106, 0, 0.16);
+  box-shadow: inset 3px 0 0 var(--slide-accent-2);
+}
+
+/* ---------- chrome ---------- */
+
+#progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: var(--slide-accent);
+  transition: width 0.2s ease;
+  z-index: 10;
+}
+#counter,
+#timer,
+#hint {
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  position: fixed;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+  z-index: 10;
+}
+#counter {
+  bottom: 12px;
+  right: 18px;
+  font-size: 0.9rem;
+}
+#timer {
+  bottom: 34px;
+  right: 18px;
+  font-size: 0.95rem;
+}
+#hint {
+  bottom: 12px;
+  left: 18px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+:fullscreen #hint {
+  display: none;
+}
+@media (pointer: coarse) {
+  #hint {
+    display: none;
+  }
+}
+
+/* ---------- overview（o / Esc） ---------- */
+
+#overview {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: 28px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: #29292c;
+}
+body.overview #overview {
+  display: flex;
+}
+body.overview #deck,
+body.overview #progress,
+body.overview #counter,
+body.overview #timer,
+body.overview #hint,
+body.overview #presenter {
+  display: none;
+}
+.ov-item {
+  cursor: pointer;
+}
+.ov-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.ov-item.current .ov-frame {
+  outline: 3px solid var(--slide-accent);
+  outline-offset: 2px;
+}
+.ov-item:hover .ov-frame {
+  border-color: var(--slide-accent);
+}
+.ov-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#overview .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+.ov-num {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ov-item.current .ov-num {
+  color: var(--slide-fg);
+  font-weight: 600;
+}
+
+/* ---------- PDF（ブラウザの印刷 → PDF に保存） ---------- */
+
+@media print {
+  @page {
+    size: 1280px 720px;
+    margin: 0;
+  }
+  html {
+    font-size: 16px;
+  }
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #deck {
+    position: static;
+  }
+  .slide {
+    display: flex !important;
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    padding: 43px 115px;
+    animation: none !important;
+    overflow: hidden;
+    break-after: page;
+    background: var(--slide-bg);
+  }
+  .slide.wide {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+  .slide.center p {
+    font-size: calc(3.5rem * var(--slide-size, 1));
+  }
+  .slide.title h1 {
+    font-size: calc(5.2rem * var(--slide-size, 1));
+  }
+  #progress,
+  #counter,
+  #timer,
+  #hint,
+  #overview,
+  #presenter {
+    display: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<div id="deck">
+<section class="slide title"><h1>Honov5 RCを触ってみる</h1><p>〜 v4 と並べて、何が壊れるのか確かめた 〜</p><p>田中博悠 / tanahiro2010</p></section>
+<section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>Hono Conference 2026 コアスタッフ</li><li>個人開発でずっと Hono を使ってる</li></ul><h1>Hono、好きです</h1></div><div><p><img src="img/tanahiro_hono.jpg" alt="tanahiro2010"></p></div></div></section>
+<section class="slide center"><p>Hono v5 RC、出ましたね</p></section>
+<section class="slide"><h2>v5 RC</h2><ul><li>10月8日 <span class="arrow">→</span> <code>5.0.0-rc.0</code></li><li>10月10日 <span class="arrow">→</span> <code>5.0.0-rc.1</code></li></ul><p class="note">honojs/hono releases</p></section>
+<section class="slide center" style="--slide-size:1.5;"><pre data-lang="sh"><code>npm i hono@next</code></pre></section>
+<section class="slide center"><p>もう触れます</p></section>
+<section class="slide center" style="--slide-size:2;background:#0d76bc;"><p>で</p></section>
+<section class="slide center"><p>あなたのアプリ、</p><p>v5 にしたら壊れますか？</p></section>
+<section class="slide center"><p>⋯</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>僕のは壊れました</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>方針</p></section>
+<section class="slide center"><p>Migration Guide の翻訳はしない</p></section>
+<section class="slide"><h2>やったこと</h2><ul><li>v4 と v5 の環境を<strong>別々に</strong>作る</li><li><strong>同じコードを両方で動かす</strong></li><li>差分だけを見る</li></ul></section>
+<section class="slide center"><p>「ドキュメントにこう書いてある」</p><p>↓</p><p>「実際にこうなった」</p></section>
+<section class="slide"><h2>環境</h2><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>v4</td><td><code>hono@4.13.13</code></td></tr><tr><td>v5</td><td><code>hono@5.0.0-rc.1</code></td></tr><tr><td>Node.js</td><td>v24.22.0</td></tr><tr><td>TypeScript</td><td>7.0.2</td></tr></tbody></table><p class="note">Apple M4 / 2026-10-18 時点</p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>型</p></section>
+<section class="slide"><h2><code>c.req.json()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">post</span>(<span class="hl-s">'/users'</span>, <span class="hl-k">async</span> (c) =&gt; {
+  <span class="hl-k">const</span> body = <span class="hl-k">await</span> c.req.<span class="hl-f">json</span>()
+
+<span class="hl-mark">  <span class="hl-k">return</span> c.<span class="hl-f">json</span>({ name: body.name.<span class="hl-f">toUpperCase</span>() })</span>
+})</code></pre><ul><li>v4 <span class="arrow">→</span> <code>any</code></li><li>v5 <span class="arrow">→</span> <code>unknown</code></li></ul></section>
+<section class="slide center"><p>v4 では、このコードが通る</p></section>
+<section class="slide"><h2>v5</h2><pre><code><span class="hl-out">error TS18046: 'body' is of type 'unknown'.</span></code></pre></section>
+<section class="slide center"><p>ちゃんと止まった</p></section>
+<section class="slide center"><p>もうひとつ気になってたのが</p></section>
+<section class="slide"><h2><code>c.req.query()</code></h2><pre data-lang="ts"><code><span class="hl-k">const</span> { name } = c.req.<span class="hl-f">query</span>()
+<span class="hl-k">const</span> upper: string = name.<span class="hl-f">toUpperCase</span>()</code></pre><ul><li>v4 <span class="arrow">→</span> <code>Record&lt;string, string&gt;</code></li><li>v5 <span class="arrow">→</span> <code>Record&lt;string, string | undefined&gt;</code></li></ul></section>
+<section class="slide center"><p>これ、分割代入してるコードが</p><p><strong>全部赤くなるのでは？</strong></p></section>
+<section class="slide"><h2>v5</h2><pre><code><span class="hl-out">error TS18048: 'name' is possibly 'undefined'.</span>
+<span class="hl-out">error TS2322: Type 'string[] | undefined' is not</span>
+<span class="hl-out">  assignable to type 'string[]'.</span></code></pre></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>全部赤くなった</strong></p></section>
+<section class="slide center"><p>でも、ここで面白いことに気づいた</p></section>
+<section class="slide"><h2>実行時の値を比べてみる</h2><p><code>GET /q?a=1&amp;a=2</code></p><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>query()</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td><td><code>{&quot;a&quot;:&quot;1&quot;}</code></td></tr><tr><td><code>queries()</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td><td><code>{&quot;a&quot;:[&quot;1&quot;,&quot;2&quot;]}</code></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>完全に同じ</strong></p></section>
+<section class="slide"><h2>わかったこと</h2><ul><li>v5 は挙動を<strong>変えていない</strong></li><li>v4 でも <code>undefined</code> は返っていた</li><li>型が嘘をついていただけ</li></ul></section>
+<section class="slide center"><p>赤くなった箇所は、</p><p><strong>v4 の時点でバグり得た箇所</strong></p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>エラー</p></section>
+<section class="slide center"><p>ここが v5 で一番面白い</p></section>
+<section class="slide"><h2>v4 の <code>onError()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>((err, c) =&gt; {
+  console.<span class="hl-f">error</span>(err.message)
+  <span class="hl-k">return</span> c.<span class="hl-f">json</span>({ error: <span class="hl-s">'Internal Server Error'</span> }, <span class="hl-n">500</span>)
+})</code></pre><ul><li>アプリ全体に1つだけ</li><li>シグネチャは <code>(err, c)</code></li></ul></section>
+<section class="slide"><h2>v5 の <code>onError()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>(<span class="hl-s">'/api/*'</span>, <span class="hl-k">async</span> (c, next) =&gt; {
+<span class="hl-mark">  console.<span class="hl-f">error</span>(c.error?.message)</span>
+  c.<span class="hl-f">header</span>(<span class="hl-s">'X-Error-Handler'</span>, <span class="hl-s">'api'</span>)
+  <span class="hl-k">await</span> <span class="hl-f">next</span>()
+})
+
+app.<span class="hl-f">onError</span>((c) =&gt; c.<span class="hl-f">json</span>({ error: <span class="hl-s">'Error'</span> }, <span class="hl-n">500</span>))</code></pre><ul><li><code>(c, next)</code> <span class="arrow">→</span> 普通のミドルウェア</li><li>エラーは <code>c.error</code> から読む</li><li><strong>パスで絞れる</strong></li></ul></section>
+<section class="slide"><h2>設計意図</h2><blockquote><p>エラー処理を Hono の<strong>ルーティングシステムの上に</strong><br>モデル化する</p></blockquote><ul><li>内部では <code>@ERROR</code> / <code>@NOT_FOUND</code> という</li></ul><p>  予約メソッドで Router に登録されている</p><p class="note">honojs/hono#5541</p></section>
+<section class="slide center"><p>本当にパスで絞れるのか？</p></section>
+<section class="slide"><h2>動かしてみた</h2><table><thead><tr><th>リクエスト</th><th>ヘッダ</th><th>status</th></tr></thead><tbody><tr><td><code>/api/error</code></td><td><strong><code>api</code></strong></td><td>500</td></tr><tr><td><code>/other/error</code></td><td>なし</td><td>500</td></tr></tbody></table></section>
+<section class="slide center"><p>効いた</p></section>
+<section class="slide center"><p>ちなみに v4 で同じことを書くと</p></section>
+<section class="slide"><h2>v4</h2><pre><code><span class="hl-out">this.errorHandler is not a function</span></code></pre><ul><li>パス文字列をハンドラとして保存してしまう</li><li><strong>登録時ではなくリクエスト時に落ちる</strong></li></ul></section>
+<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここからが本番</p></section>
+<section class="slide center"><p><code>onError()</code> を 2回登録したら</p><p>どうなる？</p></section>
+<section class="slide"><h2>実験</h2><pre data-lang="ts"><code>app.<span class="hl-f">onError</span>((c) =&gt; { order.<span class="hl-f">push</span>(<span class="hl-s">'first'</span>);  ... })
+app.<span class="hl-f">onError</span>((c) =&gt; { order.<span class="hl-f">push</span>(<span class="hl-s">'second'</span>); ... })</code></pre></section>
+<section class="slide"><h2>結果</h2><table><thead><tr><th></th><th>実行されたハンドラ</th></tr></thead><tbody><tr><td><strong>v4</strong></td><td><code>[&quot;second&quot;]</code></td></tr><tr><td><strong>v5</strong></td><td><code>[&quot;first&quot;, &quot;second&quot;]</code></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v4 は<strong>上書き</strong></p><p>v5 は<strong>合成</strong></p></section>
+<section class="slide"><h2>敗因になりそうなところ</h2><ul><li>v4 <span class="arrow">→</span> 「あとから登録して潰す」が書けた</li><li>v5 <span class="arrow">→</span> <strong>両方走る</strong></li><li>しかも⋯</li></ul></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>型エラーにならない</strong></p></section>
+<section class="slide center"><p>シグネチャさえ直せば <code>tsc</code> は通る</p></section>
+<section class="slide center"><p>じゃあ v4 の書き方のまま</p><p>動かしたらどうなる？</p></section>
+<section class="slide"><h2>型チェックは止めてくれる</h2><pre><code><span class="hl-out">error TS2339: Property 'message' does not exist</span>
+<span class="hl-out">  on type 'Context&lt;BlankEnv, string, any&gt;'.</span>
+<span class="hl-out">error TS2339: Property 'json' does not exist</span>
+<span class="hl-out">  on type 'Next'.</span></code></pre><ul><li>第1引数が <code>Context</code>、第2引数が <code>Next</code></li></ul></section>
+<section class="slide center"><p>問題は、これを握りつぶしたとき</p></section>
+<section class="slide"><h2>実行すると</h2><pre><code><span class="hl-out">Context is not finalized.</span>
+<span class="hl-out">Did you forget to return a Response object</span>
+<span class="hl-out">or `await next()`?</span></code></pre></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>原因を指していない</strong></p></section>
+<section class="slide"><h2>何が起きてるか</h2><ul><li><code>c</code> のつもりで触ってるものが <code>next</code> 関数</li><li><code>c.text()</code> が無い <span class="arrow">→</span> 例外</li><li><span class="arrow">→</span> Context が確定しないまま終わる</li></ul><p class="note">型エラーを消すと、デバッグが遠回りになる</p></section>
+<section class="slide"><h2>非 Error を <code>throw</code> したら</h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>throw 'oops'</code></td><td>外に漏れる</td><td><code>message</code> / <code>cause</code> に <code>'oops'</code></td></tr><tr><td><code>throw { code: 42 }</code></td><td>外に漏れる</td><td><code>message</code> は <strong>空</strong></td></tr></tbody></table><ul><li>オブジェクトは <code>cause</code> にしか入らない</li><li><span class="arrow">→</span> <code>c.error.message</code> だけログに出すと何も分からない</li></ul></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center" style="--slide-size:1.5;background:#c0392b;"><p>地雷</p></section>
+<section class="slide center"><p>型でも捕まらないやつ</p></section>
+<section class="slide"><h2><code>c.json(undefined)</code></h2><table><thead><tr><th></th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>c.json(undefined)</code></td><td>200 / 空ボディ</td><td><strong>500</strong></td></tr><tr><td><code>c.json(() =&gt; 1)</code></td><td>200 / 空</td><td><strong>500</strong></td></tr></tbody></table><pre><code><span class="hl-out">TypeError: Value is not JSON serializable</span></code></pre></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>型エラーにならない</strong></p></section>
+<section class="slide"><h2>どこで踏むか</h2><pre data-lang="ts"><code><span class="hl-k">const</span> user = <span class="hl-k">await</span> db.query.users.<span class="hl-f">findFirst</span>({ ... })
+<span class="hl-mark"><span class="hl-k">return</span> c.<span class="hl-f">json</span>(user) <span class="hl-c">// 見つからなければ undefined</span></span></code></pre><ul><li>v4 <span class="arrow">→</span> 404 のつもりが 200 で空ボディ</li><li>v5 <span class="arrow">→</span> <strong>500</strong></li></ul></section>
+<section class="slide center"><p>つまり</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v5 で 500 が出る箇所は</p><p><strong>v4 の時点でバグっていた箇所</strong></p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>ルーター</p></section>
+<section class="slide center"><p>ワイルドカードが統一された</p></section>
+<section class="slide center"><p>v4 は Router ごとにバラバラだった</p></section>
+<section class="slide wide"><h2>v4</h2><table><thead><tr><th>ルート</th><th>パス</th><th>Smart</th><th>RegExp</th><th>Trie</th><th>Pattern</th></tr></thead><tbody><tr><td><code>/x*/y</code></td><td><code>/x/y</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr><tr><td><code>/x*/y</code></td><td><code>/xz/y</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr><tr><td><code>/x*y</code></td><td><code>/xay</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr><tr><td><code>/wild/*/card</code></td><td><code>/wild//card</code></td><td>❌</td><td>❌</td><td>✅</td><td>❌</td></tr></tbody></table><p class="note">6ケース中3ケースで割れている</p></section>
+<section class="slide wide"><h2>v5</h2><table><thead><tr><th>ルート</th><th>パス</th><th>Smart</th><th>RegExp</th><th>Trie</th><th>Pattern</th></tr></thead><tbody><tr><td><code>/x*/y</code></td><td><code>/x/y</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr><tr><td><code>/x*/y</code></td><td><code>/xz/y</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr><tr><td><code>/x*y</code></td><td><code>/xay</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr><tr><td><code>/wild/*/card</code></td><td><code>/wild//card</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>4つとも一致</strong></p></section>
+<section class="slide center" style="--slide-size:1.5;background:#ca8a04;"><p>ここが一番おいしい</p></section>
+<section class="slide"><h2>競合するルートを書いてみる</h2><pre data-lang="ts"><code>app.<span class="hl-f">get</span>(<span class="hl-s">'/x*/y'</span>, (c) =&gt; c.<span class="hl-f">text</span>(<span class="hl-s">'a'</span>))
+app.<span class="hl-f">get</span>(<span class="hl-s">'/x/*'</span>,  (c) =&gt; c.<span class="hl-f">text</span>(<span class="hl-s">'b'</span>))</code></pre></section>
+<section class="slide"><h2>v5 の RegExpRouter</h2><pre><code><span class="hl-out">UnsupportedPathError: /x/*</span></code></pre><ul><li>両方を同時に登録できない</li></ul></section>
+<section class="slide center"><p>じゃあ SmartRouter はどうなる？</p></section>
+<section class="slide"><h2>選ばれた Router</h2><table><thead><tr><th>登録したルート</th><th>Router</th></tr></thead><tbody><tr><td><code>/x/*</code> だけ</td><td><code>SmartRouter + RegExpRouter</code></td></tr><tr><td><code>/x*/y</code> + <code>/x/*</code></td><td><strong><code>SmartRouter + TrieRouter</code></strong></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ルートを<strong>1行足しただけ</strong>で</p><p>Router が入れ替わった</p></section>
+<section class="slide center"><p>性能も変わるのでは？</p></section>
+<section class="slide"><h2>測った</h2><p><code>GET /users/:id</code> × 50,000回 × 12ラウンド</p><table><thead><tr><th></th><th class="num">中央値</th><th class="num">最小</th></tr></thead><tbody><tr><td>RegExpRouter</td><td class="num">138.68 ms</td><td class="num">132.35 ms</td></tr><tr><td>Trie フォールバック</td><td class="num">148.57 ms</td><td class="num">146.25 ms</td></tr><tr><td><strong>差</strong></td><td class="num"><strong>+7.1%</strong></td><td class="num"><strong>+10.5%</strong></td></tr></tbody></table></section>
+<section class="slide center"><p>遅くなった</p></section>
+<section class="slide"><h2>でも問題はそこじゃない</h2><ul><li>7〜10% は正直どうでもいい</li><li>問題は<strong>無言で切り替わる</strong>こと</li><li>ログにも型にも出ない</li></ul></section>
+<section class="slide center"><p>しかも</p></section>
+<section class="slide"><h2>マッチするハンドラも変わる</h2><p>同じ競合ルートに <code>/x/y</code> を投げると</p><table><thead><tr><th>v4</th><th>v5</th></tr></thead><tbody><tr><td><code>/x/*</code> の方</td><td><code>/x*/y</code> の方</td></tr></tbody></table></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>性能</p></section>
+<section class="slide center"><p>v5、速くなったの？</p></section>
+<section class="slide"><h2>測った</h2><p><code>GET /users/:id</code> × 100,000回 × 10ラウンド</p><table><thead><tr><th></th><th class="num">中央値</th><th class="num">最小</th></tr></thead><tbody><tr><td>v4</td><td class="num">270.53 ms</td><td class="num">258.31 ms</td></tr><tr><td>v5</td><td class="num">266.50 ms</td><td class="num">255.59 ms</td></tr></tbody></table><p class="note"><code>app.fetch()</code> のインプロセス計測。実サーバーの性能ではない</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>誤差</strong></p></section>
+<section class="slide"><h2>分布が重なっている</h2><ul><li>v4 の最小 <strong>258.31 ms</strong></li><li>v5 の中央値 <strong>266.50 ms</strong></li><li><span class="arrow">→</span> v4 の方が速いラウンドがある</li></ul></section>
+<section class="slide center"><p>ここで、恥ずかしい話を</p></section>
+<section class="slide"><h2>敗因</h2><ul><li>最初 <strong>5ラウンド</strong>で測った <span class="arrow">→</span> 差 <strong>2.9%</strong></li><li><strong>10ラウンド</strong>に増やした <span class="arrow">→</span> 差 <strong>1.5%</strong></li><li>同じコード、同じマシン、同じ日</li></ul></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ラウンド数を変えただけで</p><p><strong>結論が倍違った</strong></p></section>
+<section class="slide"><h2>わかったこと</h2><ul><li>マイクロベンチで数%を語るなら</li></ul><p>  <strong>ラウンド数と分布</strong>を出す</p><ul><li>Router の方も 3ラウンド <span class="arrow">→</span> 12ラウンドで</li></ul><p>  3.3% <span class="arrow">→</span> 7.1% に変わった</p></section>
+<section class="slide center"><p>コアの性能は<strong>据え置き</strong></p></section>
+<section class="slide center"><p>v5 の変更は、性能のためじゃない</p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>サイズ</p></section>
+<section class="slide center"><p>「アダプタ分離で軽くなった」</p><p>本当？</p></section>
+<section class="slide"><h2>インストールサイズ</h2><table><thead><tr><th></th><th class="num">展開後</th><th class="num">ファイル数</th></tr></thead><tbody><tr><td>v4</td><td class="num">1.23 MB</td><td class="num">574</td></tr><tr><td>v5</td><td class="num"><strong>0.66 MB</strong></td><td class="num"><strong>310</strong></td></tr></tbody></table><p class="note">npm registry の unpackedSize</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>-46%</strong></p></section>
+<section class="slide"><h2>3つの測り方が一致した</h2><ul><li>npm registry <span class="arrow">→</span> <strong>-46%</strong></li><li>手元の <code>du -sh</code>（2.8M <span class="arrow">→</span> 1.5M）<span class="arrow">→</span> <strong>-46%</strong></li><li>yusukebeさんの資料（1.29MB <span class="arrow">→</span> 0.70MB）<span class="arrow">→</span> <strong>-46%</strong></li></ul><p class="note">ファイル数 574 <span class="arrow">→</span> 310 は完全一致</p></section>
+<section class="slide center"><p>じゃあバンドルは？</p></section>
+<section class="slide"><h2>バンドルサイズ</h2><table><thead><tr><th></th><th class="num">v4</th><th class="num">v5</th><th class="num">差</th></tr></thead><tbody><tr><td>コアのみ</td><td class="num">18,528 B</td><td class="num">18,830 B</td><td class="num"><strong>+302 B</strong></td></tr><tr><td>アダプタ込み</td><td class="num">22,760 B</td><td class="num">22,923 B</td><td class="num"><strong>+163 B</strong></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>増えた</strong></p></section>
+<section class="slide"><h2>考えてみれば当たり前</h2><ul><li>減ったのは CJS ビルドとアダプタの分離</li><li>CJS はそもそもバンドルに入らない</li><li><code>@hono/bun</code> を入れれば同じコードが入る</li></ul></section>
+<section class="slide center"><p>「軽くなった」は</p><p><strong>インストールサイズの話</strong></p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>設計</p></section>
+<section class="slide center"><p>ここまで全部、同じ方向を向いてる</p></section>
+<section class="slide"><h2>v5 = AIのためのHono</h2><blockquote><p>抽象化されていて、選択肢が少ない</p></blockquote><p class="note">Yusuke Wada / Hono Conference 2026</p></section>
+<section class="slide"><h2>なぜ型を厳しくするのか</h2><ul><li>人間は「ここは <code>any</code> だけど大丈夫」と空気を読む</li><li><strong>LLM は読まない</strong></li><li>型が嘘をつけば、嘘のまま出てくる</li></ul></section>
+<section class="slide center"><p>それが一番出てるのが</p></section>
+<section class="slide"><h2><code>defineHandler()</code></h2><pre data-lang="ts"><code>app.<span class="hl-f">get</span>(<span class="hl-s">'/ping'</span>, <span class="hl-f">defineHandler</span>(() =&gt; ({ pong: <span class="hl-n">true</span> })))</code></pre><pre><code><span class="hl-out">ping -&gt; 200 {&quot;pong&quot;:true}</span></code></pre><ul><li><code>c.json()</code> を呼んでいない</li><li><strong>返した値が Response になる</strong></li></ul></section>
+<section class="slide"><h2>検証も1か所で書ける</h2><pre data-lang="ts"><code>app.<span class="hl-f">post</span>(<span class="hl-s">'/users'</span>, <span class="hl-f">defineHandler</span>({ json: <span class="hl-t">NameSchema</span> })(
+  (c, input) =&gt; ({ name: input.json.name.<span class="hl-f">toUpperCase</span>() })
+))</code></pre><pre><code><span class="hl-out">400 {&quot;error&quot;:&quot;Validation failed&quot;,&quot;issues&quot;:[...]}</span></code></pre><ul><li>Standard Schema <span class="arrow">→</span> Zod / Valibot ...</li></ul></section>
+<section class="slide"><h2>ハマった</h2><ul><li>普通の検証関数で <code>throw</code> すると</li></ul><p>  400 ではなく <strong>500</strong> になる</p><ul><li>400 にしてくれるのは Standard Schema のルートだけ</li></ul></section>
+<section class="slide"><h2>型定義のコメント</h2><blockquote><p>A JSON Response by <code>c.json()</code> is not accepted,<br>because it bypasses the response validation.</p></blockquote><ul><li><code>c.json()</code> を返すことを<strong>型で禁止</strong>している</li></ul></section>
+<section class="slide center"><p>やり方が複数あって、どれでも動く</p><p>↓</p><p><strong>正しいやり方が1つで、他は型で止まる</strong></p></section>
+<section class="slide center" style="background:#0d76bc;"><p>水を飲む</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>まとめ</p></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>①まず <code>tsc --strict</code> を通す</strong></p><ul><li><code>c.req.json()</code> の直アクセス</li><li><code>c.req.query()</code> の分割代入</li><li><code>onError((err, c) =&gt; ...)</code></li></ul><p><span class="arrow">→</span> 機械的に潰せる</p></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>②型では捕まらない3つ</strong></p><ul><li><code>c.json(undefined)</code> <span class="arrow">→</span> 500</li><li><code>onError()</code> の合成化 <span class="arrow">→</span> 両方走る</li><li>ワイルドカードのマッチ変更</li></ul><p><span class="arrow">→</span> <strong>ここが本番</strong></p></section>
+<section class="slide"><h2>移行チェックリスト</h2><p><strong>③import を書き換える</strong></p><ul><li><code>hono/&lt;runtime&gt;</code> <span class="arrow">→</span> <code>@hono/&lt;runtime&gt;</code></li><li><code>hono/cloudflare-pages</code> <span class="arrow">→</span> <strong>代替なし</strong></li><li><code>app.mount()</code> <span class="arrow">→</span> <code>hono/mount</code></li><li><code>app.fire()</code> <span class="arrow">→</span> <code>@hono/service-worker</code></li></ul></section>
+<section class="slide"><h2>まとめ</h2><ul><li>型 <span class="arrow">→</span> 嘘をつかなくなった。実行時の値は同じ</li><li>エラー <span class="arrow">→</span> 上書きから<strong>合成</strong>へ</li><li>地雷 <span class="arrow">→</span> <code>c.json(undefined)</code> が 500</li><li>ルーター <span class="arrow">→</span> 統一された。でも無言で入れ替わる</li><li>性能 <span class="arrow">→</span> 据え置き。ラウンド数を書こう</li><li>サイズ <span class="arrow">→</span> install は -46%、バンドルは微増</li></ul></section>
+<section class="slide center" style="--slide-size:1.5;"><p>v5 で壊れるのは</p><p><strong>v4 が緩かったところ</strong></p></section>
+<section class="slide center"><p>壊れたんじゃなくて、</p><p>隠れてたバグが出てきただけ</p></section>
+<section class="slide center"><p>本番投入は RC なので待ちます</p></section>
+<section class="slide center"><p>でも <code>hono@next</code> で1回ビルドするのは</p><p><strong>今やる価値がある</strong></p></section>
+<section class="slide center"><p>型エラーの量を見れば、</p><p>移行コストがその場で分かる</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>ありがとうございました</p></section>
+<section class="slide center light" style="background:#fafafa;"><p>One more thing</p></section>
+<section class="slide center"><p>正式リリースまでの予想</p></section>
+<section class="slide"><h2>ひっくり返るとしたら</h2><p><strong><code>defineHandler()</code></strong> だと思う</p><ul><li>唯一 experimental と明記されている</li><li>検証関数で 500 になる角が残っている</li><li><code>onError()</code> とワイルドカードはこのまま出る</li></ul></section>
+<section class="slide"><h2>一番詰まるのは</h2><p><strong><code>hono/cloudflare-pages</code> の削除</strong></p><ul><li>他は書き換えれば済む</li><li>これだけ<strong>代替がない</strong></li><li>型エラーの数なら <code>c.req.query()</code> が圧倒的</li><li>でも時間を食うのは<strong>数じゃなくて1件</strong></li></ul></section>
+<section class="slide center"><p>外れるかもしれません</p></section>
+<section class="slide center"><p>正式版が出たら、答え合わせします</p></section>
+<section class="slide center" style="--slide-size:1.5;"><pre data-lang="sh"><code>npm i hono@next</code></pre><p class="note"><a href="https://hono.dev/docs/guides/migrating-to-v5" target="_blank" rel="noopener">hono.dev/docs/guides/migrating-to-v5</a></p></section>
+</div>
+<div id="overview"></div>
+<div id="presenter"></div>
+<div id="progress"></div>
+<div id="timer"></div>
+<div id="counter"></div>
+<div id="hint">← → 移動 ・ f フルスクリーン ・ o 一覧 ・ p 発表者</div>
+<script>"use strict";
+// スライドのナビゲーション。ippon が HTML に埋め込む。
+//   → / Space / PageDown / クリック右側     次へ
+//   ← / PageUp / クリック左側              前へ
+//   Home / End                              最初 / 最後
+//   f                                       フルスクリーン
+//   o / Esc                                 一覧
+//   p                                       発表者ビュー（別ウィンドウ）
+(() => {
+    const slides = Array.from(document.querySelectorAll('#deck .slide'));
+    if (!slides.length)
+        return;
+    const $ = (id) => document.getElementById(id);
+    const div = (className) => {
+        const el = document.createElement('div');
+        el.className = className;
+        return el;
+    };
+    function fmt(ms) {
+        const total = Math.floor(ms / 1000);
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    // 別ウィンドウで開いたときは発表者ビューとして動く（本番のナビは動かさない）
+    if (window.name === 'ippon-presenter') {
+        presenterMode();
+        return;
+    }
+    let idx = 0;
+    const progress = $('progress');
+    const counter = $('counter');
+    const timerEl = $('timer');
+    const clamp = (n) => Math.max(0, Math.min(slides.length - 1, n));
+    // ---------- タイマー（表紙から進んだら開始、表紙に戻ったらリセット） ----------
+    let startedAt = null;
+    let ticking;
+    function syncTimer() {
+        if (idx === 0) {
+            startedAt = null;
+            clearInterval(ticking);
+            ticking = undefined;
+            timerEl.textContent = '';
+            return;
+        }
+        const t0 = (startedAt ?? (startedAt = Date.now()));
+        ticking ?? (ticking = window.setInterval(() => {
+            timerEl.textContent = fmt(Date.now() - t0);
+        }, 500));
+        timerEl.textContent = fmt(Date.now() - t0);
+    }
+    // ---------- 描画 ----------
+    function render() {
+        slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+        slides[idx].scrollTop = 0;
+        counter.textContent = idx + 1 + ' / ' + slides.length;
+        progress.style.width = ((idx + 1) / slides.length) * 100 + '%';
+        syncTimer();
+        broadcast();
+    }
+    function go(n) {
+        n = clamp(n);
+        if (n === idx)
+            return;
+        idx = n;
+        render();
+        history.replaceState(null, '', '#' + (idx + 1));
+    }
+    window.addEventListener('hashchange', () => {
+        const n = parseInt(location.hash.slice(1), 10);
+        if (n)
+            go(n - 1);
+    });
+    // ---------- 発表者ビュー（別ウィンドウ）との同期 ----------
+    let presenterWin = null;
+    function openPresenter() {
+        if (presenterWin && !presenterWin.closed) {
+            presenterWin.focus();
+            return;
+        }
+        presenterWin = window.open(location.href, 'ippon-presenter', 'width=1024,height=700');
+    }
+    function broadcast() {
+        if (presenterWin && !presenterWin.closed)
+            presenterWin.postMessage({ ippon: 'state', idx, total: slides.length, startedAt }, '*');
+    }
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || typeof m !== 'object')
+            return;
+        if (m.ippon === 'hello')
+            broadcast();
+        else if (m.ippon === 'go' && typeof m.n === 'number')
+            go(m.n);
+    });
+    const overview = $('overview');
+    let ovItems = null;
+    let ovOpen = false;
+    const THUMB = 240;
+    function buildOverview() {
+        return slides.map((s, i) => {
+            const item = div('ov-item');
+            const frame = div('ov-frame');
+            const scale = div('ov-scale');
+            const clone = s.cloneNode(true);
+            clone.classList.remove('active');
+            scale.appendChild(clone);
+            frame.appendChild(scale);
+            const num = div('ov-num');
+            num.textContent = String(i + 1);
+            item.appendChild(frame);
+            item.appendChild(num);
+            item.addEventListener('click', () => {
+                idx = i;
+                closeOverview();
+                render();
+                history.replaceState(null, '', '#' + (idx + 1));
+            });
+            overview.appendChild(item);
+            return { item, frame, scale };
+        });
+    }
+    function layoutOverview(items) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const k = THUMB / w;
+        for (const t of items) {
+            t.frame.style.width = THUMB + 'px';
+            t.frame.style.height = h * k + 'px';
+            t.scale.style.width = w + 'px';
+            t.scale.style.height = h + 'px';
+            t.scale.style.transform = 'scale(' + k + ')';
+        }
+    }
+    function openOverview() {
+        const items = (ovItems ?? (ovItems = buildOverview()));
+        layoutOverview(items);
+        items.forEach((t, i) => t.item.classList.toggle('current', i === idx));
+        ovOpen = true;
+        document.body.classList.add('overview');
+        items[idx].item.scrollIntoView({ block: 'center' });
+    }
+    function closeOverview() {
+        ovOpen = false;
+        document.body.classList.remove('overview');
+    }
+    window.addEventListener('resize', () => {
+        if (ovOpen && ovItems)
+            layoutOverview(ovItems);
+    });
+    // ---------- 入力 ----------
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey)
+            return;
+        if (ovOpen) {
+            if (e.key === 'Escape' || e.key === 'o')
+                closeOverview();
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowRight':
+            case 'PageDown':
+            case ' ':
+                e.preventDefault();
+                go(idx + 1);
+                break;
+            case 'ArrowLeft':
+            case 'PageUp':
+                e.preventDefault();
+                go(idx - 1);
+                break;
+            case 'Home':
+                go(0);
+                break;
+            case 'End':
+                go(slides.length - 1);
+                break;
+            case 'f':
+                if (document.fullscreenElement)
+                    document.exitFullscreen();
+                else
+                    document.documentElement.requestFullscreen();
+                break;
+            case 'o':
+                openOverview();
+                break;
+            case 'p':
+                openPresenter();
+                break;
+            case 'Escape':
+                if (!document.fullscreenElement)
+                    openOverview();
+                break;
+        }
+    });
+    // 画面の右 3 割で次へ、左 3 割で前へ（リンクと文字選択は邪魔しない）
+    const deck = $('deck');
+    deck.addEventListener('click', (e) => {
+        if (e.target instanceof Element && e.target.closest('a, button'))
+            return;
+        if (String(window.getSelection() || ''))
+            return;
+        const x = e.clientX / window.innerWidth;
+        if (x > 0.7)
+            go(idx + 1);
+        else if (x < 0.3)
+            go(idx - 1);
+    });
+    // 横スワイプ
+    let touch = null;
+    deck.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        touch = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+    }, { passive: true });
+    deck.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        if (!touch || !t)
+            return;
+        const dx = t.clientX - touch.x;
+        const dy = t.clientY - touch.y;
+        touch = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            go(dx < 0 ? idx + 1 : idx - 1);
+    }, { passive: true });
+    const start = parseInt(location.hash.slice(1), 10);
+    if (start)
+        idx = clamp(start - 1);
+    render();
+    // ---------- 発表者ビュー本体（別ウィンドウで動く） ----------
+    function presenterMode() {
+        document.body.classList.add('presenter');
+        const root = $('presenter');
+        const left = div('pv-left');
+        const right = div('pv-right');
+        root.appendChild(left);
+        root.appendChild(right);
+        const makeSlot = (labelText) => {
+            const slot = div('pv-slot');
+            const label = div('pv-label');
+            label.textContent = labelText;
+            const frame = div('pv-frame');
+            const scale = div('pv-scale');
+            frame.appendChild(scale);
+            slot.appendChild(label);
+            slot.appendChild(frame);
+            left.appendChild(slot);
+            return { label, frame, scale };
+        };
+        const cur = makeSlot('現在');
+        const nxt = makeSlot('次へ');
+        const clock = div('pv-clock');
+        const elapsedEl = div('pv-elapsed');
+        const wallEl = div('pv-wall');
+        clock.appendChild(elapsedEl);
+        clock.appendChild(wallEl);
+        const controls = div('pv-controls');
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀';
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '▶';
+        controls.appendChild(prevBtn);
+        controls.appendChild(nextBtn);
+        const notesEl = div('pv-notes');
+        right.appendChild(clock);
+        right.appendChild(controls);
+        right.appendChild(notesEl);
+        let curIdx = 0;
+        let total = slides.length;
+        let startedAt = null;
+        function fitPreview(frame, scale) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const fw = frame.clientWidth;
+            const k = fw / w;
+            frame.style.height = fw * (h / w) + 'px';
+            scale.style.width = w + 'px';
+            scale.style.height = h + 'px';
+            scale.style.transform = 'scale(' + k + ')';
+        }
+        function setPreview(frame, scale, i) {
+            scale.textContent = '';
+            const s = slides[i];
+            if (s)
+                scale.appendChild(s.cloneNode(true));
+            fitPreview(frame, scale);
+        }
+        function draw() {
+            cur.label.textContent = '現在  ' + (curIdx + 1) + ' / ' + total;
+            setPreview(cur.frame, cur.scale, curIdx);
+            const hasNext = curIdx + 1 < total;
+            nxt.label.textContent = hasNext ? '次へ  ' + (curIdx + 2) + ' / ' + total : 'おわり';
+            setPreview(nxt.frame, nxt.scale, hasNext ? curIdx + 1 : -1);
+            const note = slides[curIdx]?.querySelector('.notes');
+            notesEl.innerHTML = note ? note.innerHTML : '<p class="pv-empty">（ノートなし）</p>';
+        }
+        function tick() {
+            elapsedEl.textContent = startedAt == null ? '0:00' : fmt(Date.now() - startedAt);
+            wallEl.textContent = new Date().toLocaleTimeString();
+        }
+        const send = (n) => {
+            if (window.opener)
+                window.opener.postMessage({ ippon: 'go', n }, '*');
+        };
+        prevBtn.addEventListener('click', () => send(curIdx - 1));
+        nextBtn.addEventListener('click', () => send(curIdx + 1));
+        window.addEventListener('message', (e) => {
+            const m = e.data;
+            if (!m || m.ippon !== 'state')
+                return;
+            if (typeof m.idx === 'number')
+                curIdx = m.idx;
+            if (typeof m.total === 'number')
+                total = m.total;
+            startedAt = m.startedAt ?? null;
+            draw();
+            tick();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.metaKey || e.ctrlKey || e.altKey)
+                return;
+            switch (e.key) {
+                case 'ArrowRight':
+                case 'PageDown':
+                case ' ':
+                    e.preventDefault();
+                    send(curIdx + 1);
+                    break;
+                case 'ArrowLeft':
+                case 'PageUp':
+                    e.preventDefault();
+                    send(curIdx - 1);
+                    break;
+                case 'Home':
+                    send(0);
+                    break;
+                case 'End':
+                    send(total - 1);
+                    break;
+                case 'p':
+                case 'Escape':
+                    window.close();
+                    break;
+            }
+        });
+        window.addEventListener('resize', () => {
+            fitPreview(cur.frame, cur.scale);
+            fitPreview(nxt.frame, nxt.scale);
+        });
+        window.setInterval(tick, 500);
+        // 本番ウィンドウに現在の状態を要求する
+        if (window.opener)
+            window.opener.postMessage({ ippon: 'hello' }, '*');
+        draw();
+        tick();
+    }
+})();
+</script>
+</body>
+</html>
