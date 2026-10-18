@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
 <title>コミュニティ活動のすゝめ</title>
 <meta name="description" content="〜 学校の外に、もうひとつの世界を。 〜">
 <meta name="author" content="田中博悠 / tanahiro2010">
@@ -10,7 +12,7 @@
 <style>:root {
   --slide-bg: #000;
   --slide-fg: #fff;
-  --slide-accent: #7b42bc; /* Terraform purple */
+  --slide-accent: #ff6a00;
   --slide-accent-2: #ff6a00;
   --slide-muted: #8a8a8a;
   --slide-code-bg: #0d0d0d;
@@ -161,6 +163,12 @@ body {
   align-items: start;
   width: 100%;
 }
+.slide .cols.left-wide {
+  grid-template-columns: 1.4fr 1fr;
+}
+.slide .cols.right-wide {
+  grid-template-columns: 1fr 1.4fr;
+}
 .slide .cols > * > :first-child {
   margin-top: 0;
 }
@@ -222,7 +230,8 @@ body {
   font-weight: 600;
   margin: 0.2em 0;
 }
-.slide.title p:last-child {
+/* 末尾に ::note:: の <aside>（display:none）が付いても効くよう last-of-type */
+.slide.title p:last-of-type {
   margin-top: auto;
   font-size: clamp(1rem, 1.8vw, 1.3rem);
   color: var(--slide-muted);
@@ -362,6 +371,39 @@ body {
   box-sizing: border-box;
   background: rgba(255, 106, 0, 0.16);
   box-shadow: inset 3px 0 0 var(--slide-accent-2);
+}
+
+/* コードブロック右上のコピーボタン（deck.js が付ける） */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.25em 0.7em;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+.slide pre:hover .copy-btn,
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.copy-btn.copied {
+  color: #fff;
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+  opacity: 1;
 }
 
 /* ---------- chrome ---------- */
@@ -644,7 +686,8 @@ body.presenter #overview {
   #timer,
   #hint,
   #overview,
-  #presenter {
+  #presenter,
+  .copy-btn {
     display: none !important;
   }
 }
@@ -1053,6 +1096,43 @@ body.presenter #overview {
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
             go(dx < 0 ? idx + 1 : idx - 1);
     }, { passive: true });
+    // コードブロックの右上にコピーボタンを付ける
+    slides.forEach((s) => {
+        s.querySelectorAll('pre').forEach((pre) => {
+            const code = pre.querySelector('code') || pre;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.addEventListener('click', () => {
+                const text = code.innerText;
+                const done = () => {
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    window.setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 1200);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done, done);
+                }
+                else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                    }
+                    catch { }
+                    document.body.removeChild(ta);
+                    done();
+                }
+            });
+            pre.appendChild(btn);
+        });
+    });
     const start = parseInt(location.hash.slice(1), 10);
     if (start)
         idx = clamp(start - 1);
