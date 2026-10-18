@@ -86,9 +86,9 @@ published: true
 </script>
 
 <style>
-:root { --gdg-university: 'KOMPEITO'; }
+:root { --gdg-university: 'listed'; }
 
-/* This is a KOMPEITO internal talk, not a GDG deck. */
+/* This is a listed internal talk, not a GDG deck. */
 section::before,
 section.title::before,
 section.title::after {
