@@ -116,7 +116,11 @@ This app is React 19 prerendered to static HTML at build time — there is no se
 - `src/routes.tsx` is the single source of truth. Add a `{ path, title, Component }` entry and the build emits `dist/<path>/index.html` for it.
 - `src/main.tsx` is the browser entry: it hydrates the prerendered markup, and falls back to `createRoot` under `vp dev`, where `index.html` has an empty `#root`.
 - `src/entry-server.tsx` is the SSR entry, built to the gitignored `.vite-ssg/` and consumed by `scripts/prerender.ts`.
-- `vp run build` runs all four steps: `tsc`, client build, SSR build, prerender. Plain `vp build` only produces the unrendered client bundle.
+- `vp run build` は `packages/ssg/bin/build.sh` を呼ぶ。8 工程をまとめてあり、
+  アプリごとに違うのは「本文を生成」の 1 つだけ（デッキか記事か）を引数で渡す。
+  素の `vp build` はプリレンダ前のクライアントバンドルしか作らない。
+- 工程の順番には意味がある。メタデータは `tsc` より前（ページが import するため）、
+  本文・OGP・feed はプリレンダより後（`vp build` が dist を空にするため）。
 - Keep components render-safe on the server: no `window`/`document` access outside effects, or the prerender step throws.
 
 ## Deploy (Cloudflare Pages)
