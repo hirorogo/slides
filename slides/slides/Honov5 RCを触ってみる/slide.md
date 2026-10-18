@@ -4,7 +4,7 @@ description: 〜 v4 と並べて、何が壊れるのか確かめた 〜
 author: 田中博悠 / tanahiro2010
 date: 2026-10-18
 slug: hono-v5-rc
-published: false
+published: true
 ---
 
 ::title::
