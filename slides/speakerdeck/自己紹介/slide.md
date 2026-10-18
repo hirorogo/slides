@@ -8,6 +8,7 @@ theme: default
 paginate: true
 footer: "自己紹介 / 田中博悠 / tanahiro2010"
 slug: about-me
+published: true
 ---
 
 # 田中博悠 / tanahiro2010

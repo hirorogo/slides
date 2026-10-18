@@ -4,6 +4,7 @@ theme: gdg
 paginate: true
 size: 16:9
 slug: webmcp
+published: true
 ---
 
 <script>

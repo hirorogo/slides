@@ -131,6 +131,7 @@ style: |
   }
 
 slug: browser-does-the-work
+published: true
 ---
 
 # Serverlessしかなかったので、ブラウザに働いてもらいました

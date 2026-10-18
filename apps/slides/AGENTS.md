@@ -68,6 +68,8 @@ lint / fmt / commit フックの設定はリポジトリルートの `vite.confi
 両者は同じ `dist/` に同居するだけで、React 側はデッキに一切関与しない。
 
 - frontmatter の読み取りは `packages/ssg` の `frontmatter` が持つ。中央の一覧は無い。
+- **frontmatter に `published: true` が無いデッキは出力されない。** 記事と同じで書き忘れは非公開に倒れる。
+  `main.py --create` は `published: false` で雛形を作るので、書き上がったら true にする。
 - デッキを足すときは `slides/speakerdeck/<名前>/slide.md` を置き、frontmatter に `slug:` を書くだけ。
   `slug:` は URL になるので一度公開したら変えないこと。無い場合はフォルダ名にフォールバックする。
 - `date:` が無いデッキは slide.md が git に入った日を使う。CI の checkout は `fetch-depth: 0` が必須。

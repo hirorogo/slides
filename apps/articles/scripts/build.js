@@ -21,6 +21,14 @@ const GROUPS = ["slides/slides", "slides/speakerdeck"];
 
 const isPublished = (value) => String(value).trim().toLowerCase() === "true";
 
+/** 隣の slide.md が公開されているか。非公開ならスライドへのリンクを出さない。 */
+const isPublishedSlide = (dir) => {
+  const file = path.join(dir, "slide.md");
+  if (!fs.existsSync(file)) return false;
+  const fm = fs.readFileSync(file, "utf8").match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  return Boolean(fm && /^published:\s*true\s*$/m.test(fm[1]));
+};
+
 /**
  * 隣の slide.md のメタ情報。slug と date はデッキから借りる。
  *
@@ -142,8 +150,9 @@ const collect = () => {
         summary: meta.frontmatter.summary || "",
 
         image: `/og/${slug}.png`,
-        // 記事は必ずデッキと同じフォルダにあるので、スライド版へ必ず飛べる。
-        slideUrl: fs.existsSync(path.join(dir, folder, "slide.md"))
+        // デッキが公開されているときだけリンクする。非公開のデッキを
+        // 指すと 404 になる。
+        slideUrl: isPublishedSlide(path.join(dir, folder))
           ? `${site.slidesUrl}/slides/${slug}/`
           : "",
         wordCount: countWords(source),

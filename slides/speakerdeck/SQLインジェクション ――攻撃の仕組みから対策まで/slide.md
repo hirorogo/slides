@@ -50,6 +50,7 @@ style: |
     border-radius: 0 4px 4px 0;
   }
 slug: sql-injection
+published: true
 ---
 
 # SQLインジェクション

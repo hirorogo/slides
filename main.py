@@ -43,7 +43,7 @@ https://zenn.dev/meijin/articles/tech-article-output-recommend
 ARTIFACTS = {
     "file": [
         {"name": "draft.md", "content": DRAFT_CONTENT},
-        # published が true の記事だけが blog.tanahiro2010.com に出る。
+        # published が true のものだけが公開される（記事は blog.、スライドは slides.）。
         # 書き上がったら true に変えること。
         {
             "name": "article.md",
@@ -53,7 +53,7 @@ ARTIFACTS = {
         # 記事側は slide.md の slug を借りるので、ここで決めれば両方に効く。
         {
             "name": "slide.md",
-            "content": '---\ntitle: {name}\ndescription: ""\nauthor: ""\ndate: "{today}"\nslug: {slug}\nmarp: true\n---\n\n# Slide Title\n\n- Point 1\n- Point 2\n',
+            "content": '---\ntitle: {name}\ndescription: ""\nauthor: ""\ndate: "{today}"\nslug: {slug}\nmarp: true\npublished: false\n---\n\n# Slide Title\n\n- Point 1\n- Point 2\n',
         },
         {"name": "README.md", "content": "# {name}"},
         {"name": "codelab/claat.md"},

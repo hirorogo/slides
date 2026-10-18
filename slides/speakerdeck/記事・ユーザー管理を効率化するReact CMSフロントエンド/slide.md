@@ -4,6 +4,7 @@ theme: gdg
 paginate: true
 size: 16:9
 slug: react-cms-frontend
+published: true
 ---
 
 <script>

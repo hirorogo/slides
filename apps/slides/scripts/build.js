@@ -65,13 +65,19 @@ const excerptOf = (md) => {
   return "";
 };
 
+/** frontmatter の published が true か。記事側と同じ判定。 */
+const isPublished = (md) => {
+  const fm = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  return Boolean(fm && /^published:\s*true\s*$/m.test(fm[1]));
+};
+
 /** 隣の article.md が公開済みか。公開されていれば記事へのリンクを出す。 */
 const hasPublishedArticle = (dir) => {
   const file = path.join(dir, "article.md");
-  if (!fs.existsSync(file)) return false;
-  const fm = fs.readFileSync(file, "utf8").match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  return Boolean(fm && /^published:\s*true\s*$/m.test(fm[1]));
+  return fs.existsSync(file) && isPublished(fs.readFileSync(file, "utf8"));
 };
+
+let skipped = 0;
 
 const getSlides = () => {
   Object.keys(slides).forEach((key) => {
@@ -84,6 +90,14 @@ const getSlides = () => {
     folders.forEach((folder) => {
       const file = path.join(dir, folder, "slide.md");
       if (!fs.existsSync(file)) return;
+
+      // published が true のデッキだけ出す。記事と同じで、書き忘れは非公開に倒す。
+      // main.py が作った雛形のまま（# Slide Title / - Point 1）が
+      // 公開されてしまっていたので入れた。
+      if (!isPublished(fs.readFileSync(file, "utf8"))) {
+        skipped += 1;
+        return;
+      }
 
       const relDir = `${group.path}/${folder}`;
       const meta = readDocMeta({ repoRoot, relDir, folder, file });
@@ -134,7 +148,8 @@ const build = () => {
   fs.writeFileSync(outFile, JSON.stringify(slides, null, 2));
   console.log(
     `wrote ${path.relative(repoRoot, outFile)} ` +
-      `(slides: ${slides.slides.slides.length}, speakerdecks: ${slides.speakerdecks.slides.length})`,
+      `(slides: ${slides.slides.slides.length}, speakerdecks: ${slides.speakerdecks.slides.length}` +
+      `${skipped ? `, 非公開: ${skipped}` : ""})`,
   );
 };
 

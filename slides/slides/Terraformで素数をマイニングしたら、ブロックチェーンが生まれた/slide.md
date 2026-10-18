@@ -3,6 +3,7 @@ title: Terraformで素数をマイニングしたら、ブロックチェーン�
 description: 〜 Infrastructure as Code。つまりCode。なら何でもできますよね？ 〜
 author: 田中博悠 / tanahiro2010
 slug: terraform-prime-blockchain
+published: true
 ---
 
 ::title::

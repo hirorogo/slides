@@ -42,6 +42,7 @@ style: |
     border-radius: 0 4px 4px 0;
   }
 slug: github-beginners
+published: true
 ---
 
 # GitHub 活用セミナー

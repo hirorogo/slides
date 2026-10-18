@@ -4,6 +4,7 @@ theme: gdg
 paginate: true
 size: 16:9
 slug: is-hono-backend-framework
+published: true
 ---
 
 <script>
