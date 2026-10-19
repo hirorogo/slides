@@ -17,3 +17,8 @@ dist-ssr/
 
 # デッキHTMLのビルドキャッシュ
 .deck-cache/
+
+# 検証の生ログ・一時的な確認用ファイル（client_id やトークンが入りうる）
+test.json
+**/evidence-*.jsonl
+**/lifetime-state*.json
