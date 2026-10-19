@@ -6,6 +6,7 @@ data/
 
 # 公開していない調査資料と検証スクリプト
 private/
+src/evidence.ts
 src/probe.ts
 src/experiments.ts
 src/followup.ts

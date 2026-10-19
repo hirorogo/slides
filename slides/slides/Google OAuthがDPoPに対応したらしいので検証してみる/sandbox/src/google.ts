@@ -64,6 +64,36 @@ export function buildAuthorizationUrl(params: { state: string; codeChallenge: st
 // トークンエンドポイントへの POST
 // ---------------------------------------------------------------------------
 
+/**
+ * トークンエンドポイントとの 1 往復を、そのまま記録するためのフック。
+ *
+ * 既定では何もしない。記録したいときだけ setExchangeRecorder() で差し込む。
+ * 「あとで生ログが欲しかった」を繰り返さないための口。
+ */
+export type Exchange = {
+  timestamp: string
+  request: {
+    method: 'POST'
+    url: string
+    headers: Record<string, string>
+    form: Record<string, string>
+  }
+  response: {
+    status: number
+    statusText: string
+    headers: Record<string, string>
+    body: unknown
+  }
+  /** 所要時間（ミリ秒） */
+  durationMs: number
+}
+
+let recorder: ((exchange: Exchange) => void) | null = null
+
+export function setExchangeRecorder(fn: ((exchange: Exchange) => void) | null): void {
+  recorder = fn
+}
+
 export type TokenResult = {
   status: number
   /** レスポンスの DPoP-Nonce ヘッダー。成功時も失敗時も返ってくる */
@@ -88,11 +118,13 @@ async function postToTokenEndpoint(
   }
   if (proof) headers.DPoP = proof
 
+  const startedAt = Date.now()
   const response = await fetch(TOKEN_ENDPOINT, {
     method: 'POST',
     headers,
     body: new URLSearchParams(form).toString(),
   })
+  const durationMs = Date.now() - startedAt
 
   const text = await response.text()
   let body: Record<string, any>
@@ -100,6 +132,25 @@ async function postToTokenEndpoint(
     body = JSON.parse(text)
   } catch {
     body = { _raw: text }
+  }
+
+  if (recorder) {
+    recorder({
+      timestamp: new Date(startedAt).toISOString(),
+      request: {
+        method: 'POST',
+        url: TOKEN_ENDPOINT,
+        headers,
+        form,
+      },
+      response: {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body,
+      },
+      durationMs,
+    })
   }
 
   return {
