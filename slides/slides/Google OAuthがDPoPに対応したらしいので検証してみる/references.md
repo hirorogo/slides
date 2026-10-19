@@ -33,7 +33,11 @@
 | 16 | 日本語の実装記事は見つからなかった | ⚠️ 探索の限界 | 2 回検索して 0 件 |
 | 17 | Google は **DPoP proof より先に grant を検証する** | ✅ 実測 | 壊した proof 8 通り全部が `invalid_grant`（実測） |
 | 18 | `iat` の許容は**過去ちょうど 3600s / 未来ちょうど 10s** | ✅ **1 秒精度で確定** | -3599s 可 / -3600s 不可、+10s 可 / +11s 不可（2 回独立に再現） |
-| 19 | `htm` / `htu` 不一致は `invalid_dpop_proof` ではない | ❌ **ドキュメントと違う** | 実際は `invalid_request`（実測） |
+| 19 | **`jti` を使い回しても通る** | ❌ **ドキュメントと違う** | doc は「re-used jti は `invalid_dpop_proof`」と書いている（実測 200） |
+| 20 | **Nonce は検証されるが一度きりではない** | ✅ **確定（対照あり）** | でたらめな Nonce は 400。正しい Nonce は 6 回連続で 200 |
+| 21 | `htm` / `htu` 不一致は `invalid_dpop_proof` ではない | ❌ **ドキュメントと違う** | 実際は `invalid_request`（実測） |
+| 22 | 🔥 **proof をバイト単位でそのままリプレイできる** | ✅ **確定（ハッシュ照合）** | 同一 proof を 3 回送って全部 200 |
+| 23 | **捕捉した proof は発行から 3600 秒ちょうどリプレイできる** | ✅ **確定（実測）** | 59分(3540s)で200、61分(3660s)で `invalid_dpop_proof`。nonce は3540s時点でも有効だったので iat 側が上限 |
 
 ---
 
@@ -528,7 +532,7 @@ print('unpackedSize:', v['dist'].get('unpackedSize'), 'files:', v['dist'].get('f
 | **+60s（未来）** | **400** | `invalid_dpop_proof` |
 | +300s（未来） | 400 | `invalid_dpop_proof` |
 
-二分探索で 1 秒まで詰めた。独立した 2 回の実行で同じ値になった。
+二分探索で 1 秒まで詰めた（`npm run verify`）。独立した 2 回の実行で同じ値になった。
 
 | 方向 | 通る最遠 | 弾かれる最近 | 値 |
 | --- | ---: | ---: | --- |
@@ -543,6 +547,8 @@ print('unpackedSize:', v['dist'].get('unpackedSize'), 'files:', v['dist'].get('f
 過去側は緩める必要があるが、未来の `iat` は**事前生成した proof の作り置き**を意味する。
 RFC 9449 §11.2 が "DPoP Proof Pre-generation" として警戒しているのがまさにこれ。
 
+⬜ 未来側は 8〜15s までしか絞れていない。10s か 12s かはもう一度 followup を回せば確定する。
+
 ### 記事に使える切り口
 
 - 🔥 **サーバーの時刻がずれていると、詰む方向が決まっている。**
@@ -551,14 +557,101 @@ RFC 9449 §11.2 が "DPoP Proof Pre-generation" として警戒しているの�
 - この非対称の設計意図は読める。proof が届くまでの遅延は過去側にしか出ないが、
   未来の `iat` は**事前生成した proof の作り置き**を意味する。
   RFC 9449 §11.2 "DPoP Proof Pre-generation" が警戒しているのがまさにそれ
+- ⚠️ **ただし過去 1 時間という窓は、#22 と組み合わせると別の意味を持つ。**
+  「作り置きは防ぐが、使い回しは 1 時間許す」という設計になっている
 
 ---
 
-## 19. ❌ `htm` / `htu` 不一致は `invalid_dpop_proof` を返さない
+## 19. ❌ `jti` を使い回しても通る
 
 **判定: 実測。ドキュメントの記述と違う。**
 
-web-server doc の一文を分解して、`htm` / `htu` / `iat` / 署名の 4 つを試した。
+web-server doc はこう書いている。
+
+> If the DPoP proof has mismatching `htm` or `htu` claims, an expired `iat`, **a re-used `jti`**, or an invalid signature, Google returns an `invalid_dpop_proof` error code.
+
+直前に成功した proof と**同じ `jti`** を入れた proof を投げた。
+
+```
+jti を使い回す    200    -
+```
+
+**→ 通った。`jti` の一意性は強制されていない。**
+
+### ただし、これは「リプレイできる」という意味ではない
+
+今回の試行では `jti` だけを再利用し、`nonce` と `iat` は新しいものを使っている。
+つまり **proof 全体としては別物**で、リプレイ防止は `nonce` と `iat` の窓が担っている可能性がある。
+
+⬜ **proof をまるごと（署名も含めて）再送したらどうなるかは未検証。**
+   ここが通るかどうかで意味がまったく変わるので、追試が要る（`src/followup.ts`）。
+
+RFC 9449 §11.1 は `jti` の記録をリプレイ対策として挙げているが、MUST ではなく
+「サーバーは jti を記憶するか、nonce を使うかしてよい」という書き方になっている。
+Google は後者を選んでいる、と読むのが自然。
+
+---
+
+## 20. ❌ 使用済みの Nonce を再送しても通る
+
+**判定: 実測で確定。ドキュメントの記述と違う。**
+
+Adoption Guide はこう書いている。
+
+> Note that **a nonce value is used only once** and a missing, invalid, expired, or **reused** nonce value is rejected with an HTTP 400 response.
+
+### まず「そもそも検証されているのか」を確かめた
+
+「再利用できる」と「見ていない」はまったく違う主張なので、対照を取った。
+
+| 送った nonce | HTTP | error |
+| --- | ---: | --- |
+| 正しいもの | 200 | — |
+| **でたらめな乱数** | **400** | `use_dpop_nonce` |
+| **1 文字だけ変えたもの** | **400** | `use_dpop_nonce` |
+
+**→ nonce は確かに検証されている。** そのうえで、次の結果になる。
+
+### 同じ nonce を 6 回使った
+
+```
+1 回目（同じ nonce）   200
+2 回目（同じ nonce）   200
+3 回目（同じ nonce）   200
+4 回目（同じ nonce）   200
+5 回目（同じ nonce）   200
+30 秒後（同じ nonce）  200   ← まだ有効
+```
+
+**→ 「used only once」は実際の挙動と違う。** 検証はされるが、消費はされない。
+
+Nonce は「使い捨てのカウンタ」ではなく、**一定時間有効なトークン**として実装されている
+と考えるのが自然。`use_dpop_nonce` が返るのは**期限切れか、workflow を跨いだとき**（#10）。
+
+### これは実装にとって朗報
+
+PRD §6.3 で懸念していた「**同一ユーザーの並行 Refresh による Nonce 競合**」が、
+この挙動なら起きない。
+
+- 並行 Refresh を直列化する必要はない
+- Nonce 更新の排他制御も要らない
+- 複数プロセスが同じ Nonce を共有して使っても動く
+
+### 記事に使える切り口
+
+- 🔥 **ドキュメントを読んで実装すると、要らない排他制御を書くことになる。**
+  「一度きり」と書いてあれば、普通は Nonce をロックして直列化する。実際には不要だった
+- ⚠️ **ただし朗報なのは実装の手間だけ。** #22 の通り、これはリプレイ耐性を犠牲にしている
+
+⬜ Nonce の有効期間（何秒もつか）は未測定。
+
+---
+
+## 21. ❌ `htm` / `htu` 不一致は `invalid_dpop_proof` を返さない
+
+**判定: 実測。ドキュメントの記述と違う。**
+
+web-server doc の一文を、4 つの主張に分解して全部試した。
 
 > If the DPoP proof has mismatching `htm` or `htu` claims, an expired `iat`, a re-used `jti`, or an invalid signature, Google returns an `invalid_dpop_proof` error code.
 
@@ -567,9 +660,10 @@ web-server doc の一文を分解して、`htm` / `htu` / `iat` / 署名の 4 �
 | mismatching `htu` → `invalid_dpop_proof` | `invalid_request` | ❌ |
 | mismatching `htm` → `invalid_dpop_proof` | `invalid_request` | ❌ |
 | expired `iat` → `invalid_dpop_proof` | `invalid_dpop_proof` | ✅ |
+| re-used `jti` → `invalid_dpop_proof` | **エラーにならない（200）** | ❌ |
 | invalid signature → `invalid_dpop_proof` | `invalid_dpop_proof` | ✅ |
 
-**→ 4 つのうち 2 つが実際と違う。**
+**→ 5 つのうち 3 つが実際と違う。**
 
 proof を付けなかった場合も `invalid_request` だった（doc は 400 とだけ書いている）。
 
@@ -595,6 +689,132 @@ proof を付けなかった場合も `invalid_request` だった（doc は 400 �
 - 実装者向けの表として、上の「状況 → error」を記事に載せる価値がある。
   **公式ドキュメントのどこにも無い表**になる
 
+
+---
+
+## 22. 🔥 proof をバイト単位でそのままリプレイできる
+
+**判定: 実測。今回いちばん重い発見。**
+
+`jti` も `nonce` も `iat` も署名も**まったく同じ proof** を 3 回送った（`npm run verify`）。
+proof 本文の SHA-256 を毎回記録しているので、同一バイト列であることがログで確認できる。
+
+```
+# 内容                送nonce   proof(sha256)  HTTP  error
+11 1 回目（同一 proof）  AHeS8l5k  9506605d       200   -
+12 2 回目（同一 proof）  AHeS8l5k  9506605d       200   -
+13 3 回目（同一 proof）  AHeS8l5k  9506605d       200   -
+```
+
+**3 回とも 200。proof のハッシュは全部同じ。**
+
+さらに `iat` を 50 分前（-3000s）にした proof でも試した。
+
+```
+14 iat -3000s（1 回目）  AHeS8l50  00e13084       200   -
+15 iat -3000s（2 回目）  AHeS8l50  00e13084       200   -
+```
+
+**古い proof でもリプレイできる。**
+
+### RFC 9449 §11.1 が、まさにこの条件を書いている
+
+RFC はリプレイ対策として 2 つの手段を挙げ、**片方だけでは足りない**と明示している。
+
+> Unlike cryptographic nonces, it is acceptable for clients to use the same nonce multiple
+> times and for the server to accept the same nonce multiple times. **As long as the `jti`
+> value is tracked and duplicates are rejected for the lifetime of the nonce**, there is no
+> additional risk of token replay.
+
+**Nonce の使い回しを許していいのは、`jti` を追跡している場合に限る。**
+
+Google の実測はこうなっている。
+
+| RFC が求める条件 | Google の実装 |
+| --- | --- |
+| `jti` を記録して重複を拒否する | ❌ していない（#19） |
+| ↑ をやっていれば Nonce の再利用は許容 | ✅ 再利用できる（#20） |
+
+**条件を満たさないまま、許容の方だけを実装している。**
+
+さらに RFC は proof の受理時間についてこう書いている。
+
+> To limit this, servers **MUST** only accept DPoP proofs for a limited time after their
+> creation (preferably only for a relatively brief period **on the order of seconds or
+> minutes**).
+
+実測した `iat` の許容は**過去 3600 秒**（#18）。「limited time」ではあるので MUST 違反とまでは
+言えないが、RFC が推奨する "seconds or minutes" からは大きく外れている。
+
+### 3 つの発見を合成すると
+
+- `jti` は記録されていない（#19）
+- `nonce` は検証されるが消費されない（#20）
+- `iat` は過去ちょうど 3600 秒まで受理される（#18）
+
+**→ 捕捉した proof は、条件が揃っていれば何度でも再利用できる。**
+
+### リプレイ可能な時間 = 発行から 3600 秒（実測で確定・#23）
+
+1 本の proof（`iat` も `nonce` も固定）を作り、現実に盗まれた proof と同じ条件で、
+時間をおいて投げ直した（`src/lifetime.ts`、発行 2026-10-19T13:07:29Z）。
+
+| 経過 | HTTP | 結果 |
+| ---: | ---: | --- |
+| 0〜2700s（0〜45分） | 200 | ✅ リプレイ成立 |
+| 3300s（55分） | 200 | ✅ |
+| 3540s（59分） | 200 | ✅ |
+| **3660s（61分）** | **400** | ❌ **`invalid_dpop_proof`** |
+
+**落ち方が `invalid_dpop_proof`（`use_dpop_nonce` ではない）**のが決定的。
+
+- nonce は 3540s 時点でも有効だった（同じ nonce で 200）＝ **nonce の寿命 > 3600s**
+- 先に来たのは `iat` の窓 ＝ **リプレイ可能時間 = 発行から 3600 秒ちょうど**
+- `min(3600秒, nonce の寿命)` の `min` は **iat 側**に確定した
+
+#18 で 1 秒精度で出した「`iat` -3600s は弾かれる」と、このリプレイ実測が
+**別々の経路で同じ 3600 秒を指した。** 実装定数の二重の裏取り。
+
+→ **捕捉した DPoP proof は、発行からおよそ 1 時間、何度でもリプレイできる。**
+
+### ⚠️ これが意味しないこと（記事で必ず書く）
+
+**DPoP の主目的は損なわれていない。**
+
+- proof を手に入れるには、**生のリクエストを見られる立場**が要る
+- その立場なら、同じリクエストに入っている Refresh Token も一緒に取れる
+- つまり「DB ダンプで Refresh Token だけ漏れた」ケースには**DPoP は従来どおり有効**。
+  攻撃者は proof を作れないし、鍵も持っていない
+
+弱くなっているのは **「proof そのものの窃取」に対する耐性**で、これは DPoP の副次的な防御層。
+
+### ⚠️ それでも無視できない理由
+
+Google 自身が blog で、守る対象にこう書いている。
+
+> making them vulnerable to Infostealer malware (e.g. RedLine, NodeStealer) and
+> **Adversary-in-the-Middle (AiTM) attacks**
+
+**AiTM を名指しで脅威に挙げている。** AiTM・TLS 終端プロキシ・クライアント側のデバッグログなど、
+proof が単体で漏れうる経路に対して、RFC が想定する強度が出ていない。
+
+### 📌 記事を出す前にやること
+
+- [x] ~~nonce の寿命を測って窓を確定する~~ → #23 で確定。窓 = iat の 3600 秒
+- [x] ~~Google に報告するか判断する~~ → **報告済み。結果は Won't Fix (Infeasible)。**
+      Google Bug Hunters の回答要旨: アカウント乗っ取り・権限昇格・認証バイパスが示されておらず、
+      報告者自身が影響限定的と認めているため、VRP の「他ユーザーの機微データの機密性・完全性を
+      実質的に損なう」基準を越えない。→ **これで公開可。article.md に反映済み（2026-10-20）**
+- [ ] 報告するなら、**報告してから記事を出す**順番にする
+- [ ] 再現が他の環境でも成立するか確認する（今回はテストクライアント 1 つでの観測）
+
+### 記事での書き方
+
+- ❌「Google の DPoP には脆弱性がある」 ―― 断定しない。主目的は守られている
+- ⭕「**RFC が『jti を追跡していれば nonce は使い回してよい』と書いている条件を、
+  Google は満たしていない**」 ―― 事実と出典で書く
+- 🔥 記事全体の主張（**公式ドキュメントも検証対象**）の、いちばん強い実例になる。
+  #8 / #9（サンプルが壊れている）、#10 / #21（記述が実際と違う）と並べて、最後に置く
 
 ---
 
@@ -689,10 +909,10 @@ cd sandbox && npm run experiments
 | 別の鍵で署名 | 400 | `invalid_dpop_proof` |
 | `htu` を別の URL にする | 400 | `invalid_request` |
 | `htm` を GET にする | 400 | `invalid_request` |
+| **`jti` を使い回す** | **200** | — |
 | `nonce` クレームを入れない | 400 | `use_dpop_nonce` |
+| **使用済みの `nonce` を再送** | **200** | — |
 | 正常系（最後にもう一度） | 200 | — |
-
-（一部の検証項目は精査中のため非掲載）
 
 `iat` スキュー: -30 / -60 / -120 / -300 / **-600 は 200**、
 **-3600 / +60 / +300 は 400 `invalid_dpop_proof`**。
@@ -743,22 +963,30 @@ DPoP ディレクトリの中身は `SKILL.md` 1 ファイルのみ（11,264 byt
 - [x] **#10 の決着**: 持ち越した nonce は 400 `use_dpop_nonce` で拒否された
 - [x] DPoP proof を省略した Refresh が拒否されること（`invalid_request`）
 - [x] 別の鍵で署名した proof が拒否されること（`invalid_dpop_proof`）
-- [x] `htm` / `htu` / `iat` を壊したときのエラー（#19）
+- [x] `htm` / `htu` / `iat` を壊したときのエラー（#21）
 - [x] `iat` の許容スキューの概算（#18）
 - [x] 一連の失敗で Refresh Token が無効化されないこと（最後の正常系が 200）
 
 まだ埋まっていないもの:
 
 - [ ] **DPoP なしの通常フローとの差**（DPoP なしで認可した場合の比較。未実施）
+- [ ] 🔥 **proof をまるごと再送（署名ごとリプレイ）できるか**（#19 の核心。`src/followup.ts`）
+- [ ] **Nonce の有効期間**（#20。何秒もつのか）
+- [ ] **`iat` 境界の正確な値**（#18。-600〜-3600 と 0〜+60 が空いている）
 
 ### 仕様として確認できなかったこと
 
-- [x] ~~**`iat` の許容スキュー**~~ → #18 で確定（過去ちょうど 3600s / 未来ちょうど 10s）
+- [x] ~~**`iat` の許容スキュー**~~ → #18 で概算を実測（過去 -600s は通る / 未来 +60s は弾かれる）。
+      境界の正確な値は追試で詰められる
 - [ ] **RSA が本当に通るか。** Adoption Guide は "A RSA keypair is also possible but not recommended due to
       higher computational costs" と書くが、**具体的な alg 名（RS256 / PS256）が無い。**
       #7 の通り discovery にも出ていないので、投げて試すしかない
 - [ ] **`ath` クレームの扱い。** SKILL.md は `calculateATH` を必須 export にしているが、
       Google の Access Token は Bearer なので使い道が無いはず。送ったら無視されるのか拒否されるのか不明
+- [ ] 🔥 **`nonce` の寿命（#23）。これが #22 の実害の大きさを決める。**
+      proof をまるごと保存して、時間をおいて投げ直せば測れる（`npm run lifetime`）
+- [ ] **`iat` 未来側の正確な境界。** 8s は通り 15s は弾かれる。10s か 12s かは未確定
+- [ ] #22 の再現が**別の OAuth クライアント / 別アカウント**でも成立するか
 - [ ] **Confidential Client にも本当に RT がバインドされるのか。** #6 の通り RFC は否定的だが、
       Google のサンプルは `client_secret` 付き。public / confidential で挙動が違う可能性
 - [ ] 成功レスポンスに出てくる謎の `"challenge"` フィールド（Adoption Guide のサンプルにあるが、

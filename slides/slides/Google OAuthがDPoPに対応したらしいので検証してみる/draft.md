@@ -406,10 +406,10 @@ https://zenn.dev/meijin/articles/tech-article-output-recommend
   - レスポンスに新しい `DPoP-Nonce` があれば次回用に更新
   - ⚠️ **並行Refreshの競合**：同一ユーザーで同時にRefreshが走るとNonceが食い合う
     - 実装例では直列化するか、Nonce更新とRefresh処理を排他制御する
-    - 💭 ⬜ Nonceの有効期限は未確認
-- **9-4. 🔥 失敗ケースを全部踏んだら、ドキュメントが2箇所間違っていた**
+    - 💭 ⬜ Nonceの有効期限と再利用判定の粒度は未確認。実測したい
+- **9-4. 🔥 失敗ケースを全部踏んだら、ドキュメントが3箇所間違っていた**
   - 📋 結果表は「メモ⑲」、整理した対応表は「メモ⑰」参照
-  - web-server doc のこの一文のうち、`htm` / `htu` / `iat` / 署名の4つを試した
+  - web-server doc のこの一文を、5つの主張に分解して全部試した
     > If the DPoP proof has mismatching `htm` or `htu` claims, an expired `iat`,
     > a re-used `jti`, or an invalid signature, Google returns an `invalid_dpop_proof` error code.
 
@@ -418,8 +418,19 @@ https://zenn.dev/meijin/articles/tech-article-output-recommend
     | `htu` 不一致 → `invalid_dpop_proof` | `invalid_request` | ❌ |
     | `htm` 不一致 → `invalid_dpop_proof` | `invalid_request` | ❌ |
     | `iat` 期限切れ → `invalid_dpop_proof` | `invalid_dpop_proof` | ✅ |
+    | **`jti` 再利用 → `invalid_dpop_proof`** | **エラーにならない（200）** | ❌ |
     | 署名不正 → `invalid_dpop_proof` | `invalid_dpop_proof` | ✅ |
-  - **4つのうち2つが実際と違う**
+  - **5つのうち3つが実際と違う**
+  - 🔥 **`jti` を使い回しても通った**
+    - ただし今回は `jti` だけを再利用し、`nonce` と `iat` は新しくしている
+    - **proof全体をまるごと再送できるかは別問題。追試が要る**（`npm run followup`）
+    - RFC 9449 §11.1 は jti の記録を MUST にしていない。Google は nonce で代替していると読める
+  - 🔥 **使用済みのNonceを再送しても通った**
+    - Adoption Guide は "a nonce value is **used only once**" と書いている
+    - 実際は短時間内なら再利用できる。**Nonceは使い捨てカウンタではなく時間つきトークン**
+    - 📌 **これは実装にとって朗報。** PRD §6.3 の「並行RefreshによるNonce競合」は起きない
+      - 直列化も排他制御も要らない
+      - 💭 **ドキュメント通りに実装すると、要らないロックを書くことになる**
   - エラーコードの実際の切り分け（📋「メモ⑰」に整理した）
     - `invalid_request` … proofが無い / `htm`・`htu`が噛み合わない
     - `invalid_dpop_proof` … 署名不正 / `iat`範囲外
@@ -438,25 +449,22 @@ https://zenn.dev/meijin/articles/tech-article-output-recommend
     | **+60s（未来）** | 400 `invalid_dpop_proof` |
     | +300s（未来） | 400 `invalid_dpop_proof` |
 
-  - 二分探索で1秒まで詰めた結果（独立した2回の実行で一致）
-
-    | 方向 | 通る最遠 | 弾かれる最近 | 値 |
-    | --- | ---: | ---: | --- |
-    | 過去 | **-3599s** | **-3600s** | **ちょうど3600秒（1時間）** |
-    | 未来 | **+10s** | **+11s** | **ちょうど10秒** |
-
-  - 🔥 **過去は3600秒、未来は10秒。360倍の非対称**
+  - 🔥 **過去に甘く、未来に厳しい**。過去は最低10分、未来は60秒でも通らない
   - この非対称性には理屈がある
     - 過去側：proofを作ってから届くまでの遅延は当然あるので緩める必要がある
     - 未来側：未来の `iat` は**proofの作り置き**を意味する。
       RFC 9449 §11.2 "DPoP Proof Pre-generation" が警戒しているのがこれ
-  - 📌 **サーバーの時計が未来に11秒ずれているだけで全proofが弾かれる。** 過去方向は1時間耐える
+  - 📌 **サーバーの時計が未来にずれていると全proofが弾かれる。** 過去方向は10分耐える
     - NTPが効いていない環境で「なぜか `invalid_dpop_proof`」の原因になりうる
+  - ⬜ 境界の正確な値は追試中（-600〜-3600、0〜+60 が空いている）
 
-- **9-6. まだ埋まっていないもの**
+- **9-6. 追試（まだ埋まっていないもの）**
+  - [ ] 🔥 **proofをまるごと（署名ごと）再送できるか** ← §9-4 の核心
+  - [ ] Nonceの有効期間は何秒か
+  - [ ] `iat` 境界の正確な値
   - [ ] RSA（RS256 / PS256）が本当に通るか（§5。alg名が公開されていない）
   - [ ] `ath` クレームを送ったらどうなるか
-  - [ ] DPoPなしの通常フローとの比較
+  - `npm run followup` で全部測れるようにしてある
 
 ### 10. 運用で効いてくる話
 
@@ -965,7 +973,9 @@ HTTP 400  use_dpop_nonce
 | 別の鍵で署名 | 400 | `invalid_dpop_proof` | ✅ |
 | `htu` を別の URL にする | 400 | `invalid_request` | ⚠️ doc は `invalid_dpop_proof` |
 | `htm` を GET にする | 400 | `invalid_request` | ⚠️ doc は `invalid_dpop_proof` |
+| **`jti` を使い回す** | **200** | — | ❌ doc は弾くと書いている |
 | `nonce` クレームを入れない | 400 | `use_dpop_nonce` | ✅ |
+| **使用済みの `nonce` を再送** | **200** | — | ❌ doc は「used only once」 |
 | 正常系（最後にもう一度） | 200 | — | ✅ |
 
 **`iat` スキュー**
