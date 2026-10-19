@@ -5,6 +5,7 @@ paginate: true
 size: 16:9
 slug: serverless-susume
 published: true
+date: 2026-9-30
 ---
 
 <script>
