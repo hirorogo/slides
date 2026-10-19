@@ -5,6 +5,7 @@
   "description": "Google OAuth の Refresh Token を DPoP でバインドする検証用 example",
   "scripts": {
     "start": "tsx --env-file=.env src/server.tsx",
+    "verify": "tsx --env-file=.env src/verify.ts",
     "probe": "tsx --env-file=.env src/probe.ts",
     "experiments": "tsx --env-file=.env src/experiments.ts",
     "followup": "tsx --env-file=.env src/followup.ts",
