@@ -21,28 +21,7 @@ Google Cloud Console 側の設定：
 | 承認済みの JavaScript 生成元 | `http://localhost:3000` |
 | 承認済みのリダイレクト URI | `http://localhost:3000/api/auth/callback/google` |
 
-## 1. 認可なしで確かめる
-
-```sh
-npm run probe
-```
-
-ブラウザでの同意が要らないので、**いちばん最初にこれを走らせる。**
-
-存在しない Refresh Token を送りつつ、DPoP proof の方だけを 8 通りに壊して投げ分け、
-Google が proof と grant のどちらを先に検証しているかを見る。
-
-結果は **全部 `invalid_grant`** で、`DPoP-Nonce` は一度も返らない。
-つまり **grant が不正な時点で打ち切られ、proof は見られていない**。
-
-ここから分かること：
-
-- 有効な Refresh Token が無いと、DPoP の挙動は何も調べられない
-- **デバッグ中に proof のバグが `invalid_grant` に隠れる。**
-  Refresh Token が期限切れだと、proof がどれだけ壊れていても `invalid_grant` しか返らない
-- 実装の順序は「まず DPoP なしで Refresh が通ることを確認 → DPoP を足す」が正解
-
-## 2. ブラウザから通す
+## ブラウザから通す
 
 ```sh
 npm start
@@ -61,29 +40,7 @@ http://localhost:3000 を開いて、上から順に押していく。
 
 > 📌 認可した直後の 1 回目の Refresh が、`references.md` の **#10
 > （公式ドキュメント同士が矛盾している箇所）** の検証になる。
-> 1 往復で通れば web-server doc が、400 が返れば DPoP Adoption Guide が正しい。
-
-## 3. 失敗ケースを検証する
-
-Refresh Token を取ったあとで：
-
-```sh
-npm run experiments
-```
-
-わざと壊した proof を順に投げて、Google が何を返すかを表にする。
-
-| 検証項目 | 狙い |
-| --- | --- |
-| proof を付けない | Refresh Token だけ盗んでも使えないこと |
-| 別の鍵で署名 | 攻撃者の鍵では通らないこと |
-| `htu` / `htm` を変える | proof を他のリクエストに使い回せないこと |
-| `jti` を使い回す | proof をリプレイできないこと |
-| `nonce` を入れない | Refresh で Nonce が必須なのか |
-| 使用済みの `nonce` | Nonce が一度きりであること |
-| `iat` をずらす | **許容スキューは何秒か**（Google が公開していない） |
-
-最後に記事へ貼れる Markdown 表も出力する。
+> 実測では 400 `use_dpop_nonce` が返り、DPoP Adoption Guide の記述が正しかった。
 
 ## ファイル構成
 
@@ -95,9 +52,7 @@ src/
 ├── store.ts       鍵・Refresh Token・Nonce の保存
 ├── session.ts     保存した状態から鍵を復元する薄い層
 ├── server.tsx     Hono アプリ（hono/jsx）
-├── views/         画面の部品
-├── probe.ts       認可なしでできる検証（CLI）
-└── experiments.ts 失敗ケースの検証（CLI。要 Refresh Token）
+└── views/         画面の部品
 ```
 
 読む順番は `dpop.ts` → `google.ts` → `server.tsx` がおすすめ。

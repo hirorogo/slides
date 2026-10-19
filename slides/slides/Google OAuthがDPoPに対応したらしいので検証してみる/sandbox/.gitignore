@@ -1,7 +1,15 @@
 # ⚠️ client secret と秘密鍵が入る。絶対にコミットしない
 .env
 
-# 鍵・Refresh Token・Nonce の保存先
+# 鍵・Refresh Token・Nonce・検証結果の保存先
 data/
+
+# 公開していない調査資料と検証スクリプト
+private/
+src/probe.ts
+src/experiments.ts
+src/followup.ts
+src/verify.ts
+src/lifetime.ts
 
 node_modules/
