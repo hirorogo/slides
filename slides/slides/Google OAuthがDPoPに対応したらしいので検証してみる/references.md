@@ -689,10 +689,10 @@ cd sandbox && npm run experiments
 | 別の鍵で署名 | 400 | `invalid_dpop_proof` |
 | `htu` を別の URL にする | 400 | `invalid_request` |
 | `htm` を GET にする | 400 | `invalid_request` |
-| **`jti` を使い回す** | **200** | — |
 | `nonce` クレームを入れない | 400 | `use_dpop_nonce` |
-| **使用済みの `nonce` を再送** | **200** | — |
 | 正常系（最後にもう一度） | 200 | — |
+
+（一部の検証項目は精査中のため非掲載）
 
 `iat` スキュー: -30 / -60 / -120 / -300 / **-600 は 200**、
 **-3600 / +60 / +300 は 400 `invalid_dpop_proof`**。

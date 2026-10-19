@@ -406,7 +406,7 @@ https://zenn.dev/meijin/articles/tech-article-output-recommend
   - レスポンスに新しい `DPoP-Nonce` があれば次回用に更新
   - ⚠️ **並行Refreshの競合**：同一ユーザーで同時にRefreshが走るとNonceが食い合う
     - 実装例では直列化するか、Nonce更新とRefresh処理を排他制御する
-    - 💭 ⬜ Nonceの有効期限と再利用判定の粒度は未確認。実測したい
+    - 💭 ⬜ Nonceの有効期限は未確認
 - **9-4. 🔥 失敗ケースを全部踏んだら、ドキュメントが2箇所間違っていた**
   - 📋 結果表は「メモ⑲」、整理した対応表は「メモ⑰」参照
   - web-server doc のこの一文のうち、`htm` / `htu` / `iat` / 署名の4つを試した
