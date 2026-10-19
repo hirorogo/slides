@@ -1,0 +1,7 @@
+# ⚠️ client secret と秘密鍵が入る。絶対にコミットしない
+.env
+
+# 鍵・Refresh Token・Nonce の保存先
+data/
+
+node_modules/
