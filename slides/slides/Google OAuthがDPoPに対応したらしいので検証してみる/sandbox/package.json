@@ -1,0 +1,22 @@
+{
+  "name": "google-oauth-dpop-sandbox",
+  "private": true,
+  "type": "module",
+  "description": "Google OAuth の Refresh Token を DPoP でバインドする検証用 example",
+  "scripts": {
+    "start": "tsx --env-file=.env src/server.tsx",
+    "probe": "tsx --env-file=.env src/probe.ts",
+    "experiments": "tsx --env-file=.env src/experiments.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.9",
+    "hono": "^4.10.7",
+    "jose": "^6.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
