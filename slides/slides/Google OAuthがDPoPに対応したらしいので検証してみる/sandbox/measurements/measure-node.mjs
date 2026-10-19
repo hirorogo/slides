@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify, exportJWK, calculateJwkThumbprint } from 'jose'
 
-console.log('node', process.version, '| jose', (await import('./node_modules/jose/package.json', {with:{type:'json'}})).default.version)
+console.log('node', process.version, '| jose', (await import('../node_modules/jose/package.json', {with:{type:'json'}})).default.version)
 
 // --- 1. non-extractable key pair, per Google's SKILL.md ---
 const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign','verify'])
