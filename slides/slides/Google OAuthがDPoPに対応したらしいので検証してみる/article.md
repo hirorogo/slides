@@ -1,8 +1,9 @@
 ---
-published: false
+published: true
+summary: Google OAuthがDPoPに対応したらしいので検証してみたら...
 ---
 
-# Google OAuthがDPoPに対応したらしいので検証してみる
+# Google OAuthがDPoPに対応したらしいので検証してみたら...なんか違った
 
 > 実装は、ちゃんと動きました。壊れていたのはドキュメントの方です。
 
