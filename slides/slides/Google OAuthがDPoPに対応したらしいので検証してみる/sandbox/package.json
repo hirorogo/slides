@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx --env-file=.env src/server.tsx",
     "verify": "tsx --env-file=.env src/verify.ts",
+    "lifetime": "tsx --env-file=.env src/lifetime.ts",
     "probe": "tsx --env-file=.env src/probe.ts",
     "experiments": "tsx --env-file=.env src/experiments.ts",
     "followup": "tsx --env-file=.env src/followup.ts",
