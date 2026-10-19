@@ -7,6 +7,7 @@
     "start": "tsx --env-file=.env src/server.tsx",
     "probe": "tsx --env-file=.env src/probe.ts",
     "experiments": "tsx --env-file=.env src/experiments.ts",
+    "followup": "tsx --env-file=.env src/followup.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

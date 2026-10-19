@@ -177,6 +177,8 @@ export async function refreshOnce(args: {
   proofOverrides?: Partial<ProofOptions>
   /** true にすると proof を一切送らない */
   withoutProof?: boolean
+  /** 組み立て済みの proof をそのまま送る。proof の丸ごとリプレイ検証に使う */
+  rawProof?: string
 }): Promise<TokenResult> {
   const form = {
     grant_type: 'refresh_token',
@@ -186,6 +188,7 @@ export async function refreshOnce(args: {
   }
 
   if (args.withoutProof) return await postToTokenEndpoint(form)
+  if (args.rawProof) return await postToTokenEndpoint(form, args.rawProof)
 
   const proof = await createProof({
     keyPair: args.keyPair,
