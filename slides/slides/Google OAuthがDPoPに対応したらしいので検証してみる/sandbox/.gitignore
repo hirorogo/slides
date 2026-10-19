@@ -7,6 +7,7 @@ data/
 # 公開していない調査資料と検証スクリプト
 private/
 src/evidence.ts
+src/capture-replay.ts
 src/probe.ts
 src/experiments.ts
 src/followup.ts
@@ -14,3 +15,6 @@ src/verify.ts
 src/lifetime.ts
 
 node_modules/
+
+# ローカル専用スクリプトランナー
+/run
