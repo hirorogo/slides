@@ -1,0 +1,1784 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
+<title>MCPのStep-up Authorizationは、OAuthのIncremental Authorizationと何が違うのか？</title>
+<meta name="description" content="〜 違いは「誰が気づいて、誰が覚えているか」でした 〜">
+<meta name="author" content="田中博悠 / tanahiro2010">
+<meta name="generator" content="ippon-slides">
+<style>:root {
+  --slide-bg: #000;
+  --slide-fg: #fff;
+  --slide-accent: #ff6a00;
+  --slide-accent-2: #ff6a00;
+  --slide-muted: #8a8a8a;
+  --slide-code-bg: #0d0d0d;
+  --slide-border: rgba(255, 255, 255, 0.12);
+  --slide-font: -apple-system, 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  /* macOS には凸版文久見出しゴシックが入っている。ない環境では本文フォントに落ちる */
+  --slide-display-font: 'Toppan Bunkyu Midashi Gothic', '凸版文久見出しゴシック', var(--slide-font);
+  --slide-mono: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* 1280x720 で 16px。画面の短い辺に合わせて rem ごと拡大縮小する */
+html {
+  font-size: max(16px, min(1.25vw, 2.223vh));
+  touch-action: manipulation;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  font-family: var(--slide-font);
+  overflow: hidden;
+}
+#deck {
+  position: fixed;
+  inset: 0;
+}
+
+/* ---------- slide ---------- */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6vh 9vw;
+  box-sizing: border-box;
+  overflow: auto;
+  /* 日本語を文節で改行する（Chrome 119+） */
+  word-break: auto-phrase;
+}
+.slide pre {
+  word-break: normal;
+}
+.slide.active {
+  display: flex;
+  animation: slide-in 0.25s ease;
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide > :first-child {
+  margin-top: 0;
+}
+
+.slide h1 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(2.2rem, 5vw, 3.6rem) * var(--slide-size, 1));
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+}
+.slide h2 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4vw, 2.6rem) * var(--slide-size, 1));
+  line-height: 1.2;
+  margin: 0 0 2.2rem;
+}
+.slide h3 {
+  font-size: calc(clamp(1.4rem, 3vw, 1.9rem) * var(--slide-size, 1));
+  margin: 0 0 1rem;
+}
+.slide p,
+.slide li {
+  font-size: calc(clamp(1.1rem, 2.2vw, 1.5rem) * var(--slide-size, 1));
+  line-height: 1.6;
+}
+.slide ul,
+.slide ol {
+  padding-left: 1.4em;
+  margin: 0 0 1rem;
+}
+.slide li {
+  margin: 0.35em 0;
+}
+.slide li > ul {
+  margin: 0;
+}
+.slide li li {
+  font-size: 0.85em;
+  color: var(--slide-muted);
+}
+.slide a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+}
+/* 太字 = アクセントカラー */
+.slide strong {
+  font-weight: 700;
+  color: var(--slide-accent-2);
+}
+.slide strong code {
+  color: inherit;
+}
+.slide .arrow {
+  color: var(--slide-muted);
+  font-family: 'Hiragino Sans', system-ui, sans-serif;
+  font-weight: 800;
+}
+.slide img {
+  max-height: 58vh;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+.img-caption {
+  display: block;
+  text-align: center;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--slide-muted);
+}
+
+/* `::wide::` 左右の余白を詰める */
+.slide.wide {
+  padding-left: 3vw;
+  padding-right: 3vw;
+}
+
+/* `::right::` 2 カラム */
+.slide .cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  align-items: start;
+  width: 100%;
+}
+.slide .cols.left-wide {
+  grid-template-columns: 1.4fr 1fr;
+}
+.slide .cols.right-wide {
+  grid-template-columns: 1fr 1.4fr;
+}
+.slide .cols > * > :first-child {
+  margin-top: 0;
+}
+.slide .cols pre {
+  margin-top: 0;
+}
+
+/* `::center::` 1 枚 1 メッセージ */
+.slide.center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.slide.center h1,
+.slide.center h2 {
+  margin-bottom: 0.4em;
+}
+.slide.center p {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4.5vw, 3.5rem) * var(--slide-size, 1));
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.2em 0;
+}
+.slide.center ul,
+.slide.center ol {
+  text-align: left;
+}
+.slide.center pre {
+  text-align: left;
+  max-width: 100%;
+}
+
+/* `-# ` で始まる段落は小さい注釈 */
+.slide .note,
+.slide.center p.note {
+  font-family: var(--slide-font);
+  font-weight: 400;
+  color: var(--slide-muted);
+}
+.slide .note {
+  font-size: calc(clamp(0.95rem, 1.8vw, 1.25rem) * var(--slide-size, 1));
+}
+.slide.center p.note {
+  font-size: clamp(1.2rem, 2.6vw, 2.1rem);
+}
+
+/* `::title::` 表紙 */
+.slide.title {
+  padding-bottom: 8vh;
+}
+.slide.title h1 {
+  margin-top: auto;
+  font-size: calc(clamp(2.6rem, 7vw, 5.2rem) * var(--slide-size, 1));
+  line-height: 1.2;
+}
+.slide.title p {
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+.slide.title p:last-child {
+  margin-top: auto;
+  font-size: clamp(1rem, 1.8vw, 1.3rem);
+  color: var(--slide-muted);
+}
+
+/* `::bg=white::` 明るい背景 */
+.slide.light {
+  --slide-fg: #1f1f1f;
+  --slide-accent-2: #e85d00;
+  --slide-muted: #777;
+  --slide-border: rgba(0, 0, 0, 0.12);
+  --slide-code-bg: #f0f0f0;
+  color: var(--slide-fg);
+}
+
+.slide blockquote {
+  border-left: 4px solid var(--slide-accent-2);
+  margin: 0 0 1rem;
+  padding: 0.2rem 0 0.2rem 1.2rem;
+  color: var(--slide-muted);
+}
+
+.slide table {
+  border-collapse: collapse;
+  font-size: calc(clamp(1rem, 2vw, 1.35rem) * var(--slide-size, 1));
+  margin: 0 auto 1rem 0;
+}
+.slide.center table {
+  margin: 0 auto;
+}
+.slide th,
+.slide td {
+  padding: 0.5em 1.2em;
+  border-bottom: 1px solid var(--slide-border);
+  text-align: left;
+}
+.slide th {
+  color: var(--slide-muted);
+  font-weight: 600;
+}
+.slide td.num,
+.slide th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- code ---------- */
+
+.slide pre {
+  position: relative;
+  font-family: var(--slide-mono);
+  font-size: calc(clamp(0.8rem, 1.35vw, 1rem) * var(--slide-size, 1));
+  background: var(--slide-code-bg);
+  border: 1px solid var(--slide-border);
+  padding: 1.2rem 1.5rem;
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 64vh;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.slide pre code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.slide pre[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--slide-muted);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.slide :not(pre) > code {
+  font-family: var(--slide-mono);
+  background: rgba(127, 127, 127, 0.18);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ハイライト（atom-one-dark 寄り） */
+.hl-c {
+  color: #7f848e;
+  font-style: italic;
+}
+.hl-s {
+  color: #98c379;
+}
+.hl-k {
+  color: #c678dd;
+}
+.hl-n {
+  color: #d19a66;
+}
+.hl-f {
+  color: #61afef;
+}
+.hl-t {
+  color: #e5c07b;
+}
+.hl-i {
+  color: #56b6c2;
+}
+/* console */
+.hl-prompt {
+  color: var(--slide-accent-2);
+  user-select: none;
+}
+.hl-cmd {
+  color: #fff;
+  font-weight: 600;
+}
+.light .hl-cmd {
+  color: #1f1f1f;
+}
+.hl-out {
+  color: #abb2bf;
+}
+.hl-err {
+  color: #ef5350;
+  font-weight: 600;
+}
+.hl-ok {
+  color: #98c379;
+}
+/* `!! ` を付けた行は行全体を帯でハイライト */
+.hl-mark {
+  display: inline-block;
+  width: calc(100% + 3rem);
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  background: rgba(255, 106, 0, 0.16);
+  box-shadow: inset 3px 0 0 var(--slide-accent-2);
+}
+
+/* コードブロック右上のコピーボタン（deck.js が付ける） */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.25em 0.7em;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+.slide pre:hover .copy-btn,
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.copy-btn.copied {
+  color: #fff;
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+  opacity: 1;
+}
+
+/* ---------- ::http:: プレイグラウンド ---------- */
+
+.slide .http {
+  border: 1px solid var(--slide-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 0 1rem;
+  font-size: calc(clamp(0.85rem, 1.5vw, 1.1rem) * var(--slide-size, 1));
+}
+.http-req {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.6em 0.9em;
+  background: var(--slide-code-bg);
+  border-bottom: 1px solid var(--slide-border);
+}
+.http-method {
+  font-family: var(--slide-mono);
+  font-weight: 700;
+  font-size: 0.85em;
+  padding: 0.15em 0.6em;
+  border-radius: 5px;
+  background: rgba(127, 127, 127, 0.2);
+  color: var(--slide-fg);
+  letter-spacing: 0.03em;
+}
+.http-method.m-get {
+  color: #61afef;
+}
+.http-method.m-post {
+  color: #98c379;
+}
+.http-method.m-put,
+.http-method.m-patch {
+  color: #e5c07b;
+}
+.http-method.m-delete {
+  color: #ef5350;
+}
+.http-url {
+  font-family: var(--slide-mono);
+  font-size: 0.9em;
+  color: var(--slide-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.http-send {
+  flex: none;
+  padding: 0.25em 0.9em;
+  font: inherit;
+  font-size: 0.8em;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.light .http-send {
+  color: #333;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+.http-send:hover {
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+  color: #fff;
+}
+.http-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.http-res {
+  padding: 0.7em 0.9em;
+}
+.http-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  font-family: var(--slide-mono);
+  margin-bottom: 0.6em;
+}
+.http-code {
+  font-weight: 700;
+}
+.http-code.s-2xx {
+  color: #98c379;
+}
+.http-code.s-3xx {
+  color: #61afef;
+}
+.http-code.s-4xx {
+  color: #e5c07b;
+}
+.http-code.s-1xx,
+.http-code.s-5xx {
+  color: #ef5350;
+}
+.http-statustext {
+  color: var(--slide-fg);
+}
+.http-time {
+  margin-left: auto;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+}
+.http-errmsg {
+  color: #ef5350;
+  font-weight: 600;
+}
+.http-headers {
+  margin-bottom: 0.6em;
+}
+.http-headers summary {
+  cursor: pointer;
+  color: var(--slide-muted);
+  font-size: 0.85em;
+  user-select: none;
+}
+.http-headers table {
+  margin: 0.5em 0 0;
+  font-family: var(--slide-mono);
+  font-size: 0.8em;
+  border-collapse: collapse;
+}
+.http-headers td {
+  padding: 0.15em 0.9em 0.15em 0;
+  border: 0;
+  vertical-align: top;
+  word-break: break-all;
+}
+.http-headers .http-hk {
+  color: #56b6c2;
+  white-space: nowrap;
+}
+.http-headers .http-hv {
+  color: var(--slide-muted);
+}
+.slide .http-res pre {
+  margin: 0;
+  max-height: 42vh;
+}
+.http-msg {
+  color: var(--slide-muted);
+  font-size: 0.85em;
+  margin: 0.5em 0 0;
+}
+
+/* ---------- Spotlight / Zoom（画像・コードの拡大） ---------- */
+
+.slide pre {
+  cursor: zoom-in;
+}
+.zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.9);
+  cursor: zoom-out;
+  animation: zoom-fade 0.15s ease;
+}
+@keyframes zoom-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.zoom img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+.zoom pre.zoom-code {
+  margin: 0;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 1.5rem 1.8rem;
+  font-family: var(--slide-mono);
+  font-size: clamp(1rem, 2.1vw, 1.7rem);
+  line-height: 1.6;
+  color: var(--slide-fg);
+  background: var(--slide-code-bg);
+  border: 1px solid var(--slide-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+.zoom-code .zc-line {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0 0.4em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+.zoom-code .zc-line:hover {
+  background: rgba(127, 127, 127, 0.16);
+}
+.zoom-code.dimmed .zc-line:not(.spot) {
+  opacity: 0.3;
+}
+.zoom-code .zc-line.spot {
+  background: rgba(255, 106, 0, 0.18);
+  box-shadow: inset 3px 0 0 var(--slide-accent-2);
+  opacity: 1;
+}
+
+/* ---------- chrome ---------- */
+
+#progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: var(--slide-accent);
+  transition: width 0.2s ease;
+  z-index: 10;
+}
+#counter,
+#timer,
+#hint {
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  position: fixed;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+  z-index: 10;
+}
+#counter {
+  bottom: 12px;
+  right: 18px;
+  font-size: 0.9rem;
+}
+#timer {
+  bottom: 34px;
+  right: 18px;
+  font-size: 0.95rem;
+}
+#hint {
+  bottom: 12px;
+  left: 18px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+:fullscreen #hint {
+  display: none;
+}
+@media (pointer: coarse) {
+  #hint {
+    display: none;
+  }
+}
+
+/* ---------- overview（o / Esc） ---------- */
+
+#overview {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: 28px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: #29292c;
+}
+body.overview #overview {
+  display: flex;
+}
+body.overview #deck,
+body.overview #progress,
+body.overview #counter,
+body.overview #timer,
+body.overview #hint,
+body.overview #presenter {
+  display: none;
+}
+.ov-item {
+  cursor: pointer;
+}
+.ov-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.ov-item.current .ov-frame {
+  outline: 3px solid var(--slide-accent);
+  outline-offset: 2px;
+}
+.ov-item:hover .ov-frame {
+  border-color: var(--slide-accent);
+}
+.ov-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#overview .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+.ov-num {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ov-item.current .ov-num {
+  color: var(--slide-fg);
+  font-weight: 600;
+}
+
+/* ---------- presenter（p / 別ウィンドウ） ---------- */
+
+#presenter {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  box-sizing: border-box;
+  padding: 24px;
+  gap: 24px;
+  background: #1c1c1f;
+  color: #fff;
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+}
+body.presenter #presenter {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+body.presenter #deck,
+body.presenter #progress,
+body.presenter #counter,
+body.presenter #timer,
+body.presenter #hint,
+body.presenter #overview {
+  display: none;
+}
+
+.pv-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-slot:last-child {
+  opacity: 0.85;
+}
+.pv-slot:last-child .pv-frame {
+  width: 62%;
+}
+.pv-label {
+  font-size: 0.85rem;
+  color: #9a9aa0;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.pv-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+.pv-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#presenter .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+
+.pv-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.pv-elapsed {
+  font-size: 2.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.pv-wall {
+  font-size: 1rem;
+  color: #9a9aa0;
+  font-variant-numeric: tabular-nums;
+}
+.pv-controls {
+  display: flex;
+  gap: 10px;
+}
+.pv-controls button {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1.1rem;
+  color: #fff;
+  background: #2e2e33;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pv-controls button:hover {
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+}
+.pv-notes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: #242428;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.pv-notes .pv-empty {
+  color: #76767c;
+}
+
+/* ---------- PDF（ブラウザの印刷 → PDF に保存） ---------- */
+
+@media print {
+  @page {
+    size: 1280px 720px;
+    margin: 0;
+  }
+  html {
+    font-size: 16px;
+  }
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #deck {
+    position: static;
+  }
+  .slide {
+    display: flex !important;
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    padding: 43px 115px;
+    animation: none !important;
+    overflow: hidden;
+    break-after: page;
+    background: var(--slide-bg);
+  }
+  .slide.wide {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+  .slide.center p {
+    font-size: calc(3.5rem * var(--slide-size, 1));
+  }
+  .slide.title h1 {
+    font-size: calc(5.2rem * var(--slide-size, 1));
+  }
+  #progress,
+  #counter,
+  #timer,
+  #hint,
+  #overview,
+  #presenter,
+  .copy-btn,
+  .http-send,
+  .zoom {
+    display: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<div id="deck">
+<section class="slide title"><h1>MCPのStep-up Authorization は</h1><h1>OAuthのIncremental Authorization と何が違うのか？</h1><p>田中博悠 / tanahiro2010</p></section>
+<section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>GDG Greater Kwansai</li><li>個人開発で Google OAuth を使ってる</li><li>MCPサーバーも書く</li></ul></div><div><p><img src="images/tanahiro.jpg" alt="tanahiro2010"></p></div></div></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>発端</p></section>
+<section class="slide center"><p>2026年10月19日</p></section>
+<section class="slide center"><p>Cloudflare API MCP Server が</p><p><strong>Step-up Authorization に対応</strong></p><p class="note">Cloudflare Changelog</p></section>
+<section class="slide center"><p>最小の権限で繋いで</p></section>
+<section class="slide center"><p>足りなくなったら、足せる</p></section>
+<section class="slide center"><p>で、読んでて思ったんですけど</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>問い</p></section>
+<section class="slide center"><p><code>include_granted_scopes=true</code></p><p class="note">Google OAuth</p></section>
+<section class="slide center"><p>これ、昔からありますよね</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>何が違うんだ？</strong></p></section>
+<section class="slide center"><p>仕様を読んで</p></section>
+<section class="slide center"><p>自分でクライアントを書いて</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>128回 叩きました</strong></p><p class="note">HTTP往復・全部ログに残してあります</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>前提</p></section>
+<section class="slide center"><p>Cloudflare の MCP サーバーは</p></section>
+<section class="slide center"><p><code>scopes_supported</code> を 2 箇所で公開している</p></section>
+<section class="slide"><h2>名前は同じ、意味は別</h2><table><thead><tr><th></th><th>RFC</th><th>意味</th></tr></thead><tbody><tr><td>Protected Resource</td><td>9728</td><td>最低限いるもの</td></tr><tr><td>Authorization Server</td><td>8414</td><td>発行しうる全部</td></tr></tbody></table></section>
+<section class="slide center"><p>数えてみました</p></section>
+<section class="slide center" style="--slide-size:3;"><p><strong>2 : 384</strong></p></section>
+<section class="slide"><h2>認証なしで叩くと</h2><pre><code><span class="hl-out">HTTP/2 401</span>
+<span class="hl-out">www-authenticate: Bearer realm=&quot;OAuth&quot;,</span>
+<span class="hl-out">  resource_metadata=&quot;...&quot;,</span>
+<span class="hl-mark"><span class="hl-out">  scope=&quot;user:read account:read&quot;</span></span></code></pre></section>
+<section class="slide center"><p>2個で始められる</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>足りなくなったら足せる前提があるときだけ</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>仕様</p></section>
+<section class="slide center"><p>発火点は</p></section>
+<section class="slide center" style="--slide-size:2;"><p><code>403 insufficient_scope</code></p></section>
+<section class="slide"><h2>チャレンジ</h2><pre><code><span class="hl-out">HTTP/1.1 403 Forbidden</span>
+<span class="hl-out">WWW-Authenticate: Bearer</span>
+<span class="hl-mark"><span class="hl-out">  error=&quot;insufficient_scope&quot;,</span></span>
+<span class="hl-out">  scope=&quot;files:write&quot;,</span>
+<span class="hl-out">  resource_metadata=&quot;...&quot;</span></code></pre></section>
+<section class="slide center"><p>このエラーコード</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>MCPの発明じゃない</strong></p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>RFC 6750 §3.1</p><p><strong>2012年</strong></p><p class="note">OAuth Bearer Token Usage</p></section>
+<section class="slide center"><p>MCPが足したのは</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p><strong>そこから再認可に繋ぐ手順</strong></p></section>
+<section class="slide"><h2>Step-Up Authorization Flow</h2><ol><li><code>WWW-Authenticate</code> を読む</li><li><strong>前回の Scope ∪ チャレンジの Scope</strong></li><li>再認可する</li><li>元のリクエストを再試行</li></ol><p class="note">3 は普通の OAuth 認可コードフロー</p></section>
+<section class="slide center"><p>ここまでで、違いが3つ見えます</p></section>
+<section class="slide"><h2>Google と MCP</h2><table><thead><tr><th></th><th>Google</th><th>MCP</th></tr></thead><tbody><tr><td>気づくのは</td><td>アプリ</td><td><strong>サーバー</strong></td></tr><tr><td>伝える手段</td><td>不要</td><td><strong><code>WWW-Authenticate</code></strong></td></tr><tr><td>覚えてるのは</td><td>認可サーバー</td><td><strong>クライアント</strong></td></tr><tr><td>再認可</td><td>認可コードフロー</td><td><strong>同じ</strong></td></tr></tbody></table></section>
+<section class="slide center"><p>3行目</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>これ、読んだだけじゃ決まらない</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>歴史</p></section>
+<section class="slide center"><p>その前に、ひとつ</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>新機能じゃなかった</strong></p></section>
+<section class="slide"><h2>Step-Up の節が入った版</h2><table><thead><tr><th>仕様</th><th></th></tr></thead><tbody><tr><td>2025-06-18 以前</td><td>記述なし</td></tr><tr><td><strong>2025-11-25</strong></td><td><strong>登場</strong></td></tr><tr><td>2026-07-28</td><td>現行</td></tr></tbody></table><p class="note">Cloudflare がリンクしてるのは 2026-07-28</p></section>
+<section class="slide center"><p>じゃあ 2026-07-28 で何が変わった？</p></section>
+<section class="slide"><h2>和集合を作るのは</h2><table><thead><tr><th>仕様</th><th>誰が</th></tr></thead><tbody><tr><td>2025-11-25</td><td><strong>サーバー</strong></td></tr><tr><td>2026-07-28</td><td><strong>クライアント</strong></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>責務がひっくり返った</strong></p><p class="note">SEP-2350 / 2026-03-28 merged</p></section>
+<section class="slide center"><p>なぜ？</p></section>
+<section class="slide"><h2>Issue #2349</h2><blockquote><p>This <strong>contradicts the RFC</strong>,<br>creates an **impossible requirement<br>for stateless servers**,<br>and leads to **infinite<br>re-authorization loops** in practice.</p></blockquote></section>
+<section class="slide center"><p>無限ループ</p></section>
+<section class="slide"><h2>#1582 の再現手順</h2><ul><li><code>initialize</code> は <code>init</code> が要る</li><li><code>tools/list</code> は <code>mcp:tools:read</code> が要る</li></ul></section>
+<section class="slide center"><p>403 が「その操作に必要なScope」だけ返す</p></section>
+<section class="slide center"><p>クライアントが <code>_scope</code> を<strong>上書き</strong>する</p></section>
+<section class="slide"><h2>そして</h2><pre data-lang="text"><code>tools/list → 403 → init を失う
+initialize → 403 → tools:read を失う
+tools/list → 403 → init を失う
+       ⋮</code></pre></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>検証</p></section>
+<section class="slide center"><p>公式SDKを使いませんでした</p></section>
+<section class="slide"><h2><code>@modelcontextprotocol/client</code></h2><pre data-lang="ts"><code><span class="hl-k">function</span> <span class="hl-f">computeScopeUnion</span>(...scopes) {
+  <span class="hl-k">const</span> seen = <span class="hl-k">new</span> <span class="hl-f">Set</span>()
+  <span class="hl-k">for</span> (<span class="hl-k">const</span> scope <span class="hl-k">of</span> scopes) {
+<span class="hl-mark">    <span class="hl-k">for</span> (<span class="hl-k">const</span> t <span class="hl-k">of</span> scope.<span class="hl-f">split</span>(/\s+/)) seen.<span class="hl-f">add</span>(t)</span>
+  }
+  <span class="hl-k">return</span> [...seen].<span class="hl-f">join</span>(<span class="hl-s">' '</span>)
+}</code></pre><p class="note">403 を見たら自動で和集合にする</p></section>
+<section class="slide center"><p>正しい実装です</p></section>
+<section class="slide center"><p>でも、これだと</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>和集合を作らない再認可</strong></p><p>が投げられない</p></section>
+<section class="slide"><h2>自前の最小クライアント</h2><ul><li>OAuth を手で踏む（DCR / PKCE）</li><li>通信層は<strong>例外を投げない</strong></li><li>全送信を 1 行 JSON で記録</li></ul><p class="note">400 も 403 も観測結果なので</p></section>
+<section class="slide"><h2>秘密は指紋にする</h2><pre data-lang="json"><code><span class="hl-t">&quot;access_token&quot;</span>: {
+  <span class="hl-t">&quot;_redacted_len&quot;</span>: <span class="hl-n">82</span>,
+<span class="hl-mark">  <span class="hl-t">&quot;_sha256_16&quot;</span>: <span class="hl-s">&quot;184d68d85f68caab&quot;</span></span>
+}</code></pre></section>
+<section class="slide center"><p>まず最小Scopeで繋いで</p></section>
+<section class="slide center"><p><strong>普通に動くことを確認してから</strong></p><p>403 を踏みに行く</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>403</p></section>
+<section class="slide center"><p>踏めました</p></section>
+<section class="slide"><h2>チャレンジ全文</h2><pre><code><span class="hl-out">HTTP/2 403</span>
+<span class="hl-out">WWW-Authenticate: Bearer realm=&quot;OAuth&quot;,</span>
+<span class="hl-out">  error=&quot;insufficient_scope&quot;,</span>
+<span class="hl-mark"><span class="hl-out">  scope=&quot;user:read account:read workers-r2.read&quot;,</span></span>
+<span class="hl-out">  error_description=&quot;This operation needs</span>
+<span class="hl-out">    the workers-r2.read scope&quot;</span></code></pre></section>
+<section class="slide center"><p><code>scope</code> に注目</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>baseline が入ってる</strong></p></section>
+<section class="slide"><h2>ここ、割れてました</h2><table><thead><tr><th></th><th>403 の scope に何を入れる</th></tr></thead><tbody><tr><td>MCP 仕様</td><td>必要なものだけでいい</td></tr><tr><td>Cloudflare docs</td><td><strong>baseline込みで全部</strong></td></tr><tr><td><strong>実機</strong></td><td><strong>後者</strong></td></tr></tbody></table></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>本題</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>誰が覚えているのか</strong></p></section>
+<section class="slide center"><p><code>d1.read</code> だけ要求してみる</p><p class="note">持ってた3つは、あえて落とす</p></section>
+<section class="slide"><h2>実験 D-1</h2><pre data-lang="text"><code>要求 : d1.read</code></pre></section>
+<section class="slide"><p><img src="images/consent-d1-only.png" alt="consent"></p></section>
+<section class="slide"><h2>付与された</h2><pre data-lang="text"><code>要求 : d1.read
+<span class="hl-mark">付与 : d1.read user:read offline_access account:read</span></code></pre></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>残ってる</strong></p></section>
+<section class="slide center"><p>認可サーバーが保持してる</p></section>
+<section class="slide center"><p>…と書きかけました</p></section>
+<section class="slide center" style="--slide-size:1.5;background:#c0392b;"><p>敗因</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>対照が無い</strong></p></section>
+<section class="slide"><h2>残った理由、3つ考えられる</h2><ol><li>認可サーバーが保持している</li><li><strong>DCRの登録scopeに入れた</strong>（自分のミス）</li><li>baseline を既定で出してるだけ</li></ol><p class="note">2 は自分で混ぜ込んだ交絡</p></section>
+<section class="slide center"><p>過去の付与ゼロのクライアントを作って</p></section>
+<section class="slide center"><p>同じ画面を出してみる</p></section>
+<section class="slide"><p><img src="images/consent-control.png" alt="control"></p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>完全に同じ</strong></p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>判定を取り下げました</p></section>
+<section class="slide center"><p>測り直し</p></section>
+<section class="slide center"><p><strong>baseline じゃない</strong> <code>d1.read</code> を持った状態で</p><p><code>workers-r2.read</code> だけ要求する</p><p class="note">これなら既定値では説明がつかない</p></section>
+<section class="slide"><p><img src="images/consent-r2-only.png" alt="r2 only"></p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong><code>D1 Read</code> が無い</strong></p><p class="note">直前に付与したばかりなのに</p></section>
+<section class="slide"><h2>付与された</h2><pre data-lang="text"><code>要求 : workers-r2.read
+<span class="hl-mark">付与 : workers-r2.read user:read offline_access account:read</span></code></pre></section>
+<section class="slide center"><p><code>d1.read</code> が消えた</p></section>
+<section class="slide center"><p>文字列だけじゃ足りないので</p></section>
+<section class="slide center"><p><strong>実際に叩いてみる</strong></p></section>
+<section class="slide center" style="--slide-size:2;"><p>D1一覧 <span class="arrow">→</span> <strong>403</strong></p><p class="note">能力ごと失われている</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>わかったこと</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>Cloudflare の認可サーバーは</p><p><strong>過去の付与を引き継がない</strong></p></section>
+<section class="slide center"><p>&quot;Scopes you already granted are kept&quot;</p><p>が成立するのは</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>クライアントが和集合を作ってるから</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>ところが</p></section>
+<section class="slide center"><p>チャレンジの中身を、よく見ると</p></section>
+<section class="slide"><h2>トークンを変えて3回観測</h2><table><thead><tr><th>持ってたScope</th><th>チャレンジの scope</th></tr></thead><tbody><tr><td>baseline</td><td><code>… workers-r2.read</code></td></tr><tr><td>baseline + r2</td><td><code>… workers-r2.read</code> <strong><code>d1.read</code></strong></td></tr><tr><td>baseline + r2</td><td><code>… workers-r2.read</code> <strong><code>kv…read</code></strong></td></tr></tbody></table></section>
+<section class="slide center"><p>baseline 固定じゃない</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>トークンの中身に追随してる</strong></p></section>
+<section class="slide"><h2>つまり</h2><pre data-lang="text"><code>challenge.scope =
+    トークンの付与Scope
+  ∪ その操作に必要なScope</code></pre></section>
+<section class="slide center"><p>これ、どこかで見ました</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>2025-11-25 のやり方</strong></p><p class="note">2026-07-28 が削除した方</p></section>
+<section class="slide center"><p>効果があります</p></section>
+<section class="slide"><h2><code>sdk@1.32.1</code> の403ハンドラ</h2><pre data-lang="ts"><code><span class="hl-k">if</span> (error === <span class="hl-s">'insufficient_scope'</span>) {
+  <span class="hl-k">if</span> (scope) {
+<span class="hl-mark">    this._scope = scope   <span class="hl-c">// 上書き</span></span>
+  }</code></pre><p class="note">さっきのループ条件そのもの</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>それでも落ちない</strong></p></section>
+<section class="slide center"><p>サーバーが肩代わりしてるから</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>ゾーン</p></section>
+<section class="slide center"><p>総当たりしてて、気づいたんですけど</p></section>
+<section class="slide center"><p>403 が返らない操作がある</p></section>
+<section class="slide"><h2>権限が無いのに</h2><pre data-lang="text"><code>GET /zones
+<span class="hl-mark">→ 200  result: []</span></code></pre></section>
+<section class="slide center"><p>0件？</p></section>
+<section class="slide center"><p>本当に無いのか</p><p>権限で消えてるのか</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>区別できない</strong></p></section>
+<section class="slide center"><p><code>zone.read</code> を付けて、もう一回</p></section>
+<section class="slide"><h2>同じ呼び出し</h2><table><thead><tr><th></th><th class="num">Scope無し</th><th class="num">付与後</th></tr></thead><tbody><tr><td>ゾーン一覧</td><td class="num">0件</td><td class="num"><strong>3件</strong></td></tr><tr><td>Workers一覧</td><td class="num">0件</td><td class="num"><strong>12件</strong></td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:3;"><p><strong>あった</strong></p></section>
+<section class="slide center"><p>403 が返らないので</p></section>
+<section class="slide center"><p>クライアントは「足りない」を知らない</p></section>
+<section class="slide center"><p>ユーザーに聞きにいく機会も、発生しない</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>AIは「ゾーンはありません」と答える</strong></p></section>
+<section class="slide"><h2>同じサーバーに3通り</h2><table><thead><tr><th>操作</th><th>権限が無いと</th></tr></thead><tbody><tr><td>R2 / KV / D1</td><td><strong>403 + チャレンジ</strong></td></tr><tr><td>zones / workers</td><td><strong>200 + 空配列</strong></td></tr><tr><td><code>/user/tokens</code></td><td>文字列で403</td></tr></tbody></table><p class="note">step-up できるのは1行目だけ</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>refresh</p></section>
+<section class="slide center"><p>追加認可って、必ずブラウザに戻りますよね</p></section>
+<section class="slide center"><p>なんで refresh じゃダメなの？</p></section>
+<section class="slide center" style="--slide-size:1.5;"><p>RFC 6749 §6</p><p><strong>広げられない</strong></p></section>
+<section class="slide"><h2>投げてみた</h2><table><thead><tr><th>要求</th><th>HTTP</th><th>付与</th></tr></thead><tbody><tr><td>省略（対照）</td><td>200</td><td>元のまま</td></tr><tr><td><strong>広げる</strong></td><td>200</td><td><strong>元のまま</strong></td></tr><tr><td><strong>狭める</strong></td><td>200</td><td><strong>元のまま</strong></td></tr></tbody></table></section>
+<section class="slide center"><p>広げられないのは仕様どおり</p></section>
+<section class="slide center"><p>でも、狭めるのも無視される</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>docs には「狭められる」と書いてある</strong></p><p class="note">workers-oauth-provider</p></section>
+<section class="slide"><h2>ライブラリのソース</h2><pre data-lang="ts"><code>private <span class="hl-f">downscope</span>(requested, allowed) {
+  <span class="hl-k">if</span> (!requested) <span class="hl-k">return</span> allowed
+<span class="hl-mark">  <span class="hl-k">return</span> requested.<span class="hl-f">filter</span>(s =&gt; allowed.<span class="hl-f">includes</span>(s))</span>
+}</code></pre></section>
+<section class="slide center"><p>ライブラリは正しい</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>違うのは hosted の方</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>まとめ</p></section>
+<section class="slide"><h2>違いは3つ</h2><ol><li><strong>気づくのが誰か</strong> <span class="arrow">→</span> サーバー</li><li><strong>伝える手段があるか</strong> <span class="arrow">→</span> <code>WWW-Authenticate</code></li><li><strong>覚えてるのが誰か</strong> <span class="arrow">→</span> クライアント</li></ol><p class="note">再認可そのものは同じOAuth</p></section>
+<section class="slide center"><p>Step-up は OAuth の代替じゃない</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>OAuth への入口</strong></p></section>
+<section class="slide center"><p>なんでMCPだけこの形？</p></section>
+<section class="slide center"><p>従来のWebアプリ</p><p><strong>開発者が</strong>どのScopeが要るか知ってる</p></section>
+<section class="slide center"><p>MCP</p><p><strong>AIが</strong>ツールを選ぶ</p><p class="note"><code>execute()</code> は呼ぶまで分からない</p></section>
+<section class="slide center"><p>クライアントには事前に判断できない</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>だから「気づく」をサーバーに移した</strong></p></section>
+<section class="slide center"><p>そのための経路が、Step-up</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>そして</p></section>
+<section class="slide center"><p>経路は、まだ全部つながってない</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>黙って空を返さない</strong></p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>おまけ</p></section>
+<section class="slide center"><p>対照に投げたデタラメな文字列が</p></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>403 insufficient_scope</strong></p><p class="note">一度も発行されてないのに</p></section>
+<section class="slide"><h2>境界を二分探索した</h2><pre data-lang="text"><code>39文字 → 401 invalid_token
+<span class="hl-mark">40文字 → 403 insufficient_scope</span></code></pre><p class="note"><code>[A-Za-z0-9_-]</code> のとき</p></section>
+<section class="slide center"><p>丸い数字が出たら実装定数</p></section>
+<section class="slide center"><p>失効したトークンでも起きる？</p></section>
+<section class="slide"><h2>潰しました</h2><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>revoke 済み</td><td>401 ✅</td></tr><tr><td>別リソースのトークン</td><td>401 ✅</td></tr><tr><td>壊れた文字列</td><td>401 ✅</td></tr></tbody></table></section>
+<section class="slide center" style="--slide-size:2;"><p><strong>全部ハズレ</strong></p><p class="note">実クライアントの状態からは到達しない</p></section>
+<section class="slide title"><h1>ありがとうございました</h1><p>田中博悠 / tanahiro2010</p><p>https://blog.tanahiro2010.com</p></section>
+</div>
+<div id="overview"></div>
+<div id="presenter"></div>
+<div id="progress"></div>
+<div id="timer"></div>
+<div id="counter"></div>
+<div id="hint">← → 移動 ・ f フルスクリーン ・ o 一覧 ・ p 発表者</div>
+<script id="notes" type="application/json">["\u003cp>よろしくお願いします。タイトルが長いので一回で読めませんでした。\u003c/p>\u003cp>全 158 枚・想定 18〜22 分。1枚1メッセージなので、流す枚数が多いぶん手は止めない。\u003c/p>\u003cp>\u003cstrong>LT 枠（5分）なら「歴史」「refresh」「おまけ」の3章を落とす\u003c/strong> \u003cspan class=\"arrow\">→\u003c/span> 約 95 枚。\u003cbr>さらに削るなら「403」の章をチャレンジ1枚に圧縮する。\u003c/p>\u003cp>\u003cstrong>絶対に落とさないのは「ゾーン」の章。\u003c/strong> 今日いちばん持ち帰ってほしいのはそこ。\u003c/p>","\u003cp>個人開発で Google OAuth を使っていて、しかも MCP サーバーを書く側にも回ります。\u003c/p>\u003cp>つまり今日の話、\u003cstrong>両方の当事者\u003c/strong>です。\u003c/p>\u003cp>\u003cstrong>15 秒で切る。\u003c/strong>\u003c/p>","","","","","\u003cp>便利そうですよね。\u003c/p>\u003cp>最小権限でAIエージェントを繋げられる。で、ツールが権限を要求したらその時に足す。\u003c/p>","","","","\u003cp>Google OAuth の Incremental Authorization。\u003c/p>\u003cp>「必要になったタイミングで、必要なScopeだけ追加で要求する」\u003c/p>\u003cp>僕が個人開発で使っているやつです。\u003c/p>","\u003cp>ここで一拍おく。\u003c/p>\u003cp>これが今日の問いです。\u003c/p>","","","","","","","","","\u003cp>リソース側が2個。\u003ccode>user:read\u003c/code> と \u003ccode>account:read\u003c/code> だけ。\u003c/p>\u003cp>認可サーバーのカタログが \u003cstrong>384個\u003c/strong>。\u003c/p>\u003cp>ここで一拍。\u003c/p>","","","\u003cp>これが今日の機能の存在理由です。\u003c/p>\u003cp>384個から初回に渡す分を選ぶしかないなら、少なく選べば動かないし、多く選べば配りすぎる。\u003c/p>","","","","","","","\u003cp>12年前から居るやつです。\u003c/p>\u003cp>MCPが新しく決めたのは、エラーコードじゃない。\u003c/p>","","","","","\u003cp>\u003cstrong>表は読み上げない。\u003c/strong> 3行目だけ指す。\u003c/p>","","\u003cp>Changelog にはこう書いてあります。\u003c/p>\u003cp>&quot;Scopes you already granted are kept.&quot;\u003c/p>\u003cp>\u003cstrong>主語がない。\u003c/strong>\u003c/p>\u003cp>クライアントが和集合を作った結果そう見えるのか、認可サーバーが覚えてるのか。両方読めます。\u003c/p>\u003cp>ここを実機で決めます。\u003c/p>","","","","","","","","","","","","","","\u003cp>永久に往復します。\u003c/p>\u003cp>和集合は「お作法」じゃなくて\u003cstrong>事故対策\u003c/strong>だった。\u003c/p>","","","","","","\u003cp>「誰が覚えてるのか」を切り分ける対照が作れない。\u003c/p>\u003cp>なので手で書きました。\u003c/p>","","\u003cp>\u003ccode>&lt;redacted&gt;\u003c/code> で潰すと「同じトークンを投げた」も「毎回別物だった」も示せなくなる。\u003c/p>\u003cp>指紋なら両方示せます。\u003c/p>","","\u003cp>これ大事で、順番を逆にすると、403が出なかったときに\u003c/p>\u003cp>「権限が足りてた」のか「そもそも届いてない」のかが切り分けられません。\u003c/p>","","","","","","","","","","","","","","","\u003cp>ここで一拍。\u003c/p>","","","","","","","\u003cp>過去に一度も認可していないクライアントでも Account Read が出る。\u003c/p>\u003cp>つまり 3 で説明がつく。\u003c/p>","","","","","","","","","","","","","","\u003cp>Google は認可サーバー側で合成します。\u003ccode>include_granted_scopes=true\u003c/code> の一行で。\u003c/p>\u003cp>MCP はクライアント側。\u003cstrong>構造が逆\u003c/strong>。\u003c/p>\u003cp>これが問いへの答えです。\u003c/p>","","","\u003cp>\u003cstrong>表は読み上げない。\u003c/strong> 太字の増えてる部分だけ指す。\u003c/p>","","","","","\u003cp>Issue #2349 が「ステートレスなサーバーには実装不可能」と言った、あのやり方です。\u003c/p>\u003cp>Cloudflare は認可サーバーとリソースサーバーが状態を共有してるので、やれてしまう。\u003c/p>","","","","","","","","","","","","","","\u003cp>ここで一拍。\u003c/p>\u003cp>アカウントには実在していました。権限が無いあいだ、空で返ってただけ。\u003c/p>","","","","\u003cp>ここが今日いちばん持ち帰ってほしいところです。\u003c/p>\u003cp>人間なら「自分の権限では見えないのかも」と察します。AIは察しません。\u003c/p>","","","","","","","","","","","","\u003cp>チャレンジのヘッダー形式は OSS 版と一致するのに、refresh の処理とトークン検証は別物でした。\u003c/p>\u003cp>同じ名前でも、OSS版とhosted版を同一視しない方がいい。\u003c/p>","","","","","","","","","","","","","\u003cp>MCPサーバーを書く側として持ち帰ったのはこの一点です。\u003c/p>\u003cp>403とチャレンジを返せば、クライアントがユーザーに聞きにいける。\u003c/p>\u003cp>経路は仕様が用意してくれている。つながってない操作を作るかどうかは、書く側の判断です。\u003c/p>","","","","","","","","\u003cp>期待してたんですけどね。\u003c/p>\u003cp>意図的に文字列を作らないと起きません。実害なしです。\u003c/p>","\u003cp>ありがとうございました。\u003c/p>\u003cp>記事に全部の数字と生ログの話を書いています。検証コードも置いてあります。\u003c/p>"]</script>
+<script>"use strict";
+// スライドのナビゲーション。ippon が HTML に埋め込む。
+//   → / Space / PageDown / クリック右側     次へ
+//   ← / PageUp / クリック左側              前へ
+//   Home / End                              最初 / 最後
+//   f                                       フルスクリーン
+//   o / Esc                                 一覧
+//   p                                       発表者ビュー（別ウィンドウ）
+(() => {
+    const slides = Array.from(document.querySelectorAll('#deck .slide'));
+    if (!slides.length)
+        return;
+    // ippon serve のときだけ注入される設定（スマホリモコン用）。無ければ従来どおり何もしない
+    const serveCfg = window.__ippon;
+    const $ = (id) => document.getElementById(id);
+    const div = (className) => {
+        const el = document.createElement('div');
+        el.className = className;
+        return el;
+    };
+    function fmt(ms) {
+        const total = Math.floor(ms / 1000);
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    // ---------- Spotlight / Zoom（画像・コードをクリックで拡大） ----------
+    let zoomEl = null;
+    function closeZoom() {
+        if (zoomEl) {
+            zoomEl.remove();
+            zoomEl = null;
+        }
+    }
+    function openZoom(content) {
+        closeZoom();
+        const ov = div('zoom');
+        ov.appendChild(content);
+        ov.addEventListener('click', () => closeZoom()); // 背景クリックで閉じる
+        document.body.appendChild(ov);
+        zoomEl = ov;
+    }
+    function openImageZoom(img) {
+        const big = document.createElement('img');
+        big.src = img.currentSrc || img.src;
+        big.alt = img.alt;
+        openZoom(big);
+    }
+    function openCodeZoom(pre) {
+        const box = pre.cloneNode(true);
+        box.querySelector('.copy-btn')?.remove();
+        box.classList.add('zoom-code');
+        const code = box.querySelector('code');
+        if (code) {
+            // 行ごとに分けてクリックでスポットライトできるようにする
+            // （ハイライトのトークンは行をまたがないので innerHTML を改行で割れる）
+            const lines = code.innerHTML.split('\n');
+            code.textContent = '';
+            for (const ln of lines) {
+                const line = div('zc-line');
+                line.innerHTML = ln.length ? ln : '&#8203;';
+                line.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    line.classList.toggle('spot');
+                    box.classList.toggle('dimmed', !!box.querySelector('.zc-line.spot'));
+                });
+                code.appendChild(line);
+            }
+        }
+        // コード内のクリックは閉じない（行スポットライトを操作するため）
+        box.addEventListener('click', (e) => e.stopPropagation());
+        openZoom(box);
+    }
+    // 別ウィンドウで開いたときは発表者ビューとして動く（本番のナビは動かさない）
+    if (window.name === 'ippon-presenter') {
+        presenterMode();
+        return;
+    }
+    let idx = 0;
+    const progress = $('progress');
+    const counter = $('counter');
+    const timerEl = $('timer');
+    const clamp = (n) => Math.max(0, Math.min(slides.length - 1, n));
+    // ---------- タイマー（表紙から進んだら開始、表紙に戻ったらリセット） ----------
+    let startedAt = null;
+    let ticking;
+    function syncTimer() {
+        if (idx === 0) {
+            startedAt = null;
+            clearInterval(ticking);
+            ticking = undefined;
+            timerEl.textContent = '';
+            return;
+        }
+        const t0 = (startedAt ?? (startedAt = Date.now()));
+        ticking ?? (ticking = window.setInterval(() => {
+            timerEl.textContent = fmt(Date.now() - t0);
+        }, 500));
+        timerEl.textContent = fmt(Date.now() - t0);
+    }
+    // ---------- 描画 ----------
+    function render() {
+        slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+        slides[idx].scrollTop = 0;
+        counter.textContent = idx + 1 + ' / ' + slides.length;
+        progress.style.width = ((idx + 1) / slides.length) * 100 + '%';
+        syncTimer();
+        broadcast();
+        netPublish();
+    }
+    function go(n) {
+        n = clamp(n);
+        if (n === idx)
+            return;
+        idx = n;
+        render();
+        history.replaceState(null, '', '#' + (idx + 1));
+    }
+    window.addEventListener('hashchange', () => {
+        const n = parseInt(location.hash.slice(1), 10);
+        if (n)
+            go(n - 1);
+    });
+    // ---------- 発表者ビュー（別ウィンドウ）との同期 ----------
+    let presenterWin = null;
+    function openPresenter() {
+        if (presenterWin && !presenterWin.closed) {
+            presenterWin.focus();
+            return;
+        }
+        presenterWin = window.open(location.href, 'ippon-presenter', 'width=1024,height=700');
+    }
+    function broadcast() {
+        if (presenterWin && !presenterWin.closed)
+            presenterWin.postMessage({ ippon: 'state', idx, total: slides.length, startedAt }, '*');
+    }
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || typeof m !== 'object')
+            return;
+        if (m.ippon === 'hello')
+            broadcast();
+        else if (m.ippon === 'go' && typeof m.n === 'number')
+            go(m.n);
+    });
+    // ---------- serve（スマホリモコン：SSE で受信、/cmd へ state 送信） ----------
+    function netPublish() {
+        if (!serveCfg)
+            return;
+        const running = startedAt != null;
+        fetch('/cmd?t=' + encodeURIComponent(serveCfg.token), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                type: 'state',
+                idx,
+                total: slides.length,
+                elapsed: running ? Date.now() - startedAt : 0,
+                running,
+            }),
+        }).catch(() => { });
+    }
+    function resetTimer() {
+        startedAt = idx === 0 ? null : Date.now();
+        syncTimer();
+        netPublish();
+    }
+    function initServe() {
+        if (!serveCfg)
+            return;
+        const es = new EventSource('/events?t=' + encodeURIComponent(serveCfg.token));
+        es.onmessage = (e) => {
+            let m;
+            try {
+                m = JSON.parse(e.data);
+            }
+            catch {
+                return;
+            }
+            if (m.type === 'go' && typeof m.n === 'number')
+                go(m.n);
+            else if (m.type === 'timer' && m.action === 'reset')
+                resetTimer();
+        };
+    }
+    // QR を全画面で出す（r キー）。スマホのカメラで読めばリモコンになる
+    let qrOverlay = null;
+    function toggleQr() {
+        if (!serveCfg)
+            return;
+        if (qrOverlay) {
+            qrOverlay.remove();
+            qrOverlay = null;
+            return;
+        }
+        const ov = div('');
+        ov.style.cssText =
+            'position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(0,0,0,.88);cursor:pointer';
+        const box = div('');
+        box.style.cssText = 'background:#fff;padding:16px;border-radius:12px;width:min(60vmin,360px)';
+        box.innerHTML = serveCfg.qr;
+        const svg = box.querySelector('svg');
+        if (svg)
+            svg.setAttribute('style', 'width:100%;height:auto;display:block');
+        const url = div('');
+        url.style.cssText =
+            'color:#fff;font-family:system-ui,sans-serif;font-size:1rem;word-break:break-all;max-width:80vw;text-align:center';
+        url.textContent = serveCfg.remoteUrl;
+        const hint = div('');
+        hint.style.cssText = 'color:#aaa;font-family:system-ui,sans-serif;font-size:.85rem';
+        hint.textContent = 'スマホのカメラで読み取るとリモコンになります（同じ Wi-Fi に接続）';
+        ov.appendChild(box);
+        ov.appendChild(url);
+        ov.appendChild(hint);
+        ov.addEventListener('click', () => toggleQr());
+        document.body.appendChild(ov);
+        qrOverlay = ov;
+    }
+    const overview = $('overview');
+    let ovItems = null;
+    let ovOpen = false;
+    const THUMB = 240;
+    function buildOverview() {
+        return slides.map((s, i) => {
+            const item = div('ov-item');
+            const frame = div('ov-frame');
+            const scale = div('ov-scale');
+            const clone = s.cloneNode(true);
+            clone.classList.remove('active');
+            scale.appendChild(clone);
+            frame.appendChild(scale);
+            const num = div('ov-num');
+            num.textContent = String(i + 1);
+            item.appendChild(frame);
+            item.appendChild(num);
+            item.addEventListener('click', () => {
+                idx = i;
+                closeOverview();
+                render();
+                history.replaceState(null, '', '#' + (idx + 1));
+            });
+            overview.appendChild(item);
+            return { item, frame, scale };
+        });
+    }
+    function layoutOverview(items) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const k = THUMB / w;
+        for (const t of items) {
+            t.frame.style.width = THUMB + 'px';
+            t.frame.style.height = h * k + 'px';
+            t.scale.style.width = w + 'px';
+            t.scale.style.height = h + 'px';
+            t.scale.style.transform = 'scale(' + k + ')';
+        }
+    }
+    function openOverview() {
+        const items = (ovItems ?? (ovItems = buildOverview()));
+        layoutOverview(items);
+        items.forEach((t, i) => t.item.classList.toggle('current', i === idx));
+        ovOpen = true;
+        document.body.classList.add('overview');
+        items[idx].item.scrollIntoView({ block: 'center' });
+    }
+    function closeOverview() {
+        ovOpen = false;
+        document.body.classList.remove('overview');
+    }
+    window.addEventListener('resize', () => {
+        if (ovOpen && ovItems)
+            layoutOverview(ovItems);
+    });
+    // ---------- 入力 ----------
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey)
+            return;
+        if (zoomEl) {
+            if (e.key === 'Escape')
+                closeZoom();
+            return;
+        }
+        if (ovOpen) {
+            if (e.key === 'Escape' || e.key === 'o')
+                closeOverview();
+            return;
+        }
+        if (qrOverlay) {
+            if (e.key === 'Escape' || e.key === 'r')
+                toggleQr();
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowRight':
+            case 'PageDown':
+            case ' ':
+                e.preventDefault();
+                go(idx + 1);
+                break;
+            case 'ArrowLeft':
+            case 'PageUp':
+                e.preventDefault();
+                go(idx - 1);
+                break;
+            case 'Home':
+                go(0);
+                break;
+            case 'End':
+                go(slides.length - 1);
+                break;
+            case 'f':
+                if (document.fullscreenElement)
+                    document.exitFullscreen();
+                else
+                    document.documentElement.requestFullscreen();
+                break;
+            case 'o':
+                openOverview();
+                break;
+            case 'p':
+                openPresenter();
+                break;
+            case 'r':
+                toggleQr();
+                break;
+            case 'Escape':
+                if (!document.fullscreenElement)
+                    openOverview();
+                break;
+        }
+    });
+    // 画面の右 3 割で次へ、左 3 割で前へ（リンクと文字選択は邪魔しない）
+    const deck = $('deck');
+    deck.addEventListener('click', (e) => {
+        if (e.target instanceof Element && e.target.closest('a, button'))
+            return;
+        if (String(window.getSelection() || ''))
+            return;
+        const x = e.clientX / window.innerWidth;
+        if (x > 0.7)
+            go(idx + 1);
+        else if (x < 0.3)
+            go(idx - 1);
+    });
+    // 横スワイプ
+    let touch = null;
+    deck.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        touch = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+    }, { passive: true });
+    deck.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        if (!touch || !t)
+            return;
+        const dx = t.clientX - touch.x;
+        const dy = t.clientY - touch.y;
+        touch = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            go(dx < 0 ? idx + 1 : idx - 1);
+    }, { passive: true });
+    // コードブロックの右上にコピーボタンを付ける
+    slides.forEach((s) => {
+        s.querySelectorAll('pre').forEach((pre) => {
+            const code = pre.querySelector('code') || pre;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.addEventListener('click', () => {
+                const text = code.innerText;
+                const done = () => {
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    window.setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 1200);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done, done);
+                }
+                else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                    }
+                    catch { }
+                    document.body.removeChild(ta);
+                    done();
+                }
+            });
+            pre.appendChild(btn);
+            // クリックでコードを拡大（文字選択中とコピーボタンは邪魔しない）
+            pre.addEventListener('click', (e) => {
+                if (e.target instanceof Element && e.target.closest('.copy-btn'))
+                    return;
+                if (String(window.getSelection() || ''))
+                    return;
+                e.stopPropagation();
+                openCodeZoom(pre);
+            });
+        });
+        // 画像はクリックで拡大
+        s.querySelectorAll('img').forEach((img) => {
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openImageZoom(img);
+            });
+        });
+    });
+    // ::http:: の「再送信」ボタン：ブラウザからライブで叩く（CORS が通る相手のみ）。
+    // 失敗したらビルド時のスナップショットに戻す。
+    function escText(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function hlJson(src) {
+        const re = /"(?:[^"\\]|\\.)*"|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?/g;
+        let out = '';
+        let last = 0;
+        let m;
+        while ((m = re.exec(src))) {
+            out += escText(src.slice(last, m.index));
+            const tok = m[0];
+            last = m.index + tok.length;
+            // 文字列で直後が : ならキー（hl-t）、それ以外の文字列は hl-s、数値と true/false/null は hl-n
+            const cls = tok[0] === '"' ? (/^\s*:/.test(src.slice(last)) ? 'hl-t' : 'hl-s') : 'hl-n';
+            out += '<span class="' + cls + '">' + escText(tok) + '</span>';
+        }
+        return out + escText(src.slice(last));
+    }
+    function httpStatusClass(status) {
+        return 's-' + (status < 200 ? 1 : status < 300 ? 2 : status < 400 ? 3 : status < 500 ? 4 : 5) + 'xx';
+    }
+    function httpResultHtml(r, text, ms) {
+        let count = 0;
+        let rows = '';
+        r.headers.forEach((v, k) => {
+            count++;
+            rows += '<tr><td class="http-hk">' + escText(k) + '</td><td class="http-hv">' + escText(v) + '</td></tr>';
+        });
+        const ct = r.headers.get('content-type') || '';
+        let body;
+        if (/\bjson\b/i.test(ct) || /^\s*[[{]/.test(text)) {
+            try {
+                body = '<pre data-lang="json"><code>' + hlJson(JSON.stringify(JSON.parse(text), null, 2)) + '</code></pre>';
+            }
+            catch {
+                body = '<pre><code>' + escText(text) + '</code></pre>';
+            }
+        }
+        else {
+            body = '<pre><code>' + escText(text) + '</code></pre>';
+        }
+        return ('<div class="http-status">' +
+            '<span class="http-code ' + httpStatusClass(r.status) + '">' + r.status + '</span>' +
+            '<span class="http-statustext">' + escText(r.statusText) + '</span>' +
+            '<span class="http-time">' + ms + ' ms</span></div>' +
+            '<details class="http-headers"><summary>ヘッダー（' + count + '）</summary><table>' + rows + '</table></details>' +
+            body);
+    }
+    slides.forEach((s) => {
+        s.querySelectorAll('.http').forEach((box) => {
+            const btn = box.querySelector('.http-send');
+            const resEl = box.querySelector('.http-res');
+            if (!btn || !resEl)
+                return;
+            const baked = resEl.innerHTML; // ビルド時スナップショット
+            const method = box.dataset.method || 'GET';
+            const url = box.dataset.url || '';
+            btn.addEventListener('click', async () => {
+                if (!url)
+                    return;
+                const label = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = '送信中…';
+                const t0 = performance.now();
+                try {
+                    const r = await fetch(url, { method });
+                    const text = await r.text();
+                    resEl.dataset.state = 'ok';
+                    resEl.innerHTML = httpResultHtml(r, text, Math.round(performance.now() - t0));
+                }
+                catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    resEl.dataset.state = 'error';
+                    resEl.innerHTML =
+                        '<div class="http-status"><span class="http-errmsg">✗ ' + escText(msg) + '</span></div>' +
+                            '<p class="http-msg">ブラウザからは CORS で取得できないことがあります。ビルド時のスナップショットを表示します。</p>' +
+                            baked;
+                }
+                finally {
+                    btn.disabled = false;
+                    btn.textContent = label;
+                }
+            });
+        });
+    });
+    const start = parseInt(location.hash.slice(1), 10);
+    if (start)
+        idx = clamp(start - 1);
+    render();
+    if (serveCfg) {
+        const hint = $('hint');
+        if (hint)
+            hint.textContent += ' ・ r リモコン';
+        initServe();
+    }
+    // ---------- 発表者ビュー本体（別ウィンドウで動く） ----------
+    function presenterMode() {
+        document.body.classList.add('presenter');
+        const root = $('presenter');
+        const left = div('pv-left');
+        const right = div('pv-right');
+        root.appendChild(left);
+        root.appendChild(right);
+        const makeSlot = (labelText) => {
+            const slot = div('pv-slot');
+            const label = div('pv-label');
+            label.textContent = labelText;
+            const frame = div('pv-frame');
+            const scale = div('pv-scale');
+            frame.appendChild(scale);
+            slot.appendChild(label);
+            slot.appendChild(frame);
+            left.appendChild(slot);
+            return { label, frame, scale };
+        };
+        const cur = makeSlot('現在');
+        const nxt = makeSlot('次へ');
+        const clock = div('pv-clock');
+        const elapsedEl = div('pv-elapsed');
+        const wallEl = div('pv-wall');
+        clock.appendChild(elapsedEl);
+        clock.appendChild(wallEl);
+        const controls = div('pv-controls');
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀';
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '▶';
+        controls.appendChild(prevBtn);
+        controls.appendChild(nextBtn);
+        const notesEl = div('pv-notes');
+        right.appendChild(clock);
+        right.appendChild(controls);
+        right.appendChild(notesEl);
+        // serve のときはリモコン用 QR を手元に出す
+        if (serveCfg) {
+            const qr = div('');
+            qr.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px';
+            const img = div('');
+            img.style.cssText = 'background:#fff;padding:8px;border-radius:8px;width:120px;flex:none';
+            img.innerHTML = serveCfg.qr;
+            const s = img.querySelector('svg');
+            if (s)
+                s.setAttribute('style', 'width:100%;height:auto;display:block');
+            const cap = div('');
+            cap.style.cssText = 'font-size:.8rem;color:#9a9aa0;word-break:break-all';
+            cap.textContent = 'スマホで読み取るとリモコン: ' + serveCfg.remoteUrl;
+            qr.appendChild(img);
+            qr.appendChild(cap);
+            right.appendChild(qr);
+        }
+        let curIdx = 0;
+        let total = slides.length;
+        let startedAt = null;
+        // 発表者ノートは <script id="notes"> の JSON から読む（スライド本体には無い）
+        let notesData = [];
+        try {
+            const el = document.getElementById('notes');
+            if (el && el.textContent)
+                notesData = JSON.parse(el.textContent);
+        }
+        catch { }
+        function fitPreview(frame, scale) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const fw = frame.clientWidth;
+            const k = fw / w;
+            frame.style.height = fw * (h / w) + 'px';
+            scale.style.width = w + 'px';
+            scale.style.height = h + 'px';
+            scale.style.transform = 'scale(' + k + ')';
+        }
+        function setPreview(frame, scale, i) {
+            scale.textContent = '';
+            const s = slides[i];
+            if (s)
+                scale.appendChild(s.cloneNode(true));
+            fitPreview(frame, scale);
+        }
+        function draw() {
+            cur.label.textContent = '現在  ' + (curIdx + 1) + ' / ' + total;
+            setPreview(cur.frame, cur.scale, curIdx);
+            const hasNext = curIdx + 1 < total;
+            nxt.label.textContent = hasNext ? '次へ  ' + (curIdx + 2) + ' / ' + total : 'おわり';
+            setPreview(nxt.frame, nxt.scale, hasNext ? curIdx + 1 : -1);
+            const note = notesData[curIdx];
+            notesEl.innerHTML = note ? note : '<p class="pv-empty">（ノートなし）</p>';
+        }
+        function tick() {
+            elapsedEl.textContent = startedAt == null ? '0:00' : fmt(Date.now() - startedAt);
+            wallEl.textContent = new Date().toLocaleTimeString();
+        }
+        const send = (n) => {
+            if (window.opener)
+                window.opener.postMessage({ ippon: 'go', n }, '*');
+        };
+        prevBtn.addEventListener('click', () => send(curIdx - 1));
+        nextBtn.addEventListener('click', () => send(curIdx + 1));
+        window.addEventListener('message', (e) => {
+            const m = e.data;
+            if (!m || m.ippon !== 'state')
+                return;
+            if (typeof m.idx === 'number')
+                curIdx = m.idx;
+            if (typeof m.total === 'number')
+                total = m.total;
+            startedAt = m.startedAt ?? null;
+            draw();
+            tick();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.metaKey || e.ctrlKey || e.altKey)
+                return;
+            switch (e.key) {
+                case 'ArrowRight':
+                case 'PageDown':
+                case ' ':
+                    e.preventDefault();
+                    send(curIdx + 1);
+                    break;
+                case 'ArrowLeft':
+                case 'PageUp':
+                    e.preventDefault();
+                    send(curIdx - 1);
+                    break;
+                case 'Home':
+                    send(0);
+                    break;
+                case 'End':
+                    send(total - 1);
+                    break;
+                case 'p':
+                case 'Escape':
+                    window.close();
+                    break;
+            }
+        });
+        window.addEventListener('resize', () => {
+            fitPreview(cur.frame, cur.scale);
+            fitPreview(nxt.frame, nxt.scale);
+        });
+        window.setInterval(tick, 500);
+        // 本番ウィンドウに現在の状態を要求する
+        if (window.opener)
+            window.opener.postMessage({ ippon: 'hello' }, '*');
+        draw();
+        tick();
+    }
+})();
+</script>
+</body>
+</html>

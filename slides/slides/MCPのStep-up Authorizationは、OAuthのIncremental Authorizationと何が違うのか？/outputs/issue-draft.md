@@ -2,6 +2,8 @@
 
 **Title:** `A list filtered down to nothing by permissions never raises a scope challenge`
 
+**立てた Issue:** https://github.com/cloudflare/mcp/issues/302
+
 ---
 
 Cloudflare filters list endpoints by the credential's permissions rather than refusing them. A connection that holds none of the scopes an endpoint accepts gets `200` and an empty `result`, so nothing is refused, no challenge is raised, and the agent reports that the account is empty.
@@ -50,10 +52,12 @@ The catalog is read only once the first two hold, so unaffected requests don't p
 
 I deliberately kept this to a message rather than a challenge, since turning a `200` into a `403` would break calls that work today. If you'd rather it raise a real challenge for clients in `scopeChallenge: 'tool'` mode, that seems like a natural follow-up.
 
-### Happy to send it as a PR
+### A PR is on the way
 
 I have this implemented against `main` — 5 files, +173/−15, with unit tests for the split-out helper and three end-to-end tests (flagged / holds the scope / list has results). `npm run check` passes: 562 tests.
 
 Branch: https://github.com/tanahiro2010/cloudflare-mcp/tree/fix/empty-list-unheld-scope
 
-Would a PR be welcome, or would you rather handle this differently? I'm happy to adjust the shape before opening one.
+I'm opening it as a PR so there's something concrete to react to, rather than leaving it described here. Nothing about the shape is settled, though: if you'd rather it raise a real challenge, sit behind a flag, live somewhere else in the request path, or not happen at all, say so and I'll rework it or close it.
+
+
