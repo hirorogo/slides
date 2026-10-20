@@ -1,6 +1,6 @@
 ---
-published: false
-summary: Step-upで新しいのは認可ではなく、「足りない」を伝える経路
+published: true
+summary: Cloudflare が Step-up Authorization に対応したので色々検証してみる
 ---
 
 # MCPのStep-up Authorizationは、OAuthのIncremental Authorizationと何が違うのか？
