@@ -105,12 +105,27 @@ DPoP はそこに効く、はずでした。
 
 ---
 
-## DPoP とは
+::center::
 
-- **D**emonstrating **P**roof-of-**P**ossession
-- 鍵ペアを作って、秘密鍵を自分だけが持つ
-- リクエストごとに署名した JWT を添える
-- サーバーはトークンを**公開鍵に紐づけて**発行する
+**D**emonstrating **P**roof-of-**P**ossession
+
+---
+
+::center::
+
+鍵ペアを作って、秘密鍵は自分だけが持つ
+
+---
+
+::center::
+
+リクエストごとに、署名した JWT を添える
+
+---
+
+::center::
+
+サーバーはトークンを **公開鍵に紐づけて** 発行する
 
 ---
 
@@ -120,7 +135,7 @@ DPoP はそこに効く、はずでした。
 
 ---
 
-::center size=2 bg=blue::
+::center size=2::
 
 **RFC 9449**
 
@@ -146,14 +161,13 @@ DPoP はそこに効く、はずでした。
 
 ---
 
-## 今日やったこと
+::center::
 
-- 公式ドキュメント
-- RFC 9449
-- 自分の計測
-- 実際のトークン交換
+公式ドキュメント・RFC・自分の計測・実際のトークン交換
 
-::right::
+---
+
+## 検証環境
 
 ```text
 Node.js  v24.22.0
@@ -161,6 +175,8 @@ jose     6.2.12
 hono     4.13.13
 Apple M4 (arm64)
 ```
+
+-# 専用のテストクライアントとテストアカウント。本番ユーザーには触っていない
 
 ::note::
 
@@ -394,9 +410,9 @@ Refresh のときは、普通に乱数
 
 ---
 
-::center size=2 bg=red::
+::center size=1.5 bg=#ca8a04::
 
-**ここからが本題**
+ここからが本題
 
 ---
 
@@ -424,6 +440,12 @@ Refresh のときは、普通に乱数
 ここで止まりました。
 
 公式が配っているサンプルの proof が、署名検証を通らない。
+
+---
+
+::center size=1.5 bg=red::
+
+地雷
 
 ---
 
@@ -456,7 +478,7 @@ DER のまま貼られていた
 
 ---
 
-::center size=2 bg=orange::
+::center size=2::
 
 **Google 自身が「やるな」と書いている**
 
@@ -617,7 +639,7 @@ web-server doc の方のサンプルです。
 
 ---
 
-::center size=2 bg=red::
+::center size=2.5::
 
 **6回とも通った**
 
@@ -825,7 +847,7 @@ Refresh Token が期限切れだと、proof がどれだけ壊れていても `i
 
 ---
 
-::center size=2 bg=black::
+::center size=2.5::
 
 **Won't Fix**
 
@@ -917,14 +939,19 @@ proof を取れる立場なら、Refresh Token も取れる
 
 ---
 
-## これから実装する人へ
+## 実装で踏む
 
 - `jti` は**フローで別ルール**
 - 初回 Refresh は**必ず1回落ちる**
+- まず **DPoP なしで通す**
+
+---
+
+## 数字で踏む
+
 - `htm`/`htu` 不一致は `invalid_request`
 - `iat` は過去3600秒・**未来10秒**
 - Node では `extractable: false` にできない
-- **まず DPoP なしで通す**
 
 ::note::
 
