@@ -14,6 +14,7 @@ Cloudflare API MCP Server が Step-up Authorization に対応したという発�
 - **既存 Scope を覚えているのはクライアント。** Cloudflare の認可サーバーは、baseline 以外の付与済み Scope を次の認可に引き継ぎません。Google の `include_granted_scopes` とは逆向きです
 - **ところが Cloudflare のサーバーも覚えていました。** 403 チャレンジの `scope` が、そのトークンの付与 Scope に追随します。これは MCP 2026-07-28 が削除した方のやり方です
 - **経路は全部の操作につながっていません。** 権限が無いとき、403 を返す操作と、200 と空配列を返す操作が同じサーバーに同居しています
+  - この 3 つ目は Cloudflare に報告して、**その日のうちに直りました**。経緯は §13 に書いています
 
 同じ API を、Scope を付与する前と後で叩いた結果です。
 
@@ -427,6 +428,60 @@ docs はライブラリについて正確です。食い違っているのは ho
 
 MCP サーバーを書く側として持ち帰ったのは、この一点です。**権限が足りないときに、黙って空を返さない。** 403 とチャレンジを返せば、クライアントがユーザーに聞きにいけます。経路は仕様が用意してくれています。つながっていない操作を作るかどうかは、サーバーを書く側の判断です。
 
+## 13. 追記：報告したら、その日のうちに直った（2026-10-21）
+
+記事を公開したあと、§9 の件を `cloudflare/mcp` に [Issue #302](https://github.com/cloudflare/mcp/issues/302) として出しました。タイトルはそのまま「A list filtered down to nothing by permissions never raises a scope challenge」です。
+
+10 分後に自分でも [PR #304](https://github.com/cloudflare/mcp/pull/304) を投げました。その **2 分後**に、Cloudflare 側から [PR #305](https://github.com/cloudflare/mcp/pull/305) が上がります。
+
+| 時刻（UTC） | |
+| --- | --- |
+| 14:41 | Issue #302 |
+| 14:51 | PR #304（自分） |
+| **14:53** | **PR #305（Cloudflare）** |
+| 22:11 | #305 マージ |
+
+後出しで書き直されたのではなく、ほぼ同時に上がっています。マージされたのは #305 の方でした。
+
+> Fixes #302, building on @tanahiro2010's report and branch.
+
+マージされたコミットには `Co-authored-by` で名前が入っています。報告が通って直る、までは想像していましたが、自分のブランチの上に書かれて共著者として入るのは予想外でした。
+
+ひとつの目標、学生中にCloudflareの何らかのリポジトリのコントリビューターになるという目標、あっさり達成です。
+ほな次はメンテナー目指すか...。
+
+### 何が変わったのか
+
+**権限が理由で空になったリストは、拒否として扱われます。** 200 と空配列を返していた `GET /zones` は、`403` と `WWW-Authenticate` のチャレンジを返すようになりました。`execute` でも endpoint tools でも forge tools でも同じです。
+
+この記事で「3 通りの失敗の仕方がある」と書いた表のうち、2 行目が 1 行目に合流したことになります。
+
+| 操作 | 公開時点 | #305 以降 |
+| --- | --- | --- |
+| R2 / KV / D1 | 403 + チャレンジ | 変わらず |
+| ゾーン一覧 / Workers スクリプト一覧 | **200 + 空配列** | **403 + チャレンジ** |
+| `/user/tokens` | 文字列で 403 | 変わらず |
+
+### 実装の勘どころ
+
+読んでいて良くできていると思ったのは、**空のリストを無条件に疑っていない**ところです。
+
+`src/api-permissions.ts` の `authorize()` が、1 回の判断で `granted` / `missing` / `unreachable` / `direct` / `unlisted` のどれかを返します。`src/api-refusals.ts` の `refusalFor()` は、そのうち `missing` のときだけ空リストを拒否に変えます。行が 1 件でも入っているリストは疑いません。
+
+つまり「本当に 0 件のアカウント」は巻き込まれません。巻き込まれるのは、接続がそのエンドポイントの受け付ける Scope をひとつも持っていないときだけです。アカウントが本当に空なら、Scope を 1 度聞かれて終わります。
+
+拒否の本文も工夫されていて、**Cloudflare が 403 を返したとは書きません。** 200 と空のリストが返ってきた、と書きます。嘘をつかずにチャレンジだけ足す形です。
+
+もう 1 つ、§6 で触れた `x-api-token-group` の名前のズレも直っていました。`GET /zones` の `Zone Zone Read` のような、カタログの Scope 名と合っていないものに別名が張られています。これが無いと、拒否するときに「このエンドポイントを覆う OAuth Scope はありません」と誤って案内してしまう。実際、報告前の `GET /zones` はそう答えていました。
+
+検証は 549 エンドポイント分のレスポンスを記録して判定に通し直す形で行われています。`tests/filtered-lists.test.ts` が 292 行足されていて、これは `main` では落ちます。
+
+### この記事の立場
+
+§9 と §12 は、公開時点の挙動の記録として残します。**いま `mcp.cloudflare.com` を叩いても、ゾーン一覧は空配列では返りません。**
+
+ただ、結論そのものは変わっていません。権限不足を黙って空で返すか、403 とチャレンジで返すかは、**MCP サーバーを書く側の判断**です。仕様は経路を用意しているだけで、つなぐかどうかは実装が決めます。Cloudflare はつなぎ直しました。
+
 ### 参考
 
 - [Cloudflare API MCP server now supports step-up authorization](https://developers.cloudflare.com/changelog/post/2026-10-19-cloudflare-mcp-step-up/) — 今回の発端。末尾に `/index.md` を付けると Markdown で読める
@@ -439,3 +494,5 @@ MCP サーバーを書く側として持ち帰ったのは、この一点です�
 - [Google — Using OAuth 2.0 for Web Server Applications](https://developers.google.com/identity/protocols/oauth2/web-server) — `include_granted_scopes` と combined authorization
 - [RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1) — `insufficient_scope` の定義
 - [RFC 9470](https://www.rfc-editor.org/rfc/rfc9470) — こちらは Step-up **Authentication**。別物
+- [cloudflare/mcp Issue #302](https://github.com/cloudflare/mcp/issues/302) — §9 の報告。公開後に出したもの
+- [cloudflare/mcp PR #305](https://github.com/cloudflare/mcp/pull/305) — マージされた修正。`authorize()` と `refusalFor()` の設計はここが読みどころ
