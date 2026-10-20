@@ -1,0 +1,16 @@
+# ⚠️ アクセストークン / リフレッシュトークン / client_secret が入る。絶対にコミットしない
+.env
+
+# 生ログ・トークン・DCRのクライアント情報・実験の状態
+data/
+
+# 公開していない調査資料
+private/
+
+node_modules/
+
+# ローカル専用スクリプトランナー
+/run
+
+# 検証のために clone した cloudflare/mcp の fork（別リポジトリ）
+cloudflare-mcp/

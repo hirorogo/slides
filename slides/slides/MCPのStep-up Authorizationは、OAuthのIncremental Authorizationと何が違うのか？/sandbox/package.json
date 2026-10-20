@@ -1,0 +1,14 @@
+{
+  "name": "mcp-stepup-sandbox",
+  "private": true,
+  "type": "module",
+  "description": "MCP Step-up Authorization (403 insufficient_scope) を Cloudflare API MCP Server で観測する検証用クライアント",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

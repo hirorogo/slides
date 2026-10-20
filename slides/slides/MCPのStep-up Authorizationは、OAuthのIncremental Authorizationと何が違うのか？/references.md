@@ -10,6 +10,9 @@
 
 > PRD.md のリンクは `utm_source=chatgpt.com` 付き＝ChatGPT経由の収集。
 > **全URLを実際に叩いて実在を確認済み。** 捏造リンクは無かった。
+>
+> ⚠️ **2026-10-20 追記：実機検証（`sandbox/`）を実施した。判定が変わった行がある。**
+> 最新の判定は `claims.md` を見ること。このファイルは「資料に何が書いてあるか」の記録。
 
 ---
 
@@ -28,8 +31,8 @@
 | 9 | Cloudflareの401チャレンジは `scope="user:read account:read"` | ✅ **自分で計測** | 実リクエスト |
 | 10 | TypeScript SDK 1.x は403でScopeを**上書き**、2.x は**和集合** | ✅ **自分で計測** | 公開tarballのコードを確認 |
 | 11 | 手元のMCP Clientが和集合を計算している（Claude Code 2.1.304） | ✅ **自分で計測** | インストール済みバイナリのコードを確認 |
-| 12 | Cloudflare API MCP Serverは `search()` / `execute()` / `docs()` | ✅ 確認 | 公式docs |
-| 13 | 「`Minimal` を選ぶと最小Scopeで接続」 | ⬜ 未確認 | Changelogに記述あり。画面未確認 |
+| 12 | Cloudflare API MCP Serverは `search()` / `execute()` / `docs()` | ⚠️ **実機は4本** | 実測。`whoami` が増えている（公式docs未記載） |
+| 13 | 「`Minimal` を選ぶと最小Scopeで接続」 | ✅ 確認 | 実機（2026-10-20）。同意は2画面で、1枚目が `Minimal` を含むプリセット選択 |
 
 ---
 
@@ -531,8 +534,12 @@ if (l) se(this.serverName, `Step-up pending (${FC("scope", h)}), omitting refres
 
 ## 探したが取れなかったもの
 
-- **Cloudflare API MCP ServerのScope一覧（ツール別・エンドポイント別）** — 公開ドキュメント上に無い。
-  AS metadataの384個のカタログは取れるが、「どの操作にどれが要るか」の対応表は無い。実測するしかない。
+- ~~**Cloudflare API MCP ServerのScope一覧（ツール別・エンドポイント別）** — 公開ドキュメント上に無い。~~
+  **❌ 訂正（2026-10-20 実機検証で判明）。** `search()` が返す OpenAPI spec の各 operation に
+  **`x-api-token-group`** が入っている。説明文いわく
+  > "API token permissions the endpoint accepts (any one); **OAuth scopes have the same names**"
+
+  例: `GET /zones` → `["Zone Zone Read"]`。つまり対応表はMCPサーバー自身から引ける。
 - **`Minimal` オプションの公式ドキュメント上の説明** — Changelog本文以外に見当たらない。
   [Edit optional permissions](https://developers.cloudflare.com/fundamentals/oauth/authorizing-an-application/#edit-optional-permissions) は8月のoptional scopes側の説明。
 - [`agents/model-context-protocol/protocol/authorization/`](https://developers.cloudflare.com/agents/model-context-protocol/protocol/authorization/) は
