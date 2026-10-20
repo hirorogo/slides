@@ -186,20 +186,7 @@ function computeScopeUnion(...scopes) {
 
 同意は 2 画面に分かれています。最初に `Minimal` を含むプリセットを選ぶ画面が出て、選ぶと権限の内訳に移ります。Changelog の `choose **Minimal** on the consent page` は、1 枚目の方の話です。
 
-2 枚目がこれです。
-
-```
-Permissions this app will be granted              4 total permissions
-
-REQUIRED
-  User Read        Background Access
-
-ADDITIONAL ACCESS                                 Edit Permissions
-  Developer Platform   1 permission   ・D1 Read
-  Account & Billing    1 permission   ・Account Read
-```
-
-REQUIRED と ADDITIONAL ACCESS の 2 段で、後者は Edit Permissions から外せます。8 月の optional scopes が効いている画面です。
+2 枚目は REQUIRED と ADDITIONAL ACCESS の 2 段です。前者は外せません。後者は Edit Permissions から個別にチェックを外せます。8 月の optional scopes が効いている画面です。実物は §7 に貼ります。
 
 要求した Scope は `user:read account:read` の 2 個でしたが、付与されたのは 3 個でした。
 
@@ -247,6 +234,8 @@ WWW-Authenticate: Bearer realm="OAuth", error="insufficient_scope",
 付与 : d1.read user:read offline_access account:read
 ```
 
+![scope=d1.read だけを要求したときの同意画面。ADDITIONAL ACCESS に D1 Read と Account Read が並び、4 total permissions](images/consent-d1-only.png)
+
 要求していない 3 つが残りました。これを見て「認可サーバーが過去の付与を保持している」と書きかけました。
 
 **間違いです。** 候補が 3 つあって、この観測では切り分けられません。
@@ -257,13 +246,19 @@ WWW-Authenticate: Bearer realm="OAuth", error="insufficient_scope",
 
 2 は自分で混ぜ込んだ交絡でした。対照を作ります。**過去の付与がゼロ**のクライアントを新規に登録し、登録時の `scope` も `d1.read` だけにして、同じ認可画面を出しました。
 
+![過去の付与がゼロのクライアントの同意画面。1 枚目とまったく同じ内容](images/consent-control.png)
+
 同意画面は完全に同一でした。4 permissions、REQUIRED に User Read と Background Access、ADDITIONAL ACCESS に D1 Read と Account Read。過去に一度も認可していないクライアントでも Account Read が出ます。
 
 つまり 3 で説明がつきます。**判定を取り下げました。**
 
 測り直しの設計はこうです。baseline でない `d1.read` を持った状態で、`workers-r2.read` だけを要求する。これなら既定値では説明がつきません。
 
-同意画面に `D1 Read` は出ませんでした。承認後の付与がこれです。
+同意画面に `D1 Read` は出ませんでした。直前に付与したばかりなのに、です。
+
+![scope=workers-r2.read だけを要求したときの同意画面。Developer Platform は Workers R2 Storage Read のみで、D1 Read が無い](images/consent-r2-only.png)
+
+承認後の付与がこれです。
 
 ```
 要求 : workers-r2.read
