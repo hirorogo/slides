@@ -1,10 +1,10 @@
 ---
 title: PHP2SHELLという悪夢の再来を検証してみる
-description: PHPの重大脆弱性2件を公式パッチ前に自分のラボで検証する
+description: PHPの重大脆弱性2件を、公開PoC・ソース・公式パッチで検証する
 author: tanahiro2010
 date: 2026-10-21
 slug: poc-php2shell
-published: true
+published: false
 ---
 
 ::title::
@@ -13,7 +13,7 @@ published: true
 
 tanahiro2010
 
-2026-10-21 ・ 公式パッチ公開の前に
+2026-10-21 ・ 予告から公式パッチまで
 
 ---
 
@@ -45,12 +45,14 @@ tanahiro2010
 
 ---
 
-## 公式が言っていないこと
+## 予告が言っていないこと
 
 - CVE番号
 - 「RCEである」という分類
 - 「session.upload_progress が原因」という特定
 - 影響バージョンも修正版番号も、まだ何も無い
+
+-# 10月20日の予告時点
 
 ---
 
@@ -90,7 +92,7 @@ PHP2SHELL
 
 ::center::
 
-どれも公式ではない
+どれも、予告時点では公式ではない
 
 ---
 
@@ -110,12 +112,13 @@ PHP2SHELL
 
 ---
 
-## 4つの層に分ける
+## 5つの層に分ける
 
 - 公式が確定させたこと
 - 研究者・リークの主張
 - 公開PoCの主張
 - 自分のラボの検証
+- 公式パッチの答え合わせ
 
 ---
 
@@ -342,23 +345,74 @@ PoC自身も認めている
 
 - enabled=Off → primitiveは止まる / 一時ファイルは残る
 - use_strict_mode=1 → SID固定は防ぐ / Set-Cookie追従は残る
-- パッチ → コアの原因 / アプリ側LFIは残る
+- パッチ → OOMと状態破棄漏れ / アプリ側LFIは残る
 
 ---
 
-## パッチ後に確定すること
+::center size=1.5 bg=white::
 
-- 公式のCVE番号・影響バージョン・原因・攻撃条件
-- 修正コミットのdiffがどこを直したか
-- 公開PoCの主張が正しかったか
+答え合わせ
+
+---
+
+## パッチで確定したこと
+
+- CVE-2026-109618 → **OOM corruption**
+- CVE-2026-109619 → **stale global state**
+- 修正版は **8.5.12 / 8.4.27 / 8.3.36 / 8.2.35**
+- Session Upload Progress は 619 の consumer
+
+-# php.net/archive/2026
+
+---
+
+## 答え合わせ：原因
+
+- 公開PoC → 2回目のupdateでzvalが壊れる
+- 公式 → OOM時の状態破壊 / リクエストを跨ぐstale state
+- 単一リクエストのUAFではなかった
+
+-# GHSA-w8hw-w9fx-j79w / GHSA-6wmf-4rv5-p3rp
+
+---
+
+## 答え合わせ：修正
+
+- ext/session → RINIT前にsession globalsを初期化
+- upload progress中は `__PHP_Incomplete_Class` 固定
+- Zend → OOMの `longjmp` を廃止
+- multipart → ヘッダ保持とOOMチェックを制限
+
+-# php-src commit 31c0ea7d7f
+
+---
+
+## 8.5.12 で再実行
+
+- upload_progress の書き込みは動く（仕様）
+- 公開PoC 618/619 はクラッシュせず
+- 8.5.11 でもクラッシュしていない → 効果の根拠は差分側
+- multipart + LFI は **uid=33(www-data)**
+
+-# コア修正とアプリ側sinkは別レイヤー
+
+---
+
+## 予測の答え合わせ
+
+- 修正版番号 → **的中**
+- 公式はRCEと書いていない → リリースで**RCEと明言**
+- 原因はzval UAF → **外れ**
+- enabled=Off は不完全 → **的中**
 
 ---
 
 ## 持ち帰れること
 
 - アプリ層の安全性とランタイム層の安全性は別物
-- 自分のコードが1行も悪くなくても、届く前に壊れる
+- 公開PoCが間違っていても、CVEが無いとは限らない
 - 「設定で回避」「パッチで修正」「sinkの除去」を混同しない
+- 更新だけが完全な対策
 
 ---
 
@@ -367,9 +421,9 @@ PoC自身も認めている
 - 予告 → 中身が分からないまま先にリークが走った
 - 混線 → 公式9.2とwatchTowr10.0で数字が割れた
 - 機構 → アプリ実行前に動く書き込みprimitive
-- 検証 → コアのUAFはそのままでは再現せず
-- 鎖 → multipart primitive + アプリ側LFI は成立した
-- 対策 → 設定ひとつでは止まらない
+- 検証 → 公開PoCのコアUAFは再現せず、原因はOOMとstale state
+- 鎖 → multipart + LFI は 8.5.12 でも成立
+- 対策 → 更新だけが完全な対策。sinkは別途
 
 ---
 
@@ -387,17 +441,35 @@ One more thing
 
 ::center::
 
-23:00 JST、公式パッチが出る
+公式は、予告より早く出た
 
 ---
 
 ::center::
 
-そのとき、この結論を更新する
+公開PoCの説明は、間違っていた
 
 ---
 
 ::center::
 
-もし間違っていたら、隠さず撤回する
+それでも、CVEは実在した
+
+---
+
+::center::
+
+更新だけが完全な対策
+
+---
+
+::center::
+
+アプリ側LFIは、更新後も残る
+
+---
+
+::center::
+
+現物を見てから、結論を書く
 
