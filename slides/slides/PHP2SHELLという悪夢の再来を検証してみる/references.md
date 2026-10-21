@@ -157,6 +157,44 @@ curl -sL https://raw.githubusercontent.com/php/php-src/master/main/rfc1867.c \
 
 ---
 
+## 2026-10-21 17:50 JST 追記：ローカル検証の結果
+
+**判定: 公開 PoC の「コア UAF」は再現せず。一方、`session.upload_progress` + アプリ側 LFI の鎖は再現。**
+
+| 検証 | 結果 |
+| --- | --- |
+| 公開 PoC 618/619（8.4.4 ASAN, `USE_ZEND_ALLOC=0`） | ASAN レポートなし、`uid=` なし |
+| 同（8.5.4 ASAN / 5.6.40） | 同様に再現せず |
+| ASLR 無効 + 実 `zend_call_function` アドレス | 変化なし |
+| 毒 call アドレス `0x4141414141414141` | クラッシュせず（stale pointer 未使用の傍証） |
+| `cleanup=0` の LFI | `uid=33(www-data)` |
+| `cleanup=1`（既定）のレース | 3/3 で `uid=33(www-data)` |
+| `enabled=0` + `$_FILES['f']['tmp_name']` include | `uid=33(www-data)` |
+| `use_strict_mode=1` + 攻撃者指定 SID | 失敗 |
+| `use_strict_mode=1` + `Set-Cookie` 追従 | `uid=33(www-data)` |
+| mod_php (`php:8.4.4-apache`) | `uid=33(www-data)` |
+
+ソース計測で分かったこと:
+
+- `post_bytes_processed` が指すのは `progress->data` 内の zval で、更新中は生存している。
+- `track_init` / `zend_hash_update` が解放するのは、セッションからデコードされたコピー。
+- `update()` の `post` 読み取りは `php_session_initialize()` の前にあり、解放はその後。
+- `MULTIPART_EVENT_END` の `force=1` 更新は読み取りをスキップする。
+- 公開バンドルの `VALIDATION.md` 自身が「ASAN crash はローカルで未観測」と明記している。
+- ツイートの画像は機構説明のスクリーンショットで、`uid=` / ASAN の実行証跡ではない。
+- 配布 tarball はページ記載の SHA-256 と実ファイルが一致しない（`a29d…` vs `0c254d…`）。
+
+この追記の位置づけ:
+
+- 公開 PoC の「コア UAF」は**未再現**。公式 CVE が存在しないことの証明ではない。
+- 実際に成立するのは **multipart + アプリ側 LFI** の鎖。アプリ側 sink が必須。
+- 共有された影響調査レポートは**露出評価**であり、RCE の実行証明ではない。
+  固有のアプリ名・秘密情報のキー名は記事に載せない。
+- PRD §4.2 の「攻撃再現は対象外」は、ユーザーの依頼による**ローカル検証**として更新された。
+  記事本文ではターンキーな攻撃手順・ペイロードを貼らない。
+
+詳細: `sandbox/ANALYSIS.md`、`sandbox/report/REPORT.md`、`sandbox/attacker/README.md`
+
 ## 未確認・積み残し（パッチ公開＝23:00 JST 後にやる）
 
 - [ ] **公式リリース本文**（CVE 番号・影響バージョン・修正版番号・クラス）の確認 → 表 #3 #11 #12 を更新
