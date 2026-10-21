@@ -1,0 +1,44 @@
+asan_search:
+none
+php_error:
+[21-Oct-2026 08:36:51 UTC] PHP Warning:  include(/tmp/sess_fcgib67c2c6c66bb841947ec): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:36:51 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_fcgib67c2c6c66bb841947ec' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:36:51 UTC] PHP Warning:  include(/tmp/sess_fcgib67c2c6c66bb841947ec): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:36:51 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_fcgib67c2c6c66bb841947ec' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:09 UTC] PHP Warning:  include(/tmp/sess_fcgic7b5df043744b07e074a): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:09 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_fcgic7b5df043744b07e074a' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:10 UTC] PHP Warning:  include(/tmp/sess_fcgic7b5df043744b07e074a): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:10 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_fcgic7b5df043744b07e074a' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:10 UTC] PHP Warning:  include(/tmp/sess_fcgic7b5df043744b07e074a): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:10 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_fcgic7b5df043744b07e074a' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:55 UTC] PHP Warning:  include(/tmp/sess_lficed27658c99e1b60c6a3779d): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:37:55 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_lficed27658c99e1b60c6a3779d' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:38:15 UTC] PHP Warning:  include(/tmp/sess_lfie038f310ec12825181931b2c): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:38:15 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_lfie038f310ec12825181931b2c' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:38:25 UTC] PHP Warning:  include(/tmp/sess_lfiea25ceca1800b9ea2c21957a): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:38:25 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_lfiea25ceca1800b9ea2c21957a' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:47:13 UTC] PHP Warning:  include(/tmp/sess_lfida71f8d281556d58911ea86a): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:47:13 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_lfida71f8d281556d58911ea86a' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+[21-Oct-2026 08:49:24 UTC] PHP Warning:  include(/tmp/sess_lfi3df9e35fe4b4e7683585b9fc): Failed to open stream: No such file or directory in /web-lfi/index.php on line 4
+[21-Oct-2026 08:49:24 UTC] PHP Warning:  include(): Failed opening '/tmp/sess_lfi3df9e35fe4b4e7683585b9fc' for inclusion (include_path='.:') in /web-lfi/index.php on line 4
+fpm_error:
+[21-Oct-2026 08:46:33] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:46:33] NOTICE: ready to handle connections
+[21-Oct-2026 08:46:38] NOTICE: Terminating ...
+[21-Oct-2026 08:46:38] NOTICE: Terminating ...
+[21-Oct-2026 08:46:42] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:46:42] NOTICE: ready to handle connections
+[21-Oct-2026 08:46:42] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:46:42] NOTICE: ready to handle connections
+[21-Oct-2026 08:48:54] NOTICE: Terminating ...
+[21-Oct-2026 08:48:54] NOTICE: Terminating ...
+[21-Oct-2026 08:48:57] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:48:57] NOTICE: ready to handle connections
+[21-Oct-2026 08:48:57] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:48:57] NOTICE: ready to handle connections
+[21-Oct-2026 08:49:03] NOTICE: Terminating ...
+[21-Oct-2026 08:49:03] NOTICE: Terminating ...
+[21-Oct-2026 08:49:06] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:49:06] NOTICE: ready to handle connections
+[21-Oct-2026 08:49:06] NOTICE: fpm is running, pid 1
+[21-Oct-2026 08:49:06] NOTICE: ready to handle connections

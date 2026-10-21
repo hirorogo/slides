@@ -1,0 +1,13 @@
+[*] target=http://127.0.0.1:8080/index.php
+[*] mitigated=http://127.0.0.1:8081/index.php
+[*] evidence=data/evidence.jsonl
+[probe:vuln] status=200 upload_progress=present file_parsed=True file_error=0
+[probe:mitigated] status=200 upload_progress=absent file_parsed=True file_error=0
+[trigger-single] status=200 progress=present bytes_processed=258 file_bytes=1 done=True asan=no
+[trigger-stall] status=200 progress=present bytes_processed=258 file_bytes=1 done=True asan=no
+[poc618] status=200 resp=467B rce=no asan=no failure=no
+[poc619] status=200 resp=357B rce=no asan=no failure=no
+[probe:after] status=200 upload_progress=present file_parsed=True file_error=0
+[*] summary
+    rce=False asan=False http_or_worker_failure=False
+    RESULT: no RCE or sanitizer report in this run

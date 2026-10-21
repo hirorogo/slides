@@ -1,0 +1,11 @@
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.4. Set the 'ServerName' directive globally to suppress this message
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.4. Set the 'ServerName' directive globally to suppress this message
+[Wed Oct 21 08:38:52.708154 2026] [mpm_prefork:notice] [pid 1:tid 1] AH00163: Apache/2.4.62 (Debian) PHP/8.4.4 configured -- resuming normal operations
+[Wed Oct 21 08:38:52.708266 2026] [core:notice] [pid 1:tid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+172.17.0.1 - - [21/Oct/2026:08:38:55 +0000] "GET /index.php HTTP/1.1" 200 172 "-" "curl/8.7.1"
+172.17.0.1 - - [21/Oct/2026:08:38:55 +0000] "POST /index.php HTTP/1.1" 200 172 "-" "-"
+172.17.0.1 - - [21/Oct/2026:08:38:55 +0000] "GET /index.php?file=%2Ftmp%2Fsess_lfif0a82c297a6daefffd2c4533&0=id HTTP/1.1" 200 618 "-" "-"
+172.17.0.1 - - [21/Oct/2026:08:47:14 +0000] "POST /index.php HTTP/1.1" 200 172 "-" "-"
+172.17.0.1 - - [21/Oct/2026:08:47:14 +0000] "GET /index.php?file=%2Ftmp%2Fsess_lfia5804822ef05796668824d83&0=id HTTP/1.1" 200 618 "-" "-"
+172.17.0.1 - - [21/Oct/2026:08:49:24 +0000] "POST /index.php HTTP/1.1" 200 172 "-" "-"
+172.17.0.1 - - [21/Oct/2026:08:49:24 +0000] "GET /index.php?file=%2Ftmp%2Fsess_lfi1cb8048ada0a78218ec876dd&0=id HTTP/1.1" 200 618 "-" "-"

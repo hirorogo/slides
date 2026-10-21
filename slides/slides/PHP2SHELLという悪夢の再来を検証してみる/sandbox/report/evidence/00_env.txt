@@ -1,0 +1,39 @@
+date_utc: Wed Oct 21 08:49:13 UTC 2026
+date_jst: Wed Oct 21 17:49:13 JST 2026
+uname: Darwin <hostname> 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132 arm64
+
+NAME                        IMAGE                  COMMAND                  SERVICE         CREATED          STATUS                    PORTS
+php2shell-nginx-1           nginx:alpine           "/docker-entrypoint.…"   nginx           6 seconds ago    Up 5 seconds              127.0.0.1:8080-8081->8080-8081/tcp, 127.0.0.1:8083->8083/tcp, 127.0.0.1:8087-8090->8087-8090/tcp
+php2shell-php-cleanup-1     php2shell-asan:8.4.4   "/entrypoint.sh"         php-cleanup     10 seconds ago   Up 6 seconds              9000/tcp
+php2shell-php-mitigated-1   php2shell-asan:8.4.4   "/entrypoint.sh"         php-mitigated   19 seconds ago   Up 15 seconds (healthy)   9000/tcp
+php2shell-php-strict-1      php2shell-asan:8.4.4   "/entrypoint.sh"         php-strict      10 seconds ago   Up 6 seconds              9000/tcp
+php2shell-php-vuln-1        php2shell-asan:8.4.4   "/entrypoint.sh"         php-vuln        19 seconds ago   Up 15 seconds (healthy)   9000/tcp
+php2shell-php56-1           php:5.6.40-fpm         "docker-php-entrypoi…"   php56           43 minutes ago   Up 43 minutes             9000/tcp
+
+PHP 8.4.4 (cli) (built: Oct 21 2026 07:55:00) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.4.4, Copyright (c) Zend Technologies
+PHP 8.4.4 (cli) (built: Oct 21 2026 07:55:00) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.4.4, Copyright (c) Zend Technologies
+PHP 8.4.4 (cli) (built: Oct 21 2026 07:55:00) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.4.4, Copyright (c) Zend Technologies
+PHP 8.4.4 (cli) (built: Oct 21 2026 07:55:00) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.4.4, Copyright (c) Zend Technologies
+PHP 5.6.40 (cli) (built: Jan 25 2019 09:58:25) 
+Copyright (c) 1997-2016 The PHP Group
+Zend Engine v2.6.0, Copyright (c) 1998-2016 Zend Technologies
+
+HTTP/1.1 200 OK
+Server: nginx/1.31.7
+Date: Wed, 21 Oct 2026 08:49:13 GMT
+Content-Type: application/json
+Connection: keep-alive
+X-Powered-By: PHP/8.4.4
+Set-Cookie: PHPSESSID=6b09b174e5bd402fac2a6ea090fca275; path=/
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+

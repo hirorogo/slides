@@ -1,0 +1,4 @@
+[*] target=http://127.0.0.1:8089/temp.php status=200 bytes=54
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+[*] command output present: True

@@ -7,6 +7,8 @@
 対象: CVE-2026-109618 / CVE-2026-109619（php2shell）
 関連: `../references.md`（公式情報とリーク・二次情報の整理）
 
+実行結果のレポート: **[`report/REPORT.md`](report/REPORT.md)** / [`report/index.html`](report/index.html)（通信ログ・セッションファイル・`uid=` の証跡付き）
+
 ## 1. これは何か
 
 Docker 上に **ASAN 付き PHP 8.4.4** を 2 つ立てます。
@@ -313,6 +315,12 @@ sandbox/
 ├── compose.yaml
 ├── compose.patched.yaml
 ├── run.sh
+├── report/
+│   ├── REPORT.md
+│   ├── index.html
+│   ├── run_repro.sh
+│   ├── build_report.py
+│   └── evidence/
 ├── docker/
 │   ├── php/
 │   │   ├── Dockerfile
