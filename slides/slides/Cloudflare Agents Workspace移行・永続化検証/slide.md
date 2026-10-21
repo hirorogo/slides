@@ -1,6 +1,6 @@
 ---
-title: Cloudflare AgentsのWorkspaceを移行してみる
-description: 〜 全部移ったように見えて、壊れていた 〜
+title: Cloudflare AgentsのWorkspaceが「パス1行」から「inodeとチャンク」になった
+description: 〜 保存の形が変わると、何が変わるのか 〜
 author: 田中博悠 / tanahiro2010
 date: 2026-10-22
 slug: cf-workspace-migration
@@ -9,9 +9,9 @@ published: false
 
 ::title::
 
-# Cloudflare AgentsのWorkspaceを移行してみる
+# Workspaceが「パス1行」から「inodeとチャンク」になった
 
-〜 全部移ったように見えて、壊れていた 〜
+〜 保存の形が変わると、何が変わるのか 〜
 
 田中博悠 / tanahiro2010
 
@@ -58,65 +58,120 @@ Workspaceって何？？
 
 ---
 
-## エージェントのファイルシステム
+## エージェントのファイル置き場
 
-- モデルが `read` `write` `edit` で触る置き場
+- モデルが `read` `write` `edit` で触る
 - 実体は Durable Object の SQLite
 - 再起動してもファイルが残る
 
 ---
 
-## パッケージが変わりました
-
-- 旧 → `@cloudflare/shell`
-- 新 → `@cloudflare/computer`
-- Think 0.20.2 → 0.21.0 で切り替わった
-
----
-
-::center::
-
-で、データはどうなる？？
-
----
-
 ## Changelog にこう書いてあります
 
-> 自動のデータ移行はありません。既存のWorkspaceを残したいなら、移行ガイドのスクリプトでファイルをコピーしてください
+> テーブルが違うので、パッケージを替えてもデータは移りません
 
 -# 2026-10-20 Changelog（抄訳）
 
 ---
 
-::center size=2 bg=blue::
+::center::
 
-で
+テーブルが違う
 
 ---
 
-::center::
+::center size=2 bg=blue::
 
-コピーしなかったら、
-
-どうなるんでしょう
+どう違う？？
 
 ---
 
 ::center size=1.5 bg=white::
 
-消失
+構造
 
 ---
 
-## 同じDOの上で並べました
+## 旧は、1ファイル1行でした
 
-- 旧Workspaceで13個のファイルを書く
-- そのまま新Workspaceを構築する
-- 新から読んでみる
+```sql
+CREATE TABLE cf_workspace_default (
+  path     TEXT PRIMARY KEY,
+  type     TEXT NOT NULL,
+  content  TEXT,          -- 中身がここに入る
+  ...
+);
+```
 
 ---
 
-## 結果
+## 素直です
+
+- パスが主キー
+- メタデータも中身も同じ行
+- バイナリは base64 で `content` へ
+
+---
+
+## 大きいファイルだけ別扱い
+
+- 既定の閾値は 1,500,000 バイト
+- 超えたら R2 に逃がして `r2_key` を残す
+- R2 が無ければ警告を出して inline のまま
+
+---
+
+::center::
+
+新は、分けます
+
+---
+
+## テーブルが6つ以上に分かれる
+
+- `vfs_dirents` → 親inode + 名前 から 子inode
+- `vfs_nodes` → inodeのメタデータ
+- `vfs_chunks` → inode から blob の sha256
+
+---
+
+## 中身は512KiBごとのblob
+
+```js
+const CHUNK_SIZE = 524288;
+```
+
+-# @cloudflare/computer@0.6.0
+
+---
+
+## 1ファイル1行 → inodeとチャンク
+
+- パス解決は `vfs_dirents` をルートから辿る
+- 中身は sha256 をキーにした blob
+- 名前が被らないので旧と共存できる
+
+---
+
+::center::
+
+ここから全部が導けます
+
+---
+
+::center size=1.5 bg=white::
+
+帰結
+
+---
+
+::center::
+
+帰結① テーブルが別
+
+---
+
+## 移行せずに切り替えると
 
 ```
 新から読む /workspace/notes.md  →  ENOENT
@@ -144,265 +199,20 @@ Workspaceって何？？
 
 消えてない
 
----
-
-## テーブルを覗く
-
-- 旧 → `cf_workspace_default`
-- 新 → `vfs_nodes` `vfs_dirents` `vfs_chunks` ...
-- 同じDOの中に、両方ある
-
----
-
-## 見ている場所が違うだけ
-
-- 旧はパス1本で1行
-- 新はinodeとチャンクに分かれている
-- 名前が被らないので、黙って共存する
+読みに行く先が変わっただけ
 
 ---
 
 ::center::
 
-データは残る
-
-見えなくなるだけ
-
----
-
-::center size=1.5 bg=white::
-
-移行
-
----
-
-## 公式スクリプトがあります
-
-- 移行ガイドにコピー用のコードが載っている
-- 旧を `glob` で歩いて、新の `fs` に書き直す
-- 移行先は `/workspace` 配下
-
--# cloudflare/agents docs/shell/migrating-to-computer.md
-
----
-
-## 流す題材
-
-- テキスト、JSON、TypeScript
-- 64KBのバイナリ
-- 空ディレクトリ、シンボリックリンク4本
-
----
-
-## 結果
-
-```
-comparison → {
-  total: 13, missing: [], typeChanged: [],
-  contentMismatch: [], extra: []
-}
-```
-
----
-
-## 全部移っています
-
-- 13件すべて存在する
-- バイナリもSHA-256が一致
-- 空ディレクトリも残っている
-
----
-
-::center::
-
-完璧じゃないですか
-
----
-
-::center size=1.5 bg=white::
-
-破断
-
----
-
-::center::
-
-1本だけ、読めません
-
----
-
-## シンボリックリンク4本の行方
-
-- `../notes.md` → 読める
-- `/notes.md` → 読める
-- `/src/../notes.md` → 読める
-- `/../notes.md` → **ENOENT**
-
----
-
-## 何が違うのか
-
-- 絶対パスで、かつルートより上に登るやつ
-- `/../notes.md` が `/workspace/../notes.md` になった
-- `/workspace` の外を指している
-
----
-
-## 公式スクリプトのここ
-
-```ts
-function resolveTarget(link: string, target: string): string {
-  if (target.startsWith("/")) return target;  // ← ここ
-  const parts = link.split("/").slice(1, -1);
-  ...
-}
-```
-
----
-
-## Shell 本体はこうしています
-
-```js
-const resolved = target.startsWith("/")
-  ? normalizePath(target)              // ← 絶対でも正規化する
-  : normalizePath(getParent(path) + "/" + target);
-```
-
----
-
-## 相対だけ直っていた
-
-- `normalizePath` は `..` をルートで止める
-- スクリプトは絶対パスを素通ししている
-- だから絶対 + ルート超えだけ落ちる
-
----
-
-::center::
-
-しかも、エラーが出ません
-
----
-
-## 静かに壊れる
-
-- `symlink()` はリンク先を検証せず保存する
-- 辿るときも例外は出ず、ルートで止まるだけ
-- コピーは成功したと報告する
-
----
-
-::center::
-
-自分の照合も、見逃しました
-
----
-
-## missing: [] の意味
-
-- パスの有無、型、ハッシュを比べていた
-- リンクは「存在する」から引っかからない
-- 壊れているのは指し先だけ
-
----
-
-::center::
-
-もう1つあります
-
----
-
-## 2回流してみる
-
-```
-1回目の移行  →  ok
-2回目の移行  →  EEXIST path exists: /workspace/links/abs.md
-```
-
----
-
-## symlink だけ冪等じゃない
-
-- `mkdir(recursive)` は黙って通る
-- `writeFile` は上書きする
-- `symlink()` は必ず EEXIST を投げる
-
----
-
-## 移行フラグが立ちません
-
-- ガイドは `onStart` で1回だけ流すことを勧めている
-- フラグはコピーが終わった後に立てる
-- 途中で落ちると、毎回同じ場所で失敗する
-
----
-
-::center::
-
-新発見だと思いました
-
----
-
-::center::
-
-違いました
-
----
-
-## 公式レビューは、2回とも指摘していた
-
-- 再実行の件 → PR #2552 で 🔴 指摘
-- リンクの件 → PR #2564 で指摘、修正、Resolved
-- どちらも今のドキュメントに残っている
-
----
-
-## なぜ残ったか
-
-- #2552 は別のPRスタックに差し替えられて closed
-- 指摘が引き継がれなかった
-- リンクの件は「相対」だけ直って閉じた
-
----
-
-## レビューの前提が外れていた
-
-> Absolute targets are already rebased by the copy script.
-
--# cloudflare/agents #2564 のレビューコメント
-
----
-
-## Issueを出しました
-
-- cloudflare/agents #2645
-- 新発見ではなく、判定の訂正として
-- 修正は2行、ブランチも添えた
-
----
-
-::center::
-
-調べてから書いてよかった
-
----
-
-::center size=1.5 bg=white::
-
-余談
-
----
-
-::center::
-
-ここからは脇道です
+帰結② 1行に全部入れる
 
 ---
 
 ## 4MBのファイルは保存できるか
 
-- 旧Shellは中身をbase64で1セルに入れる
-- 4MB → base64で5.6MB
+- 旧は中身をbase64で1セルに入れる
+- 4MB → base64で5,592,408文字
 - 公式ドキュメントの行上限は **2MB**
 
 ---
@@ -416,7 +226,7 @@ const resolved = target.startsWith("/")
 ## 入りました
 
 ```
-4MB → inline / base64 / content_len 5,592,408 → 読み戻し一致
+4MB → inline / base64 / 読み戻しもSHA-256一致
 8MB → SQLITE_TOOBIG
 ```
 
@@ -424,7 +234,7 @@ const resolved = target.startsWith("/")
 
 ## 二分探索しました
 
-- ライブラリを通さず `ctx.storage.sql` を直接叩く
+- `ctx.storage.sql` を直接叩く
 - 通る最大 8,388,627 バイト
 - 落ちる最小 8,388,628 バイト
 
@@ -440,31 +250,101 @@ const resolved = target.startsWith("/")
 
 ---
 
+## 旧は約6MiBで頭打ち
+
+- base64が4/3に膨らむ
+- 新はチャンクに割るので壁が無い
+- 8MBも16MBも32MBも通った
+
+---
+
 ::center::
 
-ドキュメントを信じて予測して、外しました
+チャンク化は速度の工夫に見えて、
+
+効いているのは上限のほう
 
 ---
 
 ::center::
 
-もう1つ、脇道
+帰結③ 毎回base64に変換する
 
 ---
 
-## 新スキーマを書いた後
+## 速度を測りました
+
+- 1MBの書き込み+読み込み1往復
+- 旧 87.25ms → 新 6.45ms
+- 1KBと100KBは誤差に埋もれて読めない
+
+---
+
+::center::
+
+13.5倍
+
+---
+
+::center::
+
+帰結④ blobがcontent-addressed
+
+---
+
+## 同じ内容を2箇所に置く
+
+```
+blobs 初期        → 0
+1パス目           → 1
+2パス目           → 1   ← 増えない
+対照: 違う内容    → 2   ← 増える
+```
+
+---
+
+::center::
+
+帰結⑤ メタデータの列が減った
+
+---
+
+## 新の stat が返すもの
+
+```ts
+{ name, inode, mode, mtime, size,
+  isFile, isDirectory, isSymbolicLink }
+```
+
+---
+
+## 置き場所がありません
+
+- 旧は `mimeType` `createdAt` `updatedAt` を持つ
+- 新に MIME を読み書きするAPIが無い
+- 時刻も `mtime` の1本だけ
+
+---
+
+::center::
+
+帰結⑥ スキーマにバージョンがある
+
+---
+
+## 古い実装で開き直すと
 
 ```
 schema_version → 10
-古い実装で開き直す → EIO Unsupported workspace
-                     filesystem schema version
+古い実装で開く → EIO Unsupported workspace
+                 filesystem schema version
 ```
 
 ---
 
 ## 前には進めます
 
-- v1 から v10 まで、マイグレータが9本ある
+- v1 から v10 まで、マイグレータが9本
 - 上げるのは自動
 - 下げる道はない
 
@@ -486,11 +366,125 @@ schema_version → 10
 
 ::center size=1.5 bg=white::
 
+移行
+
+---
+
+## 公式スクリプトを流します
+
+- 旧を `glob` で歩いて、新の `fs` に書き直す
+- 移行先は `/workspace` 配下
+- テキスト・バイナリ・空ディレクトリ・リンク4本
+
+-# docs/shell/migrating-to-computer.md
+
+---
+
+## 結果
+
+```
+comparison → {
+  total: 13, missing: [], typeChanged: [],
+  contentMismatch: [], extra: []
+}
+```
+
+---
+
+## 13件すべて移っています
+
+- 存在する、型も変わらない
+- 64KBのバイナリもSHA-256が一致
+- 空ディレクトリも残る
+
+---
+
+::center::
+
+リンクだけ、1本辿れません
+
+---
+
+## シンボリックリンク4本の行方
+
+- `../notes.md` → 辿れる
+- `/notes.md` → 辿れる
+- `/src/../notes.md` → 辿れる
+- `/../notes.md` → **ENOENT**
+
+---
+
+## 絶対パスが正規化されていない
+
+```ts
+function resolveTarget(link, target) {
+  if (target.startsWith("/")) return target;  // ← 素通し
+  ...
+}
+```
+
+---
+
+## Shell 本体は正規化しています
+
+- `normalizePath` が `..` をルートで止める
+- だから Shell では `/../notes.md` = `/notes.md`
+- 素通しすると `/workspace` の外に出る
+
+---
+
+::center::
+
+エラーにはなりません
+
+---
+
+## 照合では捕まらない
+
+- 存在する → 欠落にならない
+- 型は symlink のまま → 型違いにもならない
+- 中身が無い → ハッシュ比較の対象外
+
+---
+
+::center::
+
+辿って読むしかない
+
+---
+
+## 2回流すと止まります
+
+```
+1回目の移行  →  ok
+2回目の移行  →  EEXIST /workspace/links/abs.md
+```
+
+---
+
+## symlink だけ冪等じゃない
+
+- `mkdir(recursive)` は黙って通る
+- `writeFile` は上書きする
+- `symlink()` に `force` が無い
+
+---
+
+## Issueを出しました
+
+- cloudflare/agents #2645
+- 出す前に調べたら、2件とも過去に指摘済みだった
+- 新発見ではなく、判定の訂正として
+
+---
+
+::center size=1.5 bg=white::
+
 判断
 
 ---
 
-## 永続化は、ちゃんと効いています
+## 永続化は効いています
 
 - コンストラクタで起動IDを振って確かめた
 - 15秒後・150秒後、IDが変わっても読めた
@@ -506,18 +500,10 @@ schema_version → 10
 
 ---
 
-## 速度も測りました
-
-- 1MBの書き込み+読み込み1往復
-- 旧 87.25ms → 新 6.45ms
-- 1KBと100KBは誤差に埋もれて読めない
-
----
-
 ## 移行する前にやること
 
 - シンボリックリンクがあるか数える
-- 移行後に、リンクを辿れるか確かめる
+- あるなら、移行後に辿って読む
 - 古い実装に戻せない前提でデプロイする
 
 ---
@@ -525,11 +511,10 @@ schema_version → 10
 ## まとめ
 
 - 刷新 → shell は非推奨、computer に変わった
-- 消失 → 消えてはいない。見えなくなるだけ
-- 移行 → 公式スクリプトで13件すべて一致した
-- 破断 → それでもリンク1本が静かに壊れていた
-- 余談 → 上限は8MiBだった。そして戻れない
-- 判断 → 照合はハッシュだけでは足りない
+- 構造 → パス1行から、inodeとチャンクへ
+- 帰結 → 見えない・上限8MiB・13.5倍・戻れない
+- 移行 → 13件一致。リンクだけ辿って確かめる
+- 判断 → 違うのはテーブル名ではなく構造のほう
 
 ---
 
@@ -547,24 +532,18 @@ One more thing
 
 ::center::
 
-移行は、成功したように見えました
+移行ガイドは「テーブルが違う」としか書いていません
 
 ---
 
 ::center::
 
-13件すべて、ハッシュまで一致していました
+違うのは、名前ではなく構造です
 
 ---
 
 ::center::
 
-壊れていたのは、指し先だけです
+そこを見ておくと、
 
----
-
-::center::
-
-照合が通ったことは、
-
-移行できた証拠になりません
+何を確かめればいいかが先に分かります

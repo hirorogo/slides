@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
-<title>Cloudflare AgentsのWorkspaceを移行してみる</title>
-<meta name="description" content="〜 全部移ったように見えて、壊れていた 〜">
+<title>Cloudflare AgentsのWorkspaceが「パス1行」から「inodeとチャンク」になった</title>
+<meta name="description" content="〜 保存の形が変わると、何が変わるのか 〜">
 <meta name="author" content="田中博悠 / tanahiro2010">
 <meta name="generator" content="ippon-slides">
 <style>:root {
@@ -914,95 +914,97 @@ body.presenter #overview {
 </head>
 <body>
 <div id="deck">
-<section class="slide title"><h1>Cloudflare AgentsのWorkspaceを移行してみる</h1><p>〜 全部移ったように見えて、壊れていた 〜</p><p>田中博悠 / tanahiro2010</p></section>
+<section class="slide title"><h1>Workspaceが「パス1行」から「inodeとチャンク」になった</h1><p>〜 保存の形が変わると、何が変わるのか 〜</p><p>田中博悠 / tanahiro2010</p></section>
 <section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>GDG Greater Kwansai</li><li>個人開発で Cloudflare Workers を使ってる</li></ul><h1>移行、こわいです</h1></div><div><p><img src="img/tanahiro_hono.jpg" alt="tanahiro2010"></p></div></div></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>刷新</p></section>
 <section class="slide center"><p>2026年10月20日</p></section>
 <section class="slide"><h2>Changelog が出ました</h2><ul><li>Think と Agent Skills の Workspace が <code>@cloudflare/computer</code> に</li><li><code>@cloudflare/shell</code> は非推奨</li><li>今日からもう開発もサポートもしない</li></ul><p class="note">Cloudflare Changelog 2026-10-20</p></section>
 <section class="slide center"><p>Workspaceって何？？</p></section>
-<section class="slide"><h2>エージェントのファイルシステム</h2><ul><li>モデルが <code>read</code> <code>write</code> <code>edit</code> で触る置き場</li><li>実体は Durable Object の SQLite</li><li>再起動してもファイルが残る</li></ul></section>
-<section class="slide"><h2>パッケージが変わりました</h2><ul><li>旧 <span class="arrow">→</span> <code>@cloudflare/shell</code></li><li>新 <span class="arrow">→</span> <code>@cloudflare/computer</code></li><li>Think 0.20.2 <span class="arrow">→</span> 0.21.0 で切り替わった</li></ul></section>
-<section class="slide center"><p>で、データはどうなる？？</p></section>
-<section class="slide"><h2>Changelog にこう書いてあります</h2><blockquote><p>自動のデータ移行はありません。既存のWorkspaceを残したいなら、移行ガイドのスクリプトでファイルをコピーしてください</p></blockquote><p class="note">2026-10-20 Changelog（抄訳）</p></section>
-<section class="slide center" style="--slide-size:2;background:#0d76bc;"><p>で</p></section>
-<section class="slide center"><p>コピーしなかったら、</p><p>どうなるんでしょう</p></section>
-<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>消失</p></section>
-<section class="slide"><h2>同じDOの上で並べました</h2><ul><li>旧Workspaceで13個のファイルを書く</li><li>そのまま新Workspaceを構築する</li><li>新から読んでみる</li></ul></section>
-<section class="slide"><h2>結果</h2><pre><code>新から読む /workspace/notes.md  →  ENOENT
+<section class="slide"><h2>エージェントのファイル置き場</h2><ul><li>モデルが <code>read</code> <code>write</code> <code>edit</code> で触る</li><li>実体は Durable Object の SQLite</li><li>再起動してもファイルが残る</li></ul></section>
+<section class="slide"><h2>Changelog にこう書いてあります</h2><blockquote><p>テーブルが違うので、パッケージを替えてもデータは移りません</p></blockquote><p class="note">2026-10-20 Changelog（抄訳）</p></section>
+<section class="slide center"><p>テーブルが違う</p></section>
+<section class="slide center" style="--slide-size:2;background:#0d76bc;"><p>どう違う？？</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>構造</p></section>
+<section class="slide"><h2>旧は、1ファイル1行でした</h2><pre data-lang="sql"><code>CREATE TABLE cf_workspace_default (
+  path     TEXT PRIMARY KEY,
+  type     TEXT NOT NULL,
+  content  TEXT,          -- 中身がここに入る
+  ...
+);</code></pre></section>
+<section class="slide"><h2>素直です</h2><ul><li>パスが主キー</li><li>メタデータも中身も同じ行</li><li>バイナリは base64 で <code>content</code> へ</li></ul></section>
+<section class="slide"><h2>大きいファイルだけ別扱い</h2><ul><li>既定の閾値は 1,500,000 バイト</li><li>超えたら R2 に逃がして <code>r2_key</code> を残す</li><li>R2 が無ければ警告を出して inline のまま</li></ul></section>
+<section class="slide center"><p>新は、分けます</p></section>
+<section class="slide"><h2>テーブルが6つ以上に分かれる</h2><ul><li><code>vfs_dirents</code> <span class="arrow">→</span> 親inode + 名前 から 子inode</li><li><code>vfs_nodes</code> <span class="arrow">→</span> inodeのメタデータ</li><li><code>vfs_chunks</code> <span class="arrow">→</span> inode から blob の sha256</li></ul></section>
+<section class="slide"><h2>中身は512KiBごとのblob</h2><pre data-lang="js"><code><span class="hl-k">const</span> <span class="hl-t">CHUNK_SIZE</span> = <span class="hl-n">524288</span>;</code></pre><p class="note">@cloudflare/computer@0.6.0</p></section>
+<section class="slide"><h2>1ファイル1行 <span class="arrow">→</span> inodeとチャンク</h2><ul><li>パス解決は <code>vfs_dirents</code> をルートから辿る</li><li>中身は sha256 をキーにした blob</li><li>名前が被らないので旧と共存できる</li></ul></section>
+<section class="slide center"><p>ここから全部が導けます</p></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>帰結</p></section>
+<section class="slide center"><p>帰結① テーブルが別</p></section>
+<section class="slide"><h2>移行せずに切り替えると</h2><pre><code>新から読む /workspace/notes.md  →  ENOENT
 新から読む /notes.md            →  ENOENT
 新側のツリー                    →  /workspace だけ</code></pre></section>
 <section class="slide center"><p>消えた？？</p></section>
 <section class="slide"><h2>対照を置きました</h2><ul><li>切り替える前、旧からは読める</li><li>切り替えた後も、旧からは読める</li><li><code>cf_workspace_default</code> は14行のまま</li></ul></section>
-<section class="slide center"><p>消えてない</p></section>
-<section class="slide"><h2>テーブルを覗く</h2><ul><li>旧 <span class="arrow">→</span> <code>cf_workspace_default</code></li><li>新 <span class="arrow">→</span> <code>vfs_nodes</code> <code>vfs_dirents</code> <code>vfs_chunks</code> ...</li><li>同じDOの中に、両方ある</li></ul></section>
-<section class="slide"><h2>見ている場所が違うだけ</h2><ul><li>旧はパス1本で1行</li><li>新はinodeとチャンクに分かれている</li><li>名前が被らないので、黙って共存する</li></ul></section>
-<section class="slide center"><p>データは残る</p><p>見えなくなるだけ</p></section>
+<section class="slide center"><p>消えてない</p><p>読みに行く先が変わっただけ</p></section>
+<section class="slide center"><p>帰結② 1行に全部入れる</p></section>
+<section class="slide"><h2>4MBのファイルは保存できるか</h2><ul><li>旧は中身をbase64で1セルに入れる</li><li>4MB <span class="arrow">→</span> base64で5,592,408文字</li><li>公式ドキュメントの行上限は <strong>2MB</strong></li></ul></section>
+<section class="slide center"><p>入らないはずでした</p></section>
+<section class="slide"><h2>入りました</h2><pre><code>4MB → inline / base64 / 読み戻しもSHA-256一致
+8MB → SQLITE_TOOBIG</code></pre></section>
+<section class="slide"><h2>二分探索しました</h2><ul><li><code>ctx.storage.sql</code> を直接叩く</li><li>通る最大 8,388,627 バイト</li><li>落ちる最小 8,388,628 バイト</li></ul></section>
+<section class="slide"><h2>8 MiB でした</h2><ul><li><code>8388608</code> が 8 MiB</li><li>TEXT も BLOB も KV値も同じ</li><li>ドキュメントの2MBとは4倍ちがう</li></ul><p class="note">cloudflare-docs #34502 で報告済み</p></section>
+<section class="slide"><h2>旧は約6MiBで頭打ち</h2><ul><li>base64が4/3に膨らむ</li><li>新はチャンクに割るので壁が無い</li><li>8MBも16MBも32MBも通った</li></ul></section>
+<section class="slide center"><p>チャンク化は速度の工夫に見えて、</p><p>効いているのは上限のほう</p></section>
+<section class="slide center"><p>帰結③ 毎回base64に変換する</p></section>
+<section class="slide"><h2>速度を測りました</h2><ul><li>1MBの書き込み+読み込み1往復</li><li>旧 87.25ms <span class="arrow">→</span> 新 6.45ms</li><li>1KBと100KBは誤差に埋もれて読めない</li></ul></section>
+<section class="slide center"><p>13.5倍</p></section>
+<section class="slide center"><p>帰結④ blobがcontent-addressed</p></section>
+<section class="slide"><h2>同じ内容を2箇所に置く</h2><pre><code>blobs 初期        → 0
+1パス目           → 1
+2パス目           → 1   ← 増えない
+対照: 違う内容    → 2   ← 増える</code></pre></section>
+<section class="slide center"><p>帰結⑤ メタデータの列が減った</p></section>
+<section class="slide"><h2>新の stat が返すもの</h2><pre data-lang="ts"><code>{ name, inode, mode, mtime, size,
+  isFile, isDirectory, isSymbolicLink }</code></pre></section>
+<section class="slide"><h2>置き場所がありません</h2><ul><li>旧は <code>mimeType</code> <code>createdAt</code> <code>updatedAt</code> を持つ</li><li>新に MIME を読み書きするAPIが無い</li><li>時刻も <code>mtime</code> の1本だけ</li></ul></section>
+<section class="slide center"><p>帰結⑥ スキーマにバージョンがある</p></section>
+<section class="slide"><h2>古い実装で開き直すと</h2><pre><code>schema_version → 10
+古い実装で開く → EIO Unsupported workspace
+                 filesystem schema version</code></pre></section>
+<section class="slide"><h2>前には進めます</h2><ul><li>v1 から v10 まで、マイグレータが9本</li><li>上げるのは自動</li><li>下げる道はない</li></ul></section>
+<section class="slide center"><p>戻れません</p></section>
+<section class="slide"><h2>どこにも書いてありません</h2><ul><li>移行ガイドにもChangelogにもない</li><li>実装ドキュメントに1行だけある</li><li>ユーザー向けの記述ではない</li></ul></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>移行</p></section>
-<section class="slide"><h2>公式スクリプトがあります</h2><ul><li>移行ガイドにコピー用のコードが載っている</li><li>旧を <code>glob</code> で歩いて、新の <code>fs</code> に書き直す</li><li>移行先は <code>/workspace</code> 配下</li></ul><p class="note">cloudflare/agents docs/shell/migrating-to-computer.md</p></section>
-<section class="slide"><h2>流す題材</h2><ul><li>テキスト、JSON、TypeScript</li><li>64KBのバイナリ</li><li>空ディレクトリ、シンボリックリンク4本</li></ul></section>
+<section class="slide"><h2>公式スクリプトを流します</h2><ul><li>旧を <code>glob</code> で歩いて、新の <code>fs</code> に書き直す</li><li>移行先は <code>/workspace</code> 配下</li><li>テキスト・バイナリ・空ディレクトリ・リンク4本</li></ul><p class="note">docs/shell/migrating-to-computer.md</p></section>
 <section class="slide"><h2>結果</h2><pre><code>comparison → {
   total: 13, missing: [], typeChanged: [],
   contentMismatch: [], extra: []
 }</code></pre></section>
-<section class="slide"><h2>全部移っています</h2><ul><li>13件すべて存在する</li><li>バイナリもSHA-256が一致</li><li>空ディレクトリも残っている</li></ul></section>
-<section class="slide center"><p>完璧じゃないですか</p></section>
-<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>破断</p></section>
-<section class="slide center"><p>1本だけ、読めません</p></section>
-<section class="slide"><h2>シンボリックリンク4本の行方</h2><ul><li><code>../notes.md</code> <span class="arrow">→</span> 読める</li><li><code>/notes.md</code> <span class="arrow">→</span> 読める</li><li><code>/src/../notes.md</code> <span class="arrow">→</span> 読める</li><li><code>/../notes.md</code> <span class="arrow">→</span> <strong>ENOENT</strong></li></ul></section>
-<section class="slide"><h2>何が違うのか</h2><ul><li>絶対パスで、かつルートより上に登るやつ</li><li><code>/../notes.md</code> が <code>/workspace/../notes.md</code> になった</li><li><code>/workspace</code> の外を指している</li></ul></section>
-<section class="slide"><h2>公式スクリプトのここ</h2><pre data-lang="ts"><code><span class="hl-k">function</span> <span class="hl-f">resolveTarget</span>(link: string, target: string): string {
-  <span class="hl-k">if</span> (target.<span class="hl-f">startsWith</span>(<span class="hl-s">&quot;/&quot;</span>)) <span class="hl-k">return</span> target;  <span class="hl-c">// ← ここ</span>
-  <span class="hl-k">const</span> parts = link.<span class="hl-f">split</span>(<span class="hl-s">&quot;/&quot;</span>).<span class="hl-f">slice</span>(<span class="hl-n">1</span>, -<span class="hl-n">1</span>);
+<section class="slide"><h2>13件すべて移っています</h2><ul><li>存在する、型も変わらない</li><li>64KBのバイナリもSHA-256が一致</li><li>空ディレクトリも残る</li></ul></section>
+<section class="slide center"><p>リンクだけ、1本辿れません</p></section>
+<section class="slide"><h2>シンボリックリンク4本の行方</h2><ul><li><code>../notes.md</code> <span class="arrow">→</span> 辿れる</li><li><code>/notes.md</code> <span class="arrow">→</span> 辿れる</li><li><code>/src/../notes.md</code> <span class="arrow">→</span> 辿れる</li><li><code>/../notes.md</code> <span class="arrow">→</span> <strong>ENOENT</strong></li></ul></section>
+<section class="slide"><h2>絶対パスが正規化されていない</h2><pre data-lang="ts"><code><span class="hl-k">function</span> <span class="hl-f">resolveTarget</span>(link, target) {
+  <span class="hl-k">if</span> (target.<span class="hl-f">startsWith</span>(<span class="hl-s">&quot;/&quot;</span>)) <span class="hl-k">return</span> target;  <span class="hl-c">// ← 素通し</span>
   ...
 }</code></pre></section>
-<section class="slide"><h2>Shell 本体はこうしています</h2><pre data-lang="js"><code><span class="hl-k">const</span> resolved = target.<span class="hl-f">startsWith</span>(<span class="hl-s">&quot;/&quot;</span>)
-  ? <span class="hl-f">normalizePath</span>(target)              <span class="hl-c">// ← 絶対でも正規化する</span>
-  : <span class="hl-f">normalizePath</span>(<span class="hl-f">getParent</span>(path) + <span class="hl-s">&quot;/&quot;</span> + target);</code></pre></section>
-<section class="slide"><h2>相対だけ直っていた</h2><ul><li><code>normalizePath</code> は <code>..</code> をルートで止める</li><li>スクリプトは絶対パスを素通ししている</li><li>だから絶対 + ルート超えだけ落ちる</li></ul></section>
-<section class="slide center"><p>しかも、エラーが出ません</p></section>
-<section class="slide"><h2>静かに壊れる</h2><ul><li><code>symlink()</code> はリンク先を検証せず保存する</li><li>辿るときも例外は出ず、ルートで止まるだけ</li><li>コピーは成功したと報告する</li></ul></section>
-<section class="slide center"><p>自分の照合も、見逃しました</p></section>
-<section class="slide"><h2>missing: [] の意味</h2><ul><li>パスの有無、型、ハッシュを比べていた</li><li>リンクは「存在する」から引っかからない</li><li>壊れているのは指し先だけ</li></ul></section>
-<section class="slide center"><p>もう1つあります</p></section>
-<section class="slide"><h2>2回流してみる</h2><pre><code>1回目の移行  →  ok
-2回目の移行  →  EEXIST path exists: /workspace/links/abs.md</code></pre></section>
-<section class="slide"><h2>symlink だけ冪等じゃない</h2><ul><li><code>mkdir(recursive)</code> は黙って通る</li><li><code>writeFile</code> は上書きする</li><li><code>symlink()</code> は必ず EEXIST を投げる</li></ul></section>
-<section class="slide"><h2>移行フラグが立ちません</h2><ul><li>ガイドは <code>onStart</code> で1回だけ流すことを勧めている</li><li>フラグはコピーが終わった後に立てる</li><li>途中で落ちると、毎回同じ場所で失敗する</li></ul></section>
-<section class="slide center"><p>新発見だと思いました</p></section>
-<section class="slide center"><p>違いました</p></section>
-<section class="slide"><h2>公式レビューは、2回とも指摘していた</h2><ul><li>再実行の件 <span class="arrow">→</span> PR #2552 で 🔴 指摘</li><li>リンクの件 <span class="arrow">→</span> PR #2564 で指摘、修正、Resolved</li><li>どちらも今のドキュメントに残っている</li></ul></section>
-<section class="slide"><h2>なぜ残ったか</h2><ul><li>#2552 は別のPRスタックに差し替えられて closed</li><li>指摘が引き継がれなかった</li><li>リンクの件は「相対」だけ直って閉じた</li></ul></section>
-<section class="slide"><h2>レビューの前提が外れていた</h2><blockquote><p>Absolute targets are already rebased by the copy script.</p></blockquote><p class="note">cloudflare/agents #2564 のレビューコメント</p></section>
-<section class="slide"><h2>Issueを出しました</h2><ul><li>cloudflare/agents #2645</li><li>新発見ではなく、判定の訂正として</li><li>修正は2行、ブランチも添えた</li></ul></section>
-<section class="slide center"><p>調べてから書いてよかった</p></section>
-<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>余談</p></section>
-<section class="slide center"><p>ここからは脇道です</p></section>
-<section class="slide"><h2>4MBのファイルは保存できるか</h2><ul><li>旧Shellは中身をbase64で1セルに入れる</li><li>4MB <span class="arrow">→</span> base64で5.6MB</li><li>公式ドキュメントの行上限は <strong>2MB</strong></li></ul></section>
-<section class="slide center"><p>入らないはずでした</p></section>
-<section class="slide"><h2>入りました</h2><pre><code>4MB → inline / base64 / content_len 5,592,408 → 読み戻し一致
-8MB → SQLITE_TOOBIG</code></pre></section>
-<section class="slide"><h2>二分探索しました</h2><ul><li>ライブラリを通さず <code>ctx.storage.sql</code> を直接叩く</li><li>通る最大 8,388,627 バイト</li><li>落ちる最小 8,388,628 バイト</li></ul></section>
-<section class="slide"><h2>8 MiB でした</h2><ul><li><code>8388608</code> が 8 MiB</li><li>TEXT も BLOB も KV値も同じ</li><li>ドキュメントの2MBとは4倍ちがう</li></ul><p class="note">cloudflare-docs #34502 で報告済み</p></section>
-<section class="slide center"><p>ドキュメントを信じて予測して、外しました</p></section>
-<section class="slide center"><p>もう1つ、脇道</p></section>
-<section class="slide"><h2>新スキーマを書いた後</h2><pre><code>schema_version → 10
-古い実装で開き直す → EIO Unsupported workspace
-                     filesystem schema version</code></pre></section>
-<section class="slide"><h2>前には進めます</h2><ul><li>v1 から v10 まで、マイグレータが9本ある</li><li>上げるのは自動</li><li>下げる道はない</li></ul></section>
-<section class="slide center"><p>戻れません</p></section>
-<section class="slide"><h2>どこにも書いてありません</h2><ul><li>移行ガイドにもChangelogにもない</li><li>実装ドキュメントに1行だけある</li><li>ユーザー向けの記述ではない</li></ul></section>
+<section class="slide"><h2>Shell 本体は正規化しています</h2><ul><li><code>normalizePath</code> が <code>..</code> をルートで止める</li><li>だから Shell では <code>/../notes.md</code> = <code>/notes.md</code></li><li>素通しすると <code>/workspace</code> の外に出る</li></ul></section>
+<section class="slide center"><p>エラーにはなりません</p></section>
+<section class="slide"><h2>照合では捕まらない</h2><ul><li>存在する <span class="arrow">→</span> 欠落にならない</li><li>型は symlink のまま <span class="arrow">→</span> 型違いにもならない</li><li>中身が無い <span class="arrow">→</span> ハッシュ比較の対象外</li></ul></section>
+<section class="slide center"><p>辿って読むしかない</p></section>
+<section class="slide"><h2>2回流すと止まります</h2><pre><code>1回目の移行  →  ok
+2回目の移行  →  EEXIST /workspace/links/abs.md</code></pre></section>
+<section class="slide"><h2>symlink だけ冪等じゃない</h2><ul><li><code>mkdir(recursive)</code> は黙って通る</li><li><code>writeFile</code> は上書きする</li><li><code>symlink()</code> に <code>force</code> が無い</li></ul></section>
+<section class="slide"><h2>Issueを出しました</h2><ul><li>cloudflare/agents #2645</li><li>出す前に調べたら、2件とも過去に指摘済みだった</li><li>新発見ではなく、判定の訂正として</li></ul></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>判断</p></section>
-<section class="slide"><h2>永続化は、ちゃんと効いています</h2><ul><li>コンストラクタで起動IDを振って確かめた</li><li>15秒後・150秒後、IDが変わっても読めた</li><li>再デプロイをまたいでも残っていた</li></ul></section>
+<section class="slide"><h2>永続化は効いています</h2><ul><li>コンストラクタで起動IDを振って確かめた</li><li>15秒後・150秒後、IDが変わっても読めた</li><li>再デプロイをまたいでも残っていた</li></ul></section>
 <section class="slide"><h2>ちなみに、hibernateは10秒</h2><ul><li>9秒 <span class="arrow">→</span> 再起動しない</li><li>11秒 <span class="arrow">→</span> 再起動する</li><li>ドキュメント通りでした</li></ul></section>
-<section class="slide"><h2>速度も測りました</h2><ul><li>1MBの書き込み+読み込み1往復</li><li>旧 87.25ms <span class="arrow">→</span> 新 6.45ms</li><li>1KBと100KBは誤差に埋もれて読めない</li></ul></section>
-<section class="slide"><h2>移行する前にやること</h2><ul><li>シンボリックリンクがあるか数える</li><li>移行後に、リンクを辿れるか確かめる</li><li>古い実装に戻せない前提でデプロイする</li></ul></section>
-<section class="slide"><h2>まとめ</h2><ul><li>刷新 <span class="arrow">→</span> shell は非推奨、computer に変わった</li><li>消失 <span class="arrow">→</span> 消えてはいない。見えなくなるだけ</li><li>移行 <span class="arrow">→</span> 公式スクリプトで13件すべて一致した</li><li>破断 <span class="arrow">→</span> それでもリンク1本が静かに壊れていた</li><li>余談 <span class="arrow">→</span> 上限は8MiBだった。そして戻れない</li><li>判断 <span class="arrow">→</span> 照合はハッシュだけでは足りない</li></ul></section>
+<section class="slide"><h2>移行する前にやること</h2><ul><li>シンボリックリンクがあるか数える</li><li>あるなら、移行後に辿って読む</li><li>古い実装に戻せない前提でデプロイする</li></ul></section>
+<section class="slide"><h2>まとめ</h2><ul><li>刷新 <span class="arrow">→</span> shell は非推奨、computer に変わった</li><li>構造 <span class="arrow">→</span> パス1行から、inodeとチャンクへ</li><li>帰結 <span class="arrow">→</span> 見えない・上限8MiB・13.5倍・戻れない</li><li>移行 <span class="arrow">→</span> 13件一致。リンクだけ辿って確かめる</li><li>判断 <span class="arrow">→</span> 違うのはテーブル名ではなく構造のほう</li></ul></section>
 <section class="slide center" style="--slide-size:1.5;"><p>ありがとうございました</p></section>
 <section class="slide center light" style="background:#fafafa;"><p>One more thing</p></section>
-<section class="slide center"><p>移行は、成功したように見えました</p></section>
-<section class="slide center"><p>13件すべて、ハッシュまで一致していました</p></section>
-<section class="slide center"><p>壊れていたのは、指し先だけです</p></section>
-<section class="slide center"><p>照合が通ったことは、</p><p>移行できた証拠になりません</p></section>
+<section class="slide center"><p>移行ガイドは「テーブルが違う」としか書いていません</p></section>
+<section class="slide center"><p>違うのは、名前ではなく構造です</p></section>
+<section class="slide center"><p>そこを見ておくと、</p><p>何を確かめればいいかが先に分かります</p></section>
 </div>
 <div id="overview"></div>
 <div id="presenter"></div>
@@ -1010,7 +1012,7 @@ body.presenter #overview {
 <div id="timer"></div>
 <div id="counter"></div>
 <div id="hint">← → 移動 ・ f フルスクリーン ・ o 一覧 ・ p 発表者</div>
-<script id="notes" type="application/json">["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]</script>
+<script id="notes" type="application/json">["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]</script>
 <script>"use strict";
 // スライドのナビゲーション。ippon が HTML に埋め込む。
 //   → / Space / PageDown / クリック右側     次へ
