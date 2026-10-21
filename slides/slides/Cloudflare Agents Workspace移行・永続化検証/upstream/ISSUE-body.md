@@ -9,12 +9,24 @@ This is a documentation issue, not a package one. `packages/shell`'s
 because readers copy it into their own agent and a migration runs once, a later
 fix does not reach anyone who has already run it.
 
+Both have come up in review before, which is why I am filing rather than
+assuming they are unknown:
+
+- **(1)** was raised on #2564 as "Relative links escape the migrated workspace",
+  fixed for relative targets, and marked resolved. The review's analysis said
+  "Absolute targets are already rebased by the copy script", and that premise is
+  what this issue corrects — absolute targets are passed through untouched.
+- **(2)** was raised on #2552 as "Interrupted symlink copies block migration
+  retries". #2552 was closed in favour of the #2559–#2565 stack, and the finding
+  did not carry over.
+
 I have the change on a branch, if a PR is welcome:
 <https://github.com/cloudflare/agents/compare/main...tanahiro2010:agents:docs/fix-shell-symlink-migration>
-(I could not open the PR myself — `CreatePullRequest` returns a permissions
-error for my account.)
 
 ## 1. `resolveTarget` does not normalise absolute targets
+
+`resolveTarget` was added to rebase relative targets, and it does that
+correctly. The absolute branch returns early:
 
 ```ts
 if (target.startsWith("/")) return target;
@@ -63,6 +75,10 @@ always throws `EEXIST` when the path exists and has no `force` option:
 The page recommends running the copy from `onStart` and recording a flag
 afterwards. If the copy throws, the flag is never written, so every start
 retries and fails at the same link.
+
+This is the finding from #2552. The suggestion there was to compare `readlink`
+against the source target before skipping; the branch below removes the link and
+recreates it, which is shorter and reaches the same state.
 
 ## Suggested fix
 
