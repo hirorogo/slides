@@ -1,11 +1,11 @@
 ---
 published: false
-summary: パス1行から、inodeとチャンクへ
+summary: Cloudflare AgentsのWorkspaceを移行して測ってみる
 ---
 
-# Cloudflare AgentsのWorkspaceが「パス1行」から「inodeとチャンク」になったので、移行して全部測った
+# Cloudflare AgentsのWorkspaceが刷新されたので、移行して全部測ってみた。保存の形が変わると何が変わるのか
 
-> 保存の形が変わると、何が変わるのか
+> 違うのは、テーブル名ではありませんでした
 
 ## この記事の結論
 

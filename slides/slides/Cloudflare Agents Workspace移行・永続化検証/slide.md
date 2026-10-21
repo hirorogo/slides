@@ -1,5 +1,5 @@
 ---
-title: Cloudflare AgentsのWorkspaceが「パス1行」から「inodeとチャンク」になった
+title: Cloudflare AgentsのWorkspaceが刷新されたので移行してみる
 description: 〜 保存の形が変わると、何が変わるのか 〜
 author: 田中博悠 / tanahiro2010
 date: 2026-10-22
@@ -9,7 +9,7 @@ published: false
 
 ::title::
 
-# Workspaceが「パス1行」から「inodeとチャンク」になった
+# Cloudflare AgentsのWorkspaceが刷新されたので移行してみる
 
 〜 保存の形が変わると、何が変わるのか 〜
 
