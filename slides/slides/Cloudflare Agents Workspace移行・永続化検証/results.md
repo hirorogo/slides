@@ -198,6 +198,29 @@ link              Shell の target      移行後の target              読め�
 > シンボリックリンクがある場合、(a) 再実行が `EEXIST` で中断し、
 > (b) 絶対かつルート超えの `..` を含むターゲットは静かに壊れる。
 
+### この欠陥が出荷コードではなく「コピペ用の文章」にあること
+
+`copyShellWorkspace` は**どのパッケージにも含まれていない**。
+`cloudflare/agents` を検索しても `docs/shell/migrating-to-computer.md` にしか無い
+（`shellMigrated` も同じ。`packages/think/.../chat-sdk.ts` の `resolveTarget` は
+メッセンジャー配信先の解決で、名前が同じだけの別物）。
+
+```
+copyShellWorkspace → docs/shell/migrating-to-computer.md のみ
+cf_workspace_      → packages/shell/src/filesystem.ts（Shell 本体）+ docs
+```
+
+つまりこのスクリプトは、**読んだ人が自分のエージェントに写して使うもの**。
+
+| | パッケージのバグ | 今回 |
+| --- | --- | --- |
+| 修正の届き方 | `npm update` で収束する | **収束しない** |
+| すでに実行した人 | 直せる | **届かない。移行は 1 回きり** |
+
+深刻度そのものは低い（条件が「絶対パスでルートを超える `..` を含む
+シンボリックリンク」に限られる）。ただし**直っても遡れない**ので、
+報告の価値は条件の狭さから受ける印象より高い。
+
 ---
 
 ## 4. サイズの壁（C18 / R3）— 予測が外れ、ドキュメントとも合わなかった
