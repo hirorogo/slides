@@ -25,3 +25,6 @@ tmp/
 
 # workers.dev のサブドメインはアカウント識別子。生ログは出さない
 results/run-*.raw.jsonl
+
+# cloudflare/agents のクローン置き場（別リポジトリ）
+agents/
