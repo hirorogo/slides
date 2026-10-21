@@ -1,0 +1,57 @@
+{
+  "runId": "2026-10-21T13-49-03-008Z",
+  "env": "deployed",
+  "doName": "persist-2026-10-21T13-49-03-008Z",
+  "seen": [
+    {
+      "label": "① 書く",
+      "mode": "write",
+      "httpMs": 1044,
+      "bootId": "1cadfbdd-7595-4879-94c1-43abca4688c0",
+      "aliveMs": 0,
+      "read": {
+        "text": "written-by 1cadfbdd-7595-4879-94c1-43abca4688c0 at 2026-10-21T13:49:04.111Z"
+      },
+      "ok": true
+    },
+    {
+      "label": "② 直後に読む",
+      "mode": "read",
+      "httpMs": 273,
+      "bootId": "1cadfbdd-7595-4879-94c1-43abca4688c0",
+      "aliveMs": 315,
+      "read": {
+        "text": "written-by 1cadfbdd-7595-4879-94c1-43abca4688c0 at 2026-10-21T13:49:04.111Z"
+      },
+      "ok": true
+    },
+    {
+      "label": "③ 15 秒後",
+      "mode": "read",
+      "httpMs": 1551,
+      "bootId": "e4f5f2ab-3d7d-4389-8e2d-ee32fdd97b02",
+      "aliveMs": 0,
+      "read": {
+        "text": "written-by 1cadfbdd-7595-4879-94c1-43abca4688c0 at 2026-10-21T13:49:04.111Z"
+      },
+      "ok": true
+    },
+    {
+      "label": "④ 150 秒後",
+      "mode": "read",
+      "httpMs": 198,
+      "bootId": "c602f7f1-c9f6-465e-9b36-0c3259706d64",
+      "aliveMs": 0,
+      "read": {
+        "text": "written-by 1cadfbdd-7595-4879-94c1-43abca4688c0 at 2026-10-21T13:49:04.111Z"
+      },
+      "ok": true
+    }
+  ],
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  }
+}

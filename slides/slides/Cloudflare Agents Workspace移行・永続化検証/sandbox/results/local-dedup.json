@@ -1,0 +1,159 @@
+{
+  "runId": "2026-10-21T13-47-40-544Z",
+  "env": "local",
+  "scenario": "dedup",
+  "params": {},
+  "doName": "dedup-2026-10-21T13-47-40-544Z",
+  "url": "http://localhost:8787/run/dedup?do=dedup-2026-10-21T13-47-40-544Z",
+  "status": 200,
+  "httpTotalMs": 64,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 40,
+    "scenario": "dedup",
+    "bootId": "b4b7c596-ef7c-4568-9608-865ee196fbe2",
+    "aliveMs": 28,
+    "doName": "dedup-2026-10-21T13-47-40-544Z",
+    "tables": [
+      "__miniflare_do_name",
+      "_vfs_fetch_cursor",
+      "_vfs_mounts",
+      "_vfs_push_cursor",
+      "_vfs_sync_operations",
+      "_vfs_sync_skips",
+      "_vfs_watermark",
+      "computer_execution_runtime",
+      "sqlite_sequence",
+      "vfs_blob_bytes",
+      "vfs_blobs",
+      "vfs_changes",
+      "vfs_chunks",
+      "vfs_dirents",
+      "vfs_manifests",
+      "vfs_meta",
+      "vfs_nodes"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "b4b7c596-ef7c-4568-9608-865ee196fbe2",
+          "aliveMs": 0,
+          "doName": "dedup-2026-10-21T13-47-40-544Z",
+          "scenario": "dedup"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C20",
+        "step": "準備",
+        "op": "computer.mkdir",
+        "args": {},
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 3,
+        "claim": "C20",
+        "step": "blobs 初期",
+        "op": "note",
+        "ok": true,
+        "result": 0,
+        "durationMs": 0
+      },
+      {
+        "seq": 4,
+        "claim": "C20",
+        "step": "同じ内容を 1 パス目",
+        "op": "computer.writeFile",
+        "args": {
+          "sha256": "f1310e0597f0ba4bf3abc318f459ac0a1e6b9869f4ba97821150b67f2da07b85"
+        },
+        "ok": true,
+        "durationMs": 2
+      },
+      {
+        "seq": 5,
+        "claim": "C20",
+        "step": "blobs 1 パス後",
+        "op": "note",
+        "ok": true,
+        "result": 1,
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C20",
+        "step": "同じ内容を 2 パス目",
+        "op": "computer.writeFile",
+        "args": {
+          "sha256": "f1310e0597f0ba4bf3abc318f459ac0a1e6b9869f4ba97821150b67f2da07b85"
+        },
+        "ok": true,
+        "durationMs": 6
+      },
+      {
+        "seq": 7,
+        "claim": "C20",
+        "step": "blobs 2 パス後（増えなければ重複排除）",
+        "op": "note",
+        "ok": true,
+        "result": 1,
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C20",
+        "step": "対照: 違う内容",
+        "op": "computer.writeFile",
+        "args": {
+          "sha256": "907b906ceff9626a07349b0cf34991c39fe0ccd94c375ce3834e0c828216f308"
+        },
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 9,
+        "claim": "C20",
+        "step": "blobs 違う内容を足した後（増えるはず）",
+        "op": "note",
+        "ok": true,
+        "result": 2,
+        "durationMs": 0
+      },
+      {
+        "seq": 10,
+        "claim": "C20",
+        "step": "chunks",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "inode": 4,
+            "n": 1
+          },
+          {
+            "inode": 5,
+            "n": 1
+          },
+          {
+            "inode": 6,
+            "n": 1
+          }
+        ],
+        "durationMs": 0
+      }
+    ],
+    "wallMs": 28
+  }
+}

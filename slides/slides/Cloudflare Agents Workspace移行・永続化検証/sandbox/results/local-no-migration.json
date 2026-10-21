@@ -1,0 +1,350 @@
+{
+  "runId": "2026-10-21T13-46-19-828Z",
+  "env": "local",
+  "scenario": "no-migration",
+  "params": {},
+  "doName": "no-migration-2026-10-21T13-46-19-828Z",
+  "url": "http://localhost:8787/run/no-migration?do=no-migration-2026-10-21T13-46-19-828Z",
+  "status": 200,
+  "httpTotalMs": 26,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 14,
+    "scenario": "no-migration",
+    "bootId": "ef1f2878-ac73-426a-82a2-f1bad6d0f064",
+    "aliveMs": 11,
+    "doName": "no-migration-2026-10-21T13-46-19-828Z",
+    "tables": [
+      "__miniflare_do_name",
+      "_vfs_fetch_cursor",
+      "_vfs_mounts",
+      "_vfs_push_cursor",
+      "_vfs_sync_operations",
+      "_vfs_sync_skips",
+      "_vfs_watermark",
+      "cf_workspace_default",
+      "computer_execution_runtime",
+      "sqlite_sequence",
+      "vfs_blob_bytes",
+      "vfs_blobs",
+      "vfs_changes",
+      "vfs_chunks",
+      "vfs_dirents",
+      "vfs_manifests",
+      "vfs_meta",
+      "vfs_nodes"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "ef1f2878-ac73-426a-82a2-f1bad6d0f064",
+          "aliveMs": 0,
+          "doName": "no-migration-2026-10-21T13-46-19-828Z",
+          "scenario": "no-migration"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C09",
+        "step": "seed /notes.md",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/notes.md",
+          "bytes": 39
+        },
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 3,
+        "claim": "C09",
+        "step": "seed /src",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/src"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 4,
+        "claim": "C09",
+        "step": "seed /src/index.ts",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/src/index.ts",
+          "bytes": 20
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 5,
+        "claim": "C09",
+        "step": "seed /data",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/data"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C09",
+        "step": "seed /data/config.json",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/data/config.json",
+          "bytes": 28
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 7,
+        "claim": "C09",
+        "step": "seed /assets",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/assets"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C09",
+        "step": "seed /assets/sample.bin",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "path": "/assets/sample.bin",
+          "size": 65536,
+          "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+        },
+        "ok": true,
+        "durationMs": 3
+      },
+      {
+        "seq": 9,
+        "claim": "C09",
+        "step": "seed /empty",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/empty"
+        },
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 10,
+        "claim": "C09",
+        "step": "seed /links",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/links"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 11,
+        "claim": "C09",
+        "step": "seed /links/rel.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/rel.md",
+          "target": "../notes.md",
+          "note": "相対。公式サンプルが正しく扱えるはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 12,
+        "claim": "C09",
+        "step": "seed /links/abs.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/abs.md",
+          "target": "/notes.md",
+          "note": "絶対・正規形。問題ないはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 13,
+        "claim": "C09",
+        "step": "seed /links/dotdot.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/dotdot.md",
+          "target": "/src/../notes.md",
+          "note": "絶対・.. を含むがルートは超えない"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 14,
+        "claim": "C09",
+        "step": "seed /links/esc.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/esc.md",
+          "target": "/../notes.md",
+          "note": "絶対・ルートを超える ← Phase 3 の予測ではここがズレる"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 15,
+        "claim": "C09",
+        "step": "対照: 旧から読む",
+        "op": "shell.readFile",
+        "args": {
+          "path": "/notes.md"
+        },
+        "ok": true,
+        "result": {
+          "found": true,
+          "length": 23
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 16,
+        "claim": "C09",
+        "step": "tables before switch",
+        "op": "note",
+        "ok": true,
+        "result": [
+          "__miniflare_do_name",
+          "cf_workspace_default"
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 17,
+        "claim": "C09",
+        "step": "新 Workspace を構築",
+        "op": "new Workspace",
+        "args": {
+          "storage": "ctx.storage"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 18,
+        "claim": "C09",
+        "step": "新から読む /workspace/notes.md",
+        "op": "computer.readFile",
+        "args": {
+          "path": "/workspace/notes.md"
+        },
+        "ok": false,
+        "errorName": "ENOENT",
+        "error": "no such file: /workspace/notes.md",
+        "durationMs": 2
+      },
+      {
+        "seq": 19,
+        "claim": "C09",
+        "step": "新から読む /notes.md",
+        "op": "computer.readFile",
+        "args": {
+          "path": "/notes.md"
+        },
+        "ok": false,
+        "errorName": "ENOENT",
+        "error": "no such file: /notes.md",
+        "durationMs": 0
+      },
+      {
+        "seq": 20,
+        "claim": "C09",
+        "step": "新側のツリー",
+        "op": "computer.walk",
+        "args": {
+          "root": "/"
+        },
+        "ok": true,
+        "result": [
+          {
+            "path": "/workspace",
+            "type": "dir",
+            "mtime": 1792590379950
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 21,
+        "claim": "C10",
+        "step": "対照: 切り替え後に旧から読む",
+        "op": "shell.readFile",
+        "args": {
+          "path": "/notes.md"
+        },
+        "ok": true,
+        "result": {
+          "found": true,
+          "length": 23
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 22,
+        "claim": "C10",
+        "step": "cf_workspace_default rows after switch",
+        "op": "note",
+        "ok": true,
+        "result": 14,
+        "durationMs": 0
+      },
+      {
+        "seq": 23,
+        "claim": "C09",
+        "step": "tables after switch",
+        "op": "note",
+        "ok": true,
+        "result": [
+          "__miniflare_do_name",
+          "_vfs_fetch_cursor",
+          "_vfs_mounts",
+          "_vfs_push_cursor",
+          "_vfs_sync_operations",
+          "_vfs_sync_skips",
+          "_vfs_watermark",
+          "cf_workspace_default",
+          "computer_execution_runtime",
+          "sqlite_sequence",
+          "vfs_blob_bytes",
+          "vfs_blobs",
+          "vfs_changes",
+          "vfs_chunks",
+          "vfs_dirents",
+          "vfs_manifests",
+          "vfs_meta",
+          "vfs_nodes"
+        ],
+        "durationMs": 0
+      }
+    ],
+    "wallMs": 11
+  }
+}

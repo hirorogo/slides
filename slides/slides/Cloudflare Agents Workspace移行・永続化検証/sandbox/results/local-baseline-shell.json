@@ -1,0 +1,359 @@
+{
+  "runId": "2026-10-21T13-47-40-544Z",
+  "env": "local",
+  "scenario": "baseline-shell",
+  "params": {
+    "tag": "final"
+  },
+  "doName": "baseline-shell-tagfinal-2026-10-21T13-47-40-544Z",
+  "url": "http://localhost:8787/run/baseline-shell?do=baseline-shell-tagfinal-2026-10-21T13-47-40-544Z&tag=final",
+  "status": 200,
+  "httpTotalMs": 108,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 26,
+    "scenario": "baseline-shell",
+    "bootId": "0192907d-e4f0-47a4-9c95-cd1360116990",
+    "aliveMs": 14,
+    "doName": "baseline-shell-tagfinal-2026-10-21T13-47-40-544Z",
+    "tables": [
+      "__miniflare_do_name",
+      "cf_workspace_default"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "0192907d-e4f0-47a4-9c95-cd1360116990",
+          "aliveMs": 3,
+          "doName": "baseline-shell-tagfinal-2026-10-21T13-47-40-544Z",
+          "scenario": "baseline-shell"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C06",
+        "step": "tables before",
+        "op": "note",
+        "ok": true,
+        "result": [
+          "__miniflare_do_name"
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 3,
+        "claim": "C01",
+        "step": "seed /notes.md",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/notes.md",
+          "bytes": 39
+        },
+        "ok": true,
+        "durationMs": 2
+      },
+      {
+        "seq": 4,
+        "claim": "C01",
+        "step": "seed /src",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/src"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 5,
+        "claim": "C01",
+        "step": "seed /src/index.ts",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/src/index.ts",
+          "bytes": 20
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C01",
+        "step": "seed /data",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/data"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 7,
+        "claim": "C01",
+        "step": "seed /data/config.json",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/data/config.json",
+          "bytes": 28
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C01",
+        "step": "seed /assets",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/assets"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 9,
+        "claim": "C01",
+        "step": "seed /assets/sample.bin",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "path": "/assets/sample.bin",
+          "size": 65536,
+          "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+        },
+        "ok": true,
+        "durationMs": 7
+      },
+      {
+        "seq": 10,
+        "claim": "C01",
+        "step": "seed /empty",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/empty"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 11,
+        "claim": "C01",
+        "step": "seed /links",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/links"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 12,
+        "claim": "C01",
+        "step": "seed /links/rel.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/rel.md",
+          "target": "../notes.md",
+          "note": "相対。公式サンプルが正しく扱えるはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 13,
+        "claim": "C01",
+        "step": "seed /links/abs.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/abs.md",
+          "target": "/notes.md",
+          "note": "絶対・正規形。問題ないはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 14,
+        "claim": "C01",
+        "step": "seed /links/dotdot.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/dotdot.md",
+          "target": "/src/../notes.md",
+          "note": "絶対・.. を含むがルートは超えない"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 15,
+        "claim": "C01",
+        "step": "seed /links/esc.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/esc.md",
+          "target": "/../notes.md",
+          "note": "絶対・ルートを超える ← Phase 3 の予測ではここがズレる"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 16,
+        "claim": "C01",
+        "step": "walk shell",
+        "op": "shell.glob",
+        "args": {
+          "pattern": "/**"
+        },
+        "ok": true,
+        "result": [
+          {
+            "path": "/assets",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "dir"
+          },
+          {
+            "path": "/assets/sample.bin",
+            "mimeType": "application/octet-stream",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "file",
+            "size": 65536,
+            "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+          },
+          {
+            "path": "/data",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "dir"
+          },
+          {
+            "path": "/data/config.json",
+            "mimeType": "application/json",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "file",
+            "size": 28,
+            "sha256": "be79e4c1de3ca73e8b8d09fb19bd2735c551463b100c6a77b7d5786f0bfad0ef"
+          },
+          {
+            "path": "/empty",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "dir"
+          },
+          {
+            "path": "/links",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "dir"
+          },
+          {
+            "path": "/links/abs.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "symlink",
+            "target": "/notes.md"
+          },
+          {
+            "path": "/links/dotdot.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "symlink",
+            "target": "/src/../notes.md"
+          },
+          {
+            "path": "/links/esc.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "symlink",
+            "target": "/../notes.md"
+          },
+          {
+            "path": "/links/rel.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "symlink",
+            "target": "../notes.md"
+          },
+          {
+            "path": "/notes.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "file",
+            "size": 39,
+            "sha256": "06552a25aa69518a3cc7e48c907bff1ab185d9bac94dd0f1eaa07a079cc3ebd2"
+          },
+          {
+            "path": "/src",
+            "mimeType": "text/plain",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "dir"
+          },
+          {
+            "path": "/src/index.ts",
+            "mimeType": "text/typescript",
+            "createdAt": 1792590461000,
+            "updatedAt": 1792590461000,
+            "type": "file",
+            "size": 20,
+            "sha256": "b40dedde60828bf61d1fadbfc3bb7ea2e0421e9511d22f1b5fb44ae5ba07dbb3"
+          }
+        ],
+        "durationMs": 1
+      },
+      {
+        "seq": 17,
+        "claim": "C06",
+        "step": "tables after",
+        "op": "note",
+        "ok": true,
+        "result": [
+          "__miniflare_do_name",
+          "cf_workspace_default"
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 18,
+        "claim": "C06",
+        "step": "cf_workspace_default rows",
+        "op": "note",
+        "ok": true,
+        "result": 14,
+        "durationMs": 0
+      },
+      {
+        "seq": 19,
+        "claim": "C01",
+        "step": "entry count",
+        "op": "note",
+        "ok": true,
+        "result": 13,
+        "durationMs": 0
+      }
+    ],
+    "wallMs": 11
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "runId": "2026-10-21T13-56-46-346Z",
+  "method": "二分探索。旧 Shell は base64 TEXT を 1 セルに入れる",
+  "docSays": "Maximum string, BLOB or table row size: 2 MB (developers.cloudflare.com/durable-objects/platform/limits/)",
+  "maxOk": 6291408,
+  "maxOkBase64": 8388544,
+  "minNg": 6291409,
+  "minNgBase64": 8388548,
+  "trail": [
+    {
+      "size": 6291456,
+      "base64Len": 8388608,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    },
+    {
+      "size": 5242880,
+      "base64Len": 6990508,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 5767168,
+      "base64Len": 7689560,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6029312,
+      "base64Len": 8039084,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6160384,
+      "base64Len": 8213848,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6225920,
+      "base64Len": 8301228,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6258688,
+      "base64Len": 8344920,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6275072,
+      "base64Len": 8366764,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6283264,
+      "base64Len": 8377688,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6287360,
+      "base64Len": 8383148,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6289408,
+      "base64Len": 8385880,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6290432,
+      "base64Len": 8387244,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6290944,
+      "base64Len": 8387928,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6291200,
+      "base64Len": 8388268,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6291328,
+      "base64Len": 8388440,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6291392,
+      "base64Len": 8388524,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6291424,
+      "base64Len": 8388568,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    },
+    {
+      "size": 6291408,
+      "base64Len": 8388544,
+      "shellOk": true,
+      "computerOk": true
+    },
+    {
+      "size": 6291416,
+      "base64Len": 8388556,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    },
+    {
+      "size": 6291412,
+      "base64Len": 8388552,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    },
+    {
+      "size": 6291410,
+      "base64Len": 8388548,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    },
+    {
+      "size": 6291409,
+      "base64Len": 8388548,
+      "shellOk": false,
+      "shellErr": "string or blob too big: SQLITE_TOOBIG",
+      "computerOk": true
+    }
+  ]
+}

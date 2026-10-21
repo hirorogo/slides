@@ -1,0 +1,158 @@
+{
+  "claim": "C14",
+  "phase": 3,
+  "env": "desk",
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0"
+  },
+  "note": "純関数の差分テスト。実機不要。着地点は Computer の追従時セマンティクス（.. はルートでクランプ）で評価",
+  "stringMismatches": 8,
+  "landingMismatches": 4,
+  "rows": [
+    {
+      "link": "/links/notes.md",
+      "target": "../notes.md",
+      "a": "/notes.md",
+      "b": "/notes.md",
+      "landedOfficial": "/workspace/notes.md",
+      "landedCorrect": "/workspace/notes.md",
+      "bad": false
+    },
+    {
+      "link": "/links/notes.md",
+      "target": "/notes.md",
+      "a": "/notes.md",
+      "b": "/notes.md",
+      "landedOfficial": "/workspace/notes.md",
+      "landedCorrect": "/workspace/notes.md",
+      "bad": false
+    },
+    {
+      "link": "/links/notes.md",
+      "target": "notes.md",
+      "a": "/links/notes.md",
+      "b": "/links/notes.md",
+      "landedOfficial": "/workspace/links/notes.md",
+      "landedCorrect": "/workspace/links/notes.md",
+      "bad": false
+    },
+    {
+      "link": "/a/b/c/link",
+      "target": "../../d/e.txt",
+      "a": "/a/d/e.txt",
+      "b": "/a/d/e.txt",
+      "landedOfficial": "/workspace/a/d/e.txt",
+      "landedCorrect": "/workspace/a/d/e.txt",
+      "bad": false
+    },
+    {
+      "link": "/link",
+      "target": "../../../etc/passwd",
+      "a": "/etc/passwd",
+      "b": "/etc/passwd",
+      "landedOfficial": "/workspace/etc/passwd",
+      "landedCorrect": "/workspace/etc/passwd",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "./x.txt",
+      "a": "/a/x.txt",
+      "b": "/a/x.txt",
+      "landedOfficial": "/workspace/a/x.txt",
+      "landedCorrect": "/workspace/a/x.txt",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "sub//x.txt",
+      "a": "/a/sub/x.txt",
+      "b": "/a/sub/x.txt",
+      "landedOfficial": "/workspace/a/sub/x.txt",
+      "landedCorrect": "/workspace/a/sub/x.txt",
+      "bad": false
+    },
+    {
+      "link": "/deep/a/b/link",
+      "target": "..",
+      "a": "/deep/a",
+      "b": "/deep/a",
+      "landedOfficial": "/workspace/deep/a",
+      "landedCorrect": "/workspace/deep/a",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "/a/../b/x.txt",
+      "a": "/a/../b/x.txt",
+      "b": "/b/x.txt",
+      "landedOfficial": "/workspace/b/x.txt",
+      "landedCorrect": "/workspace/b/x.txt",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "/./a/x.txt",
+      "a": "/./a/x.txt",
+      "b": "/a/x.txt",
+      "landedOfficial": "/workspace/a/x.txt",
+      "landedCorrect": "/workspace/a/x.txt",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "//double/slash",
+      "a": "//double/slash",
+      "b": "/double/slash",
+      "landedOfficial": "/workspace/double/slash",
+      "landedCorrect": "/workspace/double/slash",
+      "bad": false
+    },
+    {
+      "link": "/a/link",
+      "target": "/a/b/../../c",
+      "a": "/a/b/../../c",
+      "b": "/c",
+      "landedOfficial": "/workspace/c",
+      "landedCorrect": "/workspace/c",
+      "bad": false
+    },
+    {
+      "link": "/link",
+      "target": "/../etc/passwd",
+      "a": "/../etc/passwd",
+      "b": "/etc/passwd",
+      "landedOfficial": "/etc/passwd",
+      "landedCorrect": "/workspace/etc/passwd",
+      "bad": true
+    },
+    {
+      "link": "/a/link",
+      "target": "/../../x",
+      "a": "/../../x",
+      "b": "/x",
+      "landedOfficial": "/x",
+      "landedCorrect": "/workspace/x",
+      "bad": true
+    },
+    {
+      "link": "/a/b/link",
+      "target": "/../b/x",
+      "a": "/../b/x",
+      "b": "/b/x",
+      "landedOfficial": "/b/x",
+      "landedCorrect": "/workspace/b/x",
+      "bad": true
+    },
+    {
+      "link": "/a/link",
+      "target": "/../workspace/y",
+      "a": "/../workspace/y",
+      "b": "/workspace/y",
+      "landedOfficial": "/workspace/y",
+      "landedCorrect": "/workspace/workspace/y",
+      "bad": true
+    }
+  ]
+}

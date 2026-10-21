@@ -1,0 +1,70 @@
+{
+  "runId": "2026-10-21T13-52-48-337Z",
+  "waits": [
+    0,
+    3,
+    6,
+    9,
+    11,
+    13,
+    15
+  ],
+  "rows": [
+    {
+      "waitSeconds": 0,
+      "boot1": "ef4c20d1-1ae2-469b-8d22-d98e0359d813",
+      "boot2": "ef4c20d1-1ae2-469b-8d22-d98e0359d813",
+      "restarted": false,
+      "readOk": true,
+      "text": "written-by ef4c20d1-1ae2-469b-8d22-d98e0359d813 at 2026-10-21T13:52:49.314Z"
+    },
+    {
+      "waitSeconds": 3,
+      "boot1": "62bdbce7-3c9f-428c-a19c-bcfde76649c2",
+      "boot2": "62bdbce7-3c9f-428c-a19c-bcfde76649c2",
+      "restarted": false,
+      "readOk": true,
+      "text": "written-by 62bdbce7-3c9f-428c-a19c-bcfde76649c2 at 2026-10-21T13:52:49.945Z"
+    },
+    {
+      "waitSeconds": 6,
+      "boot1": "af12b03e-4774-49c1-9c0a-52d0fb024e76",
+      "boot2": "af12b03e-4774-49c1-9c0a-52d0fb024e76",
+      "restarted": false,
+      "readOk": true,
+      "text": "written-by af12b03e-4774-49c1-9c0a-52d0fb024e76 at 2026-10-21T13:52:53.810Z"
+    },
+    {
+      "waitSeconds": 9,
+      "boot1": "22a8a7dd-9152-45d4-9e41-0fb60e219738",
+      "boot2": "22a8a7dd-9152-45d4-9e41-0fb60e219738",
+      "restarted": false,
+      "readOk": true,
+      "text": "written-by 22a8a7dd-9152-45d4-9e41-0fb60e219738 at 2026-10-21T13:53:01.141Z"
+    },
+    {
+      "waitSeconds": 11,
+      "boot1": "359b66a0-b446-43d2-be4b-34668b72e5cd",
+      "boot2": "90983bb6-8146-46cd-a4d6-8801a7f82c29",
+      "restarted": true,
+      "readOk": true,
+      "text": "written-by 359b66a0-b446-43d2-be4b-34668b72e5cd at 2026-10-21T13:53:11.321Z"
+    },
+    {
+      "waitSeconds": 13,
+      "boot1": "45efabd9-1759-4e98-9d69-e09cabeb6cd9",
+      "boot2": "9f5e04ff-787a-484a-a90a-647d88026342",
+      "restarted": true,
+      "readOk": true,
+      "text": "written-by 45efabd9-1759-4e98-9d69-e09cabeb6cd9 at 2026-10-21T13:53:23.294Z"
+    },
+    {
+      "waitSeconds": 15,
+      "boot1": "a1b79f36-31ec-4781-80a7-856646c332bd",
+      "boot2": "100e9292-1013-4ca0-a7db-98be4cdfb8f7",
+      "restarted": true,
+      "readOk": true,
+      "text": "written-by a1b79f36-31ec-4781-80a7-856646c332bd at 2026-10-21T13:53:36.846Z"
+    }
+  ]
+}

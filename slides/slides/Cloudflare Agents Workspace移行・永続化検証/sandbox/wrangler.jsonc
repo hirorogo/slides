@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "workspace-migration-lab",
+  "main": "src/index.ts",
+  // DO の hibernation / eviction 挙動は compatibility date に依存する。
+  // 2026-10-01 以降、pending work が最大 15 分 DO をメモリに留める。
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "durable_objects": {
+    "bindings": [{ "name": "LAB", "class_name": "WorkspaceLab" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorkspaceLab"] }],
+  "r2_buckets": [
+    { "binding": "R2", "bucket_name": "workspace-migration-lab" }
+  ]
+}

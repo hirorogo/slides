@@ -1,0 +1,141 @@
+{
+  "runId": "2026-10-21T14-14-11-564Z",
+  "docSays": "Maximum string, BLOB or table row size: 2 MB",
+  "note": "ライブラリを経由せず ctx.storage.sql / ctx.storage.kv を直接叩いた",
+  "maxOk": 8388627,
+  "minNg": 8388628,
+  "trail": [
+    {
+      "size": 10485760,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 9437184,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8912896,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8650752,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8519680,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8454144,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8421376,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8404992,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8396800,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8392704,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8390656,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8389632,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8389120,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388864,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388736,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388672,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388640,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388624,
+      "TEXT": true,
+      "BLOB": true,
+      "KV": false
+    },
+    {
+      "size": 8388632,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388628,
+      "TEXT": false,
+      "BLOB": false,
+      "KV": false
+    },
+    {
+      "size": 8388626,
+      "TEXT": true,
+      "BLOB": true,
+      "KV": false
+    },
+    {
+      "size": 8388627,
+      "TEXT": true,
+      "BLOB": true,
+      "KV": false
+    }
+  ]
+}

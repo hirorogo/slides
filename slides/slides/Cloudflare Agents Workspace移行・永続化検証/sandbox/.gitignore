@@ -1,0 +1,27 @@
+# --- 秘密・アカウント識別子 ---
+.env
+.dev.vars
+*.local
+# wrangler が account_id を書き込むことがある
+.wrangler/
+wrangler.jsonc.local
+
+# --- 生ログ・証跡（account_id / DO ID が入りうる）---
+data/
+results/*.raw.json
+results/*.raw.jsonl
+**/evidence-*.jsonl
+**/*-state.json
+
+# --- 生成物 ---
+node_modules/
+dist/
+*.tsbuildinfo
+fixtures/generated/
+
+# --- scratch ---
+tmp/
+*.log
+
+# workers.dev のサブドメインはアカウント識別子。生ログは出さない
+results/run-*.raw.jsonl

@@ -1,0 +1,458 @@
+{
+  "runId": "2026-10-21T13-48-30-482Z",
+  "env": "deployed",
+  "scenario": "migrate-twice",
+  "params": {
+    "variant": "fixed"
+  },
+  "doName": "migrate-twice-variantfixed-2026-10-21T13-48-30-482Z",
+  "url": "<deployed>/run/migrate-twice?do=migrate-twice-variantfixed-2026-10-21T13-48-30-482Z&variant=fixed",
+  "status": 200,
+  "httpTotalMs": 818,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 738,
+    "scenario": "migrate-twice",
+    "bootId": "5c0a2030-6c1d-4862-ab36-152537336f0b",
+    "aliveMs": 0,
+    "doName": "migrate-twice-variantfixed-2026-10-21T13-48-30-482Z",
+    "tables": [
+      "_vfs_fetch_cursor",
+      "_vfs_mounts",
+      "_vfs_push_cursor",
+      "_vfs_sync_operations",
+      "_vfs_sync_skips",
+      "_vfs_watermark",
+      "cf_workspace_default",
+      "computer_execution_runtime",
+      "sqlite_sequence",
+      "vfs_blob_bytes",
+      "vfs_blobs",
+      "vfs_changes",
+      "vfs_chunks",
+      "vfs_dirents",
+      "vfs_manifests",
+      "vfs_meta",
+      "vfs_nodes"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "5c0a2030-6c1d-4862-ab36-152537336f0b",
+          "aliveMs": 0,
+          "doName": "migrate-twice-variantfixed-2026-10-21T13-48-30-482Z",
+          "scenario": "migrate-twice"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C16",
+        "step": "seed /notes.md",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/notes.md",
+          "bytes": 39
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 3,
+        "claim": "C16",
+        "step": "seed /src",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/src"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 4,
+        "claim": "C16",
+        "step": "seed /src/index.ts",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/src/index.ts",
+          "bytes": 20
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 5,
+        "claim": "C16",
+        "step": "seed /data",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/data"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C16",
+        "step": "seed /data/config.json",
+        "op": "shell.writeFile",
+        "args": {
+          "path": "/data/config.json",
+          "bytes": 28
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 7,
+        "claim": "C16",
+        "step": "seed /assets",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/assets"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C16",
+        "step": "seed /assets/sample.bin",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "path": "/assets/sample.bin",
+          "size": 65536,
+          "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 9,
+        "claim": "C16",
+        "step": "seed /empty",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/empty"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 10,
+        "claim": "C16",
+        "step": "seed /links",
+        "op": "shell.mkdir",
+        "args": {
+          "path": "/links"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 11,
+        "claim": "C16",
+        "step": "seed /links/rel.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/rel.md",
+          "target": "../notes.md",
+          "note": "相対。公式サンプルが正しく扱えるはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 12,
+        "claim": "C16",
+        "step": "seed /links/abs.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/abs.md",
+          "target": "/notes.md",
+          "note": "絶対・正規形。問題ないはず"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 13,
+        "claim": "C16",
+        "step": "seed /links/dotdot.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/dotdot.md",
+          "target": "/src/../notes.md",
+          "note": "絶対・.. を含むがルートは超えない"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 14,
+        "claim": "C16",
+        "step": "seed /links/esc.md",
+        "op": "shell.symlink",
+        "args": {
+          "path": "/links/esc.md",
+          "target": "/../notes.md",
+          "note": "絶対・ルートを超える ← Phase 3 の予測ではここがズレる"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 15,
+        "claim": "C16",
+        "step": "1 回目の移行（修正版）",
+        "op": "copyShellWorkspace",
+        "args": {
+          "attempt": 1
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 16,
+        "claim": "C16",
+        "step": "2 回目の移行（修正版）",
+        "op": "copyShellWorkspace",
+        "args": {
+          "attempt": 2
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 17,
+        "claim": "C16",
+        "step": "2 回目のあとのツリー",
+        "op": "computer.walk",
+        "args": {
+          "root": "/workspace"
+        },
+        "ok": true,
+        "result": [
+          {
+            "path": "/workspace/assets",
+            "type": "dir",
+            "mtime": 1792590518060
+          },
+          {
+            "path": "/workspace/assets/sample.bin",
+            "type": "file",
+            "size": 65536,
+            "mtime": 1792590518060,
+            "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+          },
+          {
+            "path": "/workspace/data",
+            "type": "dir",
+            "mtime": 1792590518060
+          },
+          {
+            "path": "/workspace/data/config.json",
+            "type": "file",
+            "size": 28,
+            "mtime": 1792590518060,
+            "sha256": "be79e4c1de3ca73e8b8d09fb19bd2735c551463b100c6a77b7d5786f0bfad0ef"
+          },
+          {
+            "path": "/workspace/empty",
+            "type": "dir",
+            "mtime": 1792590518060
+          },
+          {
+            "path": "/workspace/links",
+            "type": "dir",
+            "mtime": 1792590518060
+          },
+          {
+            "path": "/workspace/links/abs.md",
+            "type": "symlink",
+            "mtime": 1792590518060,
+            "target": "/workspace/notes.md"
+          },
+          {
+            "path": "/workspace/links/dotdot.md",
+            "type": "symlink",
+            "mtime": 1792590518060,
+            "target": "/workspace/notes.md"
+          },
+          {
+            "path": "/workspace/links/esc.md",
+            "type": "symlink",
+            "mtime": 1792590518060,
+            "target": "/workspace/notes.md"
+          },
+          {
+            "path": "/workspace/links/rel.md",
+            "type": "symlink",
+            "mtime": 1792590518060,
+            "target": "/workspace/notes.md"
+          },
+          {
+            "path": "/workspace/notes.md",
+            "type": "file",
+            "size": 39,
+            "mtime": 1792590518060,
+            "sha256": "06552a25aa69518a3cc7e48c907bff1ab185d9bac94dd0f1eaa07a079cc3ebd2"
+          },
+          {
+            "path": "/workspace/src",
+            "type": "dir",
+            "mtime": 1792590518060
+          },
+          {
+            "path": "/workspace/src/index.ts",
+            "type": "file",
+            "size": 20,
+            "mtime": 1792590518060,
+            "sha256": "b40dedde60828bf61d1fadbfc3bb7ea2e0421e9511d22f1b5fb44ae5ba07dbb3"
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 18,
+        "claim": "C16",
+        "step": "旧ツリー",
+        "op": "shell.walk",
+        "args": {},
+        "ok": true,
+        "result": [
+          {
+            "path": "/assets",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "dir"
+          },
+          {
+            "path": "/assets/sample.bin",
+            "mimeType": "application/octet-stream",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "file",
+            "size": 65536,
+            "sha256": "c7d497eff908ae15bb742502a4073fabd9aacb165baa27f551a02d440bad110c"
+          },
+          {
+            "path": "/data",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "dir"
+          },
+          {
+            "path": "/data/config.json",
+            "mimeType": "application/json",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "file",
+            "size": 28,
+            "sha256": "be79e4c1de3ca73e8b8d09fb19bd2735c551463b100c6a77b7d5786f0bfad0ef"
+          },
+          {
+            "path": "/empty",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "dir"
+          },
+          {
+            "path": "/links",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "dir"
+          },
+          {
+            "path": "/links/abs.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "symlink",
+            "target": "/notes.md"
+          },
+          {
+            "path": "/links/dotdot.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "symlink",
+            "target": "/src/../notes.md"
+          },
+          {
+            "path": "/links/esc.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "symlink",
+            "target": "/../notes.md"
+          },
+          {
+            "path": "/links/rel.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "symlink",
+            "target": "../notes.md"
+          },
+          {
+            "path": "/notes.md",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "file",
+            "size": 39,
+            "sha256": "06552a25aa69518a3cc7e48c907bff1ab185d9bac94dd0f1eaa07a079cc3ebd2"
+          },
+          {
+            "path": "/src",
+            "mimeType": "text/plain",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "dir"
+          },
+          {
+            "path": "/src/index.ts",
+            "mimeType": "text/typescript",
+            "createdAt": 1792590518000,
+            "updatedAt": 1792590518000,
+            "type": "file",
+            "size": 20,
+            "sha256": "b40dedde60828bf61d1fadbfc3bb7ea2e0421e9511d22f1b5fb44ae5ba07dbb3"
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 19,
+        "claim": "C16",
+        "step": "comparison",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "total": 13,
+          "missing": [],
+          "typeChanged": [],
+          "contentMismatch": [],
+          "extra": []
+        },
+        "durationMs": 0
+      }
+    ],
+    "wallMs": 0
+  }
+}

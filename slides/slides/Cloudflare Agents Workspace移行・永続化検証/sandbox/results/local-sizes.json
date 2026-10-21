@@ -1,0 +1,617 @@
+{
+  "runId": "2026-10-21T13-47-40-544Z",
+  "env": "local",
+  "scenario": "sizes",
+  "params": {},
+  "doName": "sizes-2026-10-21T13-47-40-544Z",
+  "url": "http://localhost:8787/run/sizes?do=sizes-2026-10-21T13-47-40-544Z",
+  "status": 200,
+  "httpTotalMs": 562,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 531,
+    "scenario": "sizes",
+    "bootId": "e22db028-3dbd-4649-916f-fcec28d3e0e8",
+    "aliveMs": 331,
+    "doName": "sizes-2026-10-21T13-47-40-544Z",
+    "tables": [
+      "__miniflare_do_name",
+      "_vfs_fetch_cursor",
+      "_vfs_mounts",
+      "_vfs_push_cursor",
+      "_vfs_sync_operations",
+      "_vfs_sync_skips",
+      "_vfs_watermark",
+      "cf_workspace_default",
+      "computer_execution_runtime",
+      "sqlite_sequence",
+      "vfs_blob_bytes",
+      "vfs_blobs",
+      "vfs_changes",
+      "vfs_chunks",
+      "vfs_dirents",
+      "vfs_manifests",
+      "vfs_meta",
+      "vfs_nodes"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "e22db028-3dbd-4649-916f-fcec28d3e0e8",
+          "aliveMs": 0,
+          "doName": "sizes-2026-10-21T13-47-40-544Z",
+          "scenario": "sizes"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C18",
+        "step": "対照の準備",
+        "op": "computer.mkdir",
+        "args": {
+          "path": "/workspace"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 3,
+        "claim": "C18",
+        "step": "旧 Shell に 1KB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "1KB",
+          "size": 1024,
+          "base64Len": 1368,
+          "sha256": "8e2160587f51c6c627808806a7007ef524e0a830c3acf70577a82e0fbb43c6e9",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 4,
+        "claim": "C18",
+        "step": "旧 Shell から 1KB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "1KB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1024,
+          "sha256": "8e2160587f51c6c627808806a7007ef524e0a830c3acf70577a82e0fbb43c6e9",
+          "match": true
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 5,
+        "claim": "C18",
+        "step": "1KB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-1KB.bin",
+            "size": 1024,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 1368
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 1KB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "1KB",
+          "size": 1024,
+          "sha256": "8e2160587f51c6c627808806a7007ef524e0a830c3acf70577a82e0fbb43c6e9",
+          "expectedChunks": 1
+        },
+        "ok": true,
+        "durationMs": 1
+      },
+      {
+        "seq": 7,
+        "claim": "C18",
+        "step": "新 Computer から 1KB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "1KB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1024,
+          "match": true
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C18",
+        "step": "1KB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 1,
+            "total": 1024
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 9,
+        "claim": "C18",
+        "step": "旧 Shell に 100KB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "100KB",
+          "size": 102400,
+          "base64Len": 136536,
+          "sha256": "10569f8abc4af375a8c0de6c86288871a5f90a6e70ea058e9859f292ea449496",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 2
+      },
+      {
+        "seq": 10,
+        "claim": "C18",
+        "step": "旧 Shell から 100KB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "100KB"
+        },
+        "ok": true,
+        "result": {
+          "size": 102400,
+          "sha256": "10569f8abc4af375a8c0de6c86288871a5f90a6e70ea058e9859f292ea449496",
+          "match": true
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 11,
+        "claim": "C18",
+        "step": "100KB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-100KB.bin",
+            "size": 102400,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 136536
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 12,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 100KB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "100KB",
+          "size": 102400,
+          "sha256": "10569f8abc4af375a8c0de6c86288871a5f90a6e70ea058e9859f292ea449496",
+          "expectedChunks": 1
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 13,
+        "claim": "C18",
+        "step": "新 Computer から 100KB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "100KB"
+        },
+        "ok": true,
+        "result": {
+          "size": 102400,
+          "match": true
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 14,
+        "claim": "C18",
+        "step": "100KB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 1,
+            "total": 102400
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 15,
+        "claim": "C18",
+        "step": "旧 Shell に 1MB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "1MB",
+          "size": 1048576,
+          "base64Len": 1398104,
+          "sha256": "97d311f013bb1b5e157f7a829ed000d5984a7eaa5c09fb44177b6b88ec6ceb11",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 18
+      },
+      {
+        "seq": 16,
+        "claim": "C18",
+        "step": "旧 Shell から 1MB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "1MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1048576,
+          "sha256": "97d311f013bb1b5e157f7a829ed000d5984a7eaa5c09fb44177b6b88ec6ceb11",
+          "match": true
+        },
+        "durationMs": 6
+      },
+      {
+        "seq": 17,
+        "claim": "C18",
+        "step": "1MB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-1MB.bin",
+            "size": 1048576,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 1398104
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 18,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 1MB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "1MB",
+          "size": 1048576,
+          "sha256": "97d311f013bb1b5e157f7a829ed000d5984a7eaa5c09fb44177b6b88ec6ceb11",
+          "expectedChunks": 2
+        },
+        "ok": true,
+        "durationMs": 11
+      },
+      {
+        "seq": 19,
+        "claim": "C18",
+        "step": "新 Computer から 1MB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "1MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1048576,
+          "match": true
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 20,
+        "claim": "C18",
+        "step": "1MB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 2,
+            "total": 1048576
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 21,
+        "claim": "C18",
+        "step": "旧 Shell に 1.4MB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "1.4MB",
+          "size": 1400000,
+          "base64Len": 1866668,
+          "sha256": "90e6332b8addd2365d0b1544acbec4c9f6dcd9024ab7252daa3a5282f4c7689e",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 33
+      },
+      {
+        "seq": 22,
+        "claim": "C18",
+        "step": "旧 Shell から 1.4MB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "1.4MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1400000,
+          "sha256": "90e6332b8addd2365d0b1544acbec4c9f6dcd9024ab7252daa3a5282f4c7689e",
+          "match": true
+        },
+        "durationMs": 5
+      },
+      {
+        "seq": 23,
+        "claim": "C18",
+        "step": "1.4MB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-1.4MB.bin",
+            "size": 1400000,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 1866668
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 24,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 1.4MB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "1.4MB",
+          "size": 1400000,
+          "sha256": "90e6332b8addd2365d0b1544acbec4c9f6dcd9024ab7252daa3a5282f4c7689e",
+          "expectedChunks": 3
+        },
+        "ok": true,
+        "durationMs": 3
+      },
+      {
+        "seq": 25,
+        "claim": "C18",
+        "step": "新 Computer から 1.4MB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "1.4MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1400000,
+          "match": true
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 26,
+        "claim": "C18",
+        "step": "1.4MB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 3,
+            "total": 1400000
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 27,
+        "claim": "C18",
+        "step": "旧 Shell に 1.6MB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "1.6MB",
+          "size": 1600000,
+          "base64Len": 2133336,
+          "sha256": "f1b85f5496740667a5c1dd91fd45c34302fb097ae59a6a5a136c4c03c03ea964",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 39
+      },
+      {
+        "seq": 28,
+        "claim": "C18",
+        "step": "旧 Shell から 1.6MB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "1.6MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1600000,
+          "sha256": "f1b85f5496740667a5c1dd91fd45c34302fb097ae59a6a5a136c4c03c03ea964",
+          "match": true
+        },
+        "durationMs": 7
+      },
+      {
+        "seq": 29,
+        "claim": "C18",
+        "step": "1.6MB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-1.6MB.bin",
+            "size": 1600000,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 2133336
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 30,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 1.6MB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "1.6MB",
+          "size": 1600000,
+          "sha256": "f1b85f5496740667a5c1dd91fd45c34302fb097ae59a6a5a136c4c03c03ea964",
+          "expectedChunks": 4
+        },
+        "ok": true,
+        "durationMs": 4
+      },
+      {
+        "seq": 31,
+        "claim": "C18",
+        "step": "新 Computer から 1.6MB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "1.6MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 1600000,
+          "match": true
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 32,
+        "claim": "C18",
+        "step": "1.6MB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 4,
+            "total": 1600000
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 33,
+        "claim": "C18",
+        "step": "旧 Shell に 4MB（R2なし）",
+        "op": "shell.writeFileBytes",
+        "args": {
+          "label": "4MB",
+          "size": 4194304,
+          "base64Len": 5592408,
+          "sha256": "f031c024ad3c007e2ebf3d540b121bf468e73dc0aeae1606a61abbff3e3fd325",
+          "r2": false
+        },
+        "ok": true,
+        "durationMs": 97
+      },
+      {
+        "seq": 34,
+        "claim": "C18",
+        "step": "旧 Shell から 4MB を読む",
+        "op": "shell.readFileBytes",
+        "args": {
+          "label": "4MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 4194304,
+          "sha256": "f031c024ad3c007e2ebf3d540b121bf468e73dc0aeae1606a61abbff3e3fd325",
+          "match": true
+        },
+        "durationMs": 16
+      },
+      {
+        "seq": 35,
+        "claim": "C18",
+        "step": "4MB の storage_backend",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "path": "/size-4MB.bin",
+            "size": 4194304,
+            "storage_backend": "inline",
+            "content_encoding": "base64",
+            "content_len": 5592408
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 36,
+        "claim": "C18",
+        "step": "対照: 新 Computer に 4MB",
+        "op": "computer.writeFile",
+        "args": {
+          "label": "4MB",
+          "size": 4194304,
+          "sha256": "f031c024ad3c007e2ebf3d540b121bf468e73dc0aeae1606a61abbff3e3fd325",
+          "expectedChunks": 8
+        },
+        "ok": true,
+        "durationMs": 12
+      },
+      {
+        "seq": 37,
+        "claim": "C18",
+        "step": "新 Computer から 4MB を読む",
+        "op": "computer.readFile",
+        "args": {
+          "label": "4MB"
+        },
+        "ok": true,
+        "result": {
+          "size": 4194304,
+          "match": true
+        },
+        "durationMs": 3
+      },
+      {
+        "seq": 38,
+        "claim": "C18",
+        "step": "4MB のチャンク数",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "chunks": 8,
+            "total": 4194304
+          }
+        ],
+        "durationMs": 0
+      }
+    ],
+    "wallMs": 331
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "runId": "2026-10-21T13-47-40-544Z",
+  "env": "local",
+  "scenario": "rollback",
+  "params": {},
+  "doName": "rollback-2026-10-21T13-47-40-544Z",
+  "url": "http://localhost:8787/run/rollback?do=rollback-2026-10-21T13-47-40-544Z",
+  "status": 200,
+  "httpTotalMs": 11,
+  "versions": {
+    "@cloudflare/shell": "0.4.3",
+    "@cloudflare/computer": "0.6.0",
+    "wrangler": "4.151.3",
+    "node": "v24.22.1"
+  },
+  "body": {
+    "httpMs": 4,
+    "scenario": "rollback",
+    "bootId": "dcc1db4a-7da7-4799-b9ea-e601dc35d605",
+    "aliveMs": 3,
+    "doName": "rollback-2026-10-21T13-47-40-544Z",
+    "tables": [
+      "__miniflare_do_name",
+      "_vfs_fetch_cursor",
+      "_vfs_mounts",
+      "_vfs_push_cursor",
+      "_vfs_sync_operations",
+      "_vfs_sync_skips",
+      "_vfs_watermark",
+      "computer_execution_runtime",
+      "sqlite_sequence",
+      "vfs_blob_bytes",
+      "vfs_blobs",
+      "vfs_changes",
+      "vfs_chunks",
+      "vfs_dirents",
+      "vfs_manifests",
+      "vfs_meta",
+      "vfs_nodes"
+    ],
+    "records": [
+      {
+        "seq": 1,
+        "claim": "meta",
+        "step": "incarnation",
+        "op": "note",
+        "ok": true,
+        "result": {
+          "bootId": "dcc1db4a-7da7-4799-b9ea-e601dc35d605",
+          "aliveMs": 0,
+          "doName": "rollback-2026-10-21T13-47-40-544Z",
+          "scenario": "rollback"
+        },
+        "durationMs": 0
+      },
+      {
+        "seq": 2,
+        "claim": "C19",
+        "step": "まず普通に書く",
+        "op": "computer.writeFile",
+        "args": {
+          "path": "/workspace/a.txt"
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 3,
+        "claim": "C19",
+        "step": "schema_version（現在）",
+        "op": "note",
+        "ok": true,
+        "result": [
+          {
+            "v": 10
+          }
+        ],
+        "durationMs": 0
+      },
+      {
+        "seq": 4,
+        "claim": "C19",
+        "step": "対照: 同じ版で再構築",
+        "op": "new Workspace",
+        "args": {},
+        "ok": true,
+        "result": {
+          "read": "hello"
+        },
+        "durationMs": 1
+      },
+      {
+        "seq": 5,
+        "claim": "C19",
+        "step": "schema_version を 11 に偽装",
+        "op": "sql.exec",
+        "args": {
+          "to": 11
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 6,
+        "claim": "C19",
+        "step": "古いバイナリで開き直す",
+        "op": "new Workspace + fs op",
+        "args": {},
+        "ok": false,
+        "errorName": "EIO",
+        "error": "Unsupported workspace filesystem schema version 11",
+        "durationMs": 0
+      },
+      {
+        "seq": 7,
+        "claim": "C19",
+        "step": "schema_version を 10 に戻す",
+        "op": "sql.exec",
+        "args": {
+          "to": 10
+        },
+        "ok": true,
+        "durationMs": 0
+      },
+      {
+        "seq": 8,
+        "claim": "C19",
+        "step": "戻したら開けるか",
+        "op": "new Workspace + fs op",
+        "args": {},
+        "ok": true,
+        "result": {
+          "read": "hello"
+        },
+        "durationMs": 1
+      }
+    ],
+    "wallMs": 3
+  }
+}
