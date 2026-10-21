@@ -1,8 +1,8 @@
 ---
-published: false
+published: true
 ---
 
-# PHP2SHELLという悪夢の再来を検証してみる
+# PHP2Shellという悪夢の再来を検証してみる
 
 > 「PHP コアの UAF で RCE」――その公開 PoC は、私のラボでは動きませんでした。
 
