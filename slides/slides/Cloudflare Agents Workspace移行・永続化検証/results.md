@@ -3,6 +3,7 @@
 | | |
 | --- | --- |
 | 計測日 | 2026-10-21 |
+| 上流報告 | [cloudflare/agents#2645](https://github.com/cloudflare/agents/issues/2645) — C14 / C16。2026-10-21 提出、回答待ち |
 | 環境 | ローカル（`wrangler dev`, miniflare）+ **本番 Cloudflare Workers / Durable Objects** |
 | バージョン | `@cloudflare/shell@0.4.3` / `@cloudflare/computer@0.6.0` / wrangler 4.151.3 / node v24.22.1 |
 | compatibility_date | `2026-10-20` |
