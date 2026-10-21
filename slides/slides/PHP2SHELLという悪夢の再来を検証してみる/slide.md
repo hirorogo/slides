@@ -4,6 +4,7 @@ description: PHPの重大脆弱性2件を公式パッチ前に自分のラボで
 author: tanahiro2010
 date: 2026-10-21
 slug: poc-php2shell
+published: true
 ---
 
 ::title::
