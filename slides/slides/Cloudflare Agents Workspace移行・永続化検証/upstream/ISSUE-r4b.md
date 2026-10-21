@@ -33,10 +33,10 @@ This looks like a leftover rather than a disagreement about naming. [#1922](http
 
 > Require `ai@^7` and `@ai-sdk/react@^4`, because Think bundles providers that return AI SDK v7 models. See [Think dependencies](https://github.com/cloudflare/agents/blob/main/docs/think/index.md#dependencies).
 
-That changeset links to this table, and the repository uses "AI SDK v7" for `ai@^7` elsewhere in the same file, so the table row appears to have been missed when v6 support was removed.
+That changeset links to this very table. The repository maps the npm major to the SDK name one-to-one elsewhere — `docs/agents/observability.md` has a section titled "AI SDK v6 and v7", and `docs/agents/migration-to-ai-sdk-v6.md` pins `ai@^6` for v6 — so this is not a naming difference.
+
+It may have been copied from the packages that still take both: `agents` and `@cloudflare/ai-chat` support v6 and v7, and only `think` is v7-only.
 
 ### Suggested change
 
 `Vercel AI SDK v6` → `Vercel AI SDK v7` in that one row.
-
-I would open a PR, but `CreatePullRequest` is refused for my account on this repository, so this is the best I can do from here.
