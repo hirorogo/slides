@@ -87,7 +87,7 @@ if (size >= this.threshold && !r2)
   console.warn(`[Workspace] File ${path} is ${size} bytes but no R2 bucket was provided. Storing inline.`);
 ```
 
-この「1行に全部入れる」という性質が、後で効いてきます。
+この「1行に全部入れる」という性質が、後で響いてきます。
 
 ## 3. 新 Workspace は、inode とチャンクに分かれている
 
@@ -146,12 +146,15 @@ cf_workspace_default の行数     → 14（切り替え前と同じ）
 
 ```
 cf_workspace_default
-vfs_nodes  vfs_dirents  vfs_chunks  vfs_blobs  vfs_blob_bytes
-vfs_manifests  vfs_meta  vfs_changes
-_vfs_watermark  _vfs_fetch_cursor  _vfs_push_cursor  ...
+computer_execution_runtime
+sqlite_sequence
+vfs_blob_bytes   vfs_blobs    vfs_changes   vfs_chunks
+vfs_dirents      vfs_manifests  vfs_meta    vfs_nodes
+_vfs_fetch_cursor  _vfs_mounts  _vfs_push_cursor
+_vfs_sync_operations  _vfs_sync_skips  _vfs_watermark
 ```
 
-ついでに分かったことが1つ。`vfs_*` は `new Workspace()` を呼んだ時点で全部作られます。最初の `fs` 操作を待ちません。`schema_version` は `10` でした。
+ついでに1つ分かりました。`vfs_*` は `new Workspace()` を呼んだ時点で全部作られます。最初の `fs` 操作を待ちません。`schema_version` は `10` でした。
 
 ## 5. 帰結②：1行に入れるかどうかで、上限が変わる
 
@@ -214,7 +217,7 @@ Error: string or blob too big: SQLITE_TOOBIG
 
 ここは諦めました。実用上は「旧 Shell に R2 を渡さない場合、ファイルは約 6 MiB が上限」と覚えておけば足ります。
 
-新 Computer は 512 KiB のチャンクに割るので、この壁がありません。8MB も 16MB も 32MB も通りました。チャンク化は速度の工夫に見えますが、効いているのは上限のほうです。
+新 Computer は 512 KiB のチャンクに割るので、この壁がありません。8MB も 16MB も 32MB も通りました。チャンク化は速度の工夫に見えますが、変わったのは上限のほうです。
 
 ## 6. 帰結③：毎回 base64 に変換するので、遅い
 
@@ -317,7 +320,7 @@ comparison → {
 
 13件すべて存在し、型も変わらず、64KB のバイナリも SHA-256 が一致しています。空ディレクトリも残りました。ローカルの `wrangler dev` でも、デプロイした本番でも同じ結果です。
 
-ハッシュ比較が機能していることも確認しました。1ビットだけ変えたバイト列を用意して、ハッシュが別物になることを見ています。`af2ba40f…` と `73734ea1…` です。比較が不一致を検出できないまま「一致した」と言っても意味がないので。
+ハッシュ比較が機能していることも確認しました。1ビットだけ変えたバイト列を用意して、ハッシュが別物になることを見ています。`af2ba40f…` と `73734ea1…` です。比較が不一致を検出できないまま「一致した」と言っても、何も示したことになりません。
 
 スクリプトが暗黙に頼っている前提も確かめました。コードのコメントに「glob returns rows ordered by path, so parents come before children」とあります。これが崩れると `mkdir` の前に `writeFile` が走ります。実測では辞書順でソートされていて、親は必ず子より先に来ていました。
 
@@ -337,10 +340,16 @@ comparison → {
 原因はスクリプトの `resolveTarget()` にあります。
 
 ```ts
+// Shell resolves a relative target against the link's directory and never
+// goes above `/`.
 function resolveTarget(link: string, target: string): string {
   if (target.startsWith("/")) return target;   // 絶対パスは素通し
   const parts = link.split("/").slice(1, -1);
-  ...
+  for (const part of target.split("/")) {
+    if (part === "..") parts.pop();
+    else if (part !== "" && part !== ".") parts.push(part);
+  }
+  return `/${parts.join("/")}`;
 }
 ```
 
@@ -379,9 +388,9 @@ await to.fs.symlink(at(target), link);
 
 シンボリックリンクを含まない Workspace なら、ここは踏みません。
 
-## 11. 永続化は効いている
+## 11. 永続化は保たれている
 
-保存形式が変わっても、Durable Object の SQLite に載っていることは同じです。再起動をまたいで残るかを確かめました。
+保存形式が変わっても、Durable Object の SQLite に載っている点は同じです。再起動をまたいで残るかを確かめました。
 
 「別のリクエストから読めた」だけでは証拠になりません。同じインスタンスがメモリに残っていて、そこから返しただけかもしれないからです。コンストラクタで `crypto.randomUUID()` を1つ生成して、レスポンスに載せました。値が変わっていれば、新しい incarnation です。
 
@@ -414,7 +423,7 @@ await to.fs.symlink(at(target), link);
     15    する      ok
 ```
 
-9秒と11秒の間。ドキュメントの「無活動10秒で hibernate」と一致しました。
+境界は9秒と11秒の間にあります。ドキュメントの「無活動10秒で hibernate」と一致しました。
 
 ## 12. 移行する前にやること
 
@@ -439,7 +448,9 @@ await to.fs.symlink(at(target), link);
 
 移行ガイドは「テーブルが違うので手でコピーしてください」としか書いていません。違うのはテーブル名ではなく構造のほうで、そこを見ておくと、移行のときに何を確かめればいいかが先に分かります。
 
-ついでに分かった、ドキュメントとずれていた点が2つ。Durable Object SQLite の値の上限は 2 MB ではなく 8 MiB でした。そして、新スキーマを書いた Durable Object が古い実装で開けないことは、ユーザー向けのどこにも書かれていません。
+ドキュメントとずれていた点も2つ出ました。Durable Object SQLite の値の上限は 2 MB ではなく 8 MiB でしたし、新スキーマを書いた Durable Object が古い実装で開けないことは、ユーザー向けのどこにも書かれていません。
+
+一番こたえたのは、4MB が通ったところです。公式の数字から予測を立てて、外しました。前提を公式に置いていたぶん、崩れたときに他の予測まで信用できなくなって、上限も速度も結局は自分で測り直しています。移行そのものより、そっちに時間を使いました。
 
 ### 参考
 
