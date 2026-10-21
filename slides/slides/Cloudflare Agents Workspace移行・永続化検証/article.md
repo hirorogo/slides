@@ -205,7 +205,7 @@ shell.writeFileBytes が通る最大  6,291,408 バイト（base64 8,388,544 文
 
 base64 が 4/3 に膨らむので、ファイルとしては約 6 MiB が上限です。
 
-ただし、なぜ素の SQL（8,388,627）より手前で落ちるのかは分かりませんでした。Shell の DDL、インデックス、INSERT 文、`ON CONFLICT DO UPDATE` 句、そして Shell が実際に作る base64 文字列まで完全に複製して同じ Durable Object で流しても、**素の SQL は通ります。** UPSERT が `excluded` で値を二重に持つのではないかという仮説も立てましたが、行が既にある状態の UPSERT も同じサイズで通りました。
+ただし、なぜ素の SQL（8,388,627）より手前で落ちるのかは分かりませんでした。Shell の DDL、インデックス、INSERT 文、`ON CONFLICT DO UPDATE` 句、そして Shell が実際に作る base64 文字列まで揃えて、同じ Durable Object で流しても、**素の SQL は通ります。** UPSERT が `excluded` で値を二重に持つのではないかという仮説も立てましたが、行が既にある状態の UPSERT も同じサイズで通りました。
 
 スタックトレースは Shell の INSERT を指しています。
 
