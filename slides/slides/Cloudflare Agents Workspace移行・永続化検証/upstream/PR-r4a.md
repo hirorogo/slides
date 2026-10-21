@@ -30,4 +30,6 @@ declare class WorkerJavaScriptBackend implements WorkspaceModuleBackend {
 
 This changes the prose to match. Nothing else on the page is touched — the code
 sample was already correct, so anyone who copied the snippet is unaffected.
-Opened as a draft in case you would rather word it differently.
+
+Filed as #34504 with the same detail, in case the wording should go a different
+way than this.
