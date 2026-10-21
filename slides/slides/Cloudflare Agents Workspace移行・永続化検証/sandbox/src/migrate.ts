@@ -50,24 +50,18 @@ export async function copyShellWorkspace(
 // --- ここまで公式サンプル -------------------------------------------------
 
 /**
- * 修正版（C14 / C16 の対照）。公式との差は 2 点だけ:
- *   1. 絶対ターゲットも Shell と同じく正規化する
- *   2. symlink が EEXIST のとき、同じリンク先なら許容する（再実行の冪等化）
- * ほかは公式と同一にして、差分の原因を 2 点に限定する。
+ * 修正版（C14 / C16 の対照）。**cloudflare/agents に出す PR と同じコード**にしてある。
+ * 公式との差は 2 点だけ:
+ *   1. 絶対ターゲットも Shell と同じく正規化する（resolveTarget の 1 行）
+ *   2. 既存リンクを消してから張り直す（再実行の EEXIST 回避）
  */
-function normalizeAbsolute(path: string): string {
-  const resolved: string[] = [];
-  for (const part of path.split("/")) {
-    if (part === "" || part === ".") continue;
-    if (part === "..") resolved.pop();
-    else resolved.push(part);
-  }
-  return "/" + resolved.join("/");
-}
-
 export function resolveTargetFixed(link: string, target: string): string {
-  if (target.startsWith("/")) return normalizeAbsolute(target);
-  return resolveTarget(link, target);
+  const parts = target.startsWith("/") ? [] : link.split("/").slice(1, -1);
+  for (const part of target.split("/")) {
+    if (part === "..") parts.pop();
+    else if (part !== "" && part !== ".") parts.push(part);
+  }
+  return `/${parts.join("/")}`;
 }
 
 export async function copyShellWorkspaceFixed(
@@ -83,15 +77,12 @@ export async function copyShellWorkspaceFixed(
       await to.fs.mkdir(at(entry.path), { recursive: true });
     } else if (entry.type === "symlink" && entry.target) {
       const target = resolveTargetFixed(entry.path, entry.target);
-      const linkPath = at(entry.path);
-      // workspace.fs には exists / lstatOrNull が無い（RPC スタブ側のみ）。
-      // lstat を try で受ける。
-      const current = await to.fs.readlink(linkPath).catch(() => null);
-      if (current !== null) {
-        if (current === at(target)) continue;
-        await to.fs.rm(linkPath);
+      const link = at(entry.path);
+      // `symlink` throws EEXIST, so a second run has to clear the old link.
+      if (await to.fs.readlink(link).then(() => true, () => false)) {
+        await to.fs.rm(link);
       }
-      await to.fs.symlink(at(target), linkPath);
+      await to.fs.symlink(at(target), link);
     } else {
       const bytes = await from.readFileBytes(entry.path);
       if (bytes !== null) await to.fs.writeFile(at(entry.path), bytes);
