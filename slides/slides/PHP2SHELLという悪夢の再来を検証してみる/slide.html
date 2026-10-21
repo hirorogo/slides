@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
 <title>PHP2SHELLという悪夢の再来を検証してみる</title>
-<meta name="description" content="PHPの重大脆弱性2件を公式パッチ前に自分のラボで検証する">
+<meta name="description" content="PHPの重大脆弱性2件を、公開PoC・ソース・公式パッチで検証する">
 <meta name="author" content="tanahiro2010">
 <meta name="generator" content="ippon-slides">
 <style>:root {
@@ -914,21 +914,21 @@ body.presenter #overview {
 </head>
 <body>
 <div id="deck">
-<section class="slide title"><h1>PHP2SHELLという悪夢の再来を検証してみる</h1><p>tanahiro2010</p><p>2026-10-21 ・ 公式パッチ公開の前に</p></section>
+<section class="slide title"><h1>PHP2SHELLという悪夢の再来を検証してみる</h1><p>tanahiro2010</p><p>2026-10-21 ・ 予告から公式パッチまで</p></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>予告</p></section>
 <section class="slide center"><p>2026年10月20日</p></section>
 <section class="slide"><h2>公式の予告</h2><ul><li>10月21日 14:00 UTC にセキュリティリリース</li><li>Critical <strong>2件</strong>、いずれも CVSS v4.0 <strong>9.2</strong></li><li>詳細・影響バージョン・修正版はリリース時に公開</li></ul><p class="note">php.net/archive/2026</p></section>
 <section class="slide center"><p>書いてあったのは、たった4行</p></section>
-<section class="slide"><h2>公式が言っていないこと</h2><ul><li>CVE番号</li><li>「RCEである」という分類</li><li>「session.upload_progress が原因」という特定</li><li>影響バージョンも修正版番号も、まだ何も無い</li></ul></section>
+<section class="slide"><h2>予告が言っていないこと</h2><ul><li>CVE番号</li><li>「RCEである」という分類</li><li>「session.upload_progress が原因」という特定</li><li>影響バージョンも修正版番号も、まだ何も無い</li></ul><p class="note">10月20日の予告時点</p></section>
 <section class="slide center"><p>中身は分からない</p></section>
 <section class="slide center"><p>なのにリークが先に走った</p></section>
 <section class="slide center"><p>PHP2SHELL</p></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>混線</p></section>
 <section class="slide"><h2>流れている情報</h2><ul><li>CVE-2026-109618 / 109619 という番号</li><li>原因は Session Upload Progress のメモリ破壊</li><li>影響は PHP 5.4 以降すべて</li></ul><p class="note">SNS / HN / 研究者</p></section>
-<section class="slide center"><p>どれも公式ではない</p></section>
+<section class="slide center"><p>どれも、予告時点では公式ではない</p></section>
 <section class="slide"><h2>重大度すら割れている</h2><ul><li>公式 <span class="arrow">→</span> CVSS v4.0 <strong>9.2</strong></li><li>watchTowr CEO <span class="arrow">→</span> &quot;Both of them are <strong>CVSS 10</strong>&quot;</li><li>同じ脆弱性の数字が、違う値で流通している</li></ul><p class="note">BleepingComputer</p></section>
 <section class="slide center"><p>誰が、何を確定させた？？</p></section>
-<section class="slide"><h2>4つの層に分ける</h2><ul><li>公式が確定させたこと</li><li>研究者・リークの主張</li><li>公開PoCの主張</li><li>自分のラボの検証</li></ul></section>
+<section class="slide"><h2>5つの層に分ける</h2><ul><li>公式が確定させたこと</li><li>研究者・リークの主張</li><li>公開PoCの主張</li><li>自分のラボの検証</li><li>公式パッチの答え合わせ</li></ul></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>機構</p></section>
 <section class="slide"><h2>Session Upload Progress</h2><ul><li>multipartのPOSTに特定フィールドを入れると</li><li>PHPがアップロード進捗をセッションに書く</li><li>enabled の既定は <strong>On</strong></li></ul></section>
 <section class="slide center"><p>いつ動く？？</p></section>
@@ -965,15 +965,23 @@ static int php_session_rfc1867_callback(...) {
 <section class="slide"><h2>enabled=0 でも</h2><ul><li>session書き込みは止まる</li><li>multipartのアップロードと一時ファイルは残る</li><li>tmp_name を include する sink があれば別経路</li></ul></section>
 <section class="slide"><h2>use_strict_mode=1 でも</h2><ul><li>SIDを選ばせないだけ</li><li>進捗の書き込み自体は続く</li><li>新しいSIDは応答の Set-Cookie に出る <span class="arrow">→</span> 読めれば追従</li></ul></section>
 <section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>対策</p></section>
-<section class="slide"><h2>緩和策の強弱</h2><ul><li>enabled=Off <span class="arrow">→</span> primitiveは止まる / 一時ファイルは残る</li><li>use_strict_mode=1 <span class="arrow">→</span> SID固定は防ぐ / Set-Cookie追従は残る</li><li>パッチ <span class="arrow">→</span> コアの原因 / アプリ側LFIは残る</li></ul></section>
-<section class="slide"><h2>パッチ後に確定すること</h2><ul><li>公式のCVE番号・影響バージョン・原因・攻撃条件</li><li>修正コミットのdiffがどこを直したか</li><li>公開PoCの主張が正しかったか</li></ul></section>
-<section class="slide"><h2>持ち帰れること</h2><ul><li>アプリ層の安全性とランタイム層の安全性は別物</li><li>自分のコードが1行も悪くなくても、届く前に壊れる</li><li>「設定で回避」「パッチで修正」「sinkの除去」を混同しない</li></ul></section>
-<section class="slide"><h2>まとめ</h2><ul><li>予告 <span class="arrow">→</span> 中身が分からないまま先にリークが走った</li><li>混線 <span class="arrow">→</span> 公式9.2とwatchTowr10.0で数字が割れた</li><li>機構 <span class="arrow">→</span> アプリ実行前に動く書き込みprimitive</li><li>検証 <span class="arrow">→</span> コアのUAFはそのままでは再現せず</li><li>鎖 <span class="arrow">→</span> multipart primitive + アプリ側LFI は成立した</li><li>対策 <span class="arrow">→</span> 設定ひとつでは止まらない</li></ul></section>
+<section class="slide"><h2>緩和策の強弱</h2><ul><li>enabled=Off <span class="arrow">→</span> primitiveは止まる / 一時ファイルは残る</li><li>use_strict_mode=1 <span class="arrow">→</span> SID固定は防ぐ / Set-Cookie追従は残る</li><li>パッチ <span class="arrow">→</span> OOMと状態破棄漏れ / アプリ側LFIは残る</li></ul></section>
+<section class="slide center light" style="--slide-size:1.5;background:#fafafa;"><p>答え合わせ</p></section>
+<section class="slide"><h2>パッチで確定したこと</h2><ul><li>CVE-2026-109618 <span class="arrow">→</span> <strong>OOM corruption</strong></li><li>CVE-2026-109619 <span class="arrow">→</span> <strong>stale global state</strong></li><li>修正版は <strong>8.5.12 / 8.4.27 / 8.3.36 / 8.2.35</strong></li><li>Session Upload Progress は 619 の consumer</li></ul><p class="note">php.net/archive/2026</p></section>
+<section class="slide"><h2>答え合わせ：原因</h2><ul><li>公開PoC <span class="arrow">→</span> 2回目のupdateでzvalが壊れる</li><li>公式 <span class="arrow">→</span> OOM時の状態破壊 / リクエストを跨ぐstale state</li><li>単一リクエストのUAFではなかった</li></ul><p class="note">GHSA-w8hw-w9fx-j79w / GHSA-6wmf-4rv5-p3rp</p></section>
+<section class="slide"><h2>答え合わせ：修正</h2><ul><li>ext/session <span class="arrow">→</span> RINIT前にsession globalsを初期化</li><li>upload progress中は <code>__PHP_Incomplete_Class</code> 固定</li><li>Zend <span class="arrow">→</span> OOMの <code>longjmp</code> を廃止</li><li>multipart <span class="arrow">→</span> ヘッダ保持とOOMチェックを制限</li></ul><p class="note">php-src commit 31c0ea7d7f</p></section>
+<section class="slide"><h2>8.5.12 で再実行</h2><ul><li>upload_progress の書き込みは動く（仕様）</li><li>公開PoC 618/619 はクラッシュせず</li><li>8.5.11 でもクラッシュしていない <span class="arrow">→</span> 効果の根拠は差分側</li><li>multipart + LFI は <strong>uid=33(www-data)</strong></li></ul><p class="note">コア修正とアプリ側sinkは別レイヤー</p></section>
+<section class="slide"><h2>予測の答え合わせ</h2><ul><li>修正版番号 <span class="arrow">→</span> <strong>的中</strong></li><li>公式はRCEと書いていない <span class="arrow">→</span> リリースで<strong>RCEと明言</strong></li><li>原因はzval UAF <span class="arrow">→</span> <strong>外れ</strong></li><li>enabled=Off は不完全 <span class="arrow">→</span> <strong>的中</strong></li></ul></section>
+<section class="slide"><h2>持ち帰れること</h2><ul><li>アプリ層の安全性とランタイム層の安全性は別物</li><li>公開PoCが間違っていても、CVEが無いとは限らない</li><li>「設定で回避」「パッチで修正」「sinkの除去」を混同しない</li><li>更新だけが完全な対策</li></ul></section>
+<section class="slide"><h2>まとめ</h2><ul><li>予告 <span class="arrow">→</span> 中身が分からないまま先にリークが走った</li><li>混線 <span class="arrow">→</span> 公式9.2とwatchTowr10.0で数字が割れた</li><li>機構 <span class="arrow">→</span> アプリ実行前に動く書き込みprimitive</li><li>検証 <span class="arrow">→</span> 公開PoCのコアUAFは再現せず、原因はOOMとstale state</li><li>鎖 <span class="arrow">→</span> multipart + LFI は 8.5.12 でも成立</li><li>対策 <span class="arrow">→</span> 更新だけが完全な対策。sinkは別途</li></ul></section>
 <section class="slide center" style="--slide-size:1.5;"><p>ありがとうございました</p></section>
 <section class="slide center light" style="background:#fafafa;"><p>One more thing</p></section>
-<section class="slide center"><p>23:00 JST、公式パッチが出る</p></section>
-<section class="slide center"><p>そのとき、この結論を更新する</p></section>
-<section class="slide center"><p>もし間違っていたら、隠さず撤回する</p></section>
+<section class="slide center"><p>公式は、予告より早く出た</p></section>
+<section class="slide center"><p>公開PoCの説明は、間違っていた</p></section>
+<section class="slide center"><p>それでも、CVEは実在した</p></section>
+<section class="slide center"><p>更新だけが完全な対策</p></section>
+<section class="slide center"><p>アプリ側LFIは、更新後も残る</p></section>
+<section class="slide center"><p>現物を見てから、結論を書く</p></section>
 </div>
 <div id="overview"></div>
 <div id="presenter"></div>
@@ -981,7 +989,7 @@ static int php_session_rfc1867_callback(...) {
 <div id="timer"></div>
 <div id="counter"></div>
 <div id="hint">← → 移動 ・ f フルスクリーン ・ o 一覧 ・ p 発表者</div>
-<script id="notes" type="application/json">["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]</script>
+<script id="notes" type="application/json">["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]</script>
 <script>"use strict";
 // スライドのナビゲーション。ippon が HTML に埋め込む。
 //   → / Space / PageDown / クリック右側     次へ
