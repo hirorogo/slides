@@ -24,7 +24,7 @@ summary: 全部移ったように見えて、リンクだけ壊れていた
 | DO SQLite の値の上限 | ドキュメント 2 MB → 実測 **8 MiB** |
 | 1MB の書き込み+読み込み | 旧 87.25ms → 新 6.45ms |
 
-検証コードはこちらです: `sandbox/`（この記事と同じリポジトリ）
+検証コードはこちらです: https://github.com/tanahiro2010/slides/tree/main/slides/slides/Cloudflare%20Agents%20Workspace%E7%A7%BB%E8%A1%8C%E3%83%BB%E6%B0%B8%E7%B6%9A%E5%8C%96%E6%A4%9C%E8%A8%BC/sandbox
 
 そして、この記事で一番伝えたいことを先に書いておきます。
 
