@@ -1,5 +1,5 @@
 ---
-published: false
+published: true
 summary: Cloudflare AgentsのWorkspaceを移行して測ってみる
 ---
 
