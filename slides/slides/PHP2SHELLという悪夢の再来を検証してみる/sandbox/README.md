@@ -3,6 +3,7 @@
 > **自分が管理する隔離環境専用。** 外部の PHP サーバーに対して実行しないでください。
 > このラボは 2026-10-21 17:00 JST 時点（公式パッチ公開前）の公開情報と公開 PoC を使って、
 > `session.upload_progress` / multipart 経路で何が観測できるかを確かめるためのものです。
+> 2026-10-21 22:45 JST の公式リリースとパッチ差分を受けて、§7 にパッチ後（8.5.12）の比較を追記しました。
 
 対象: CVE-2026-109618 / CVE-2026-109619（php2shell）
 関連: `../references.md`（公式情報とリーク・二次情報の整理）
@@ -246,30 +247,51 @@ upload_progress_uid=33(www-data) gid=33(www-data) groups=33(www-data)
 実務的な意味になり得ます）。
 一方、公開バンドルが主張する「PHP コアの UAF」は別物で、こちらはまだ再現していません。
 
-## 7. パッチ公開後の比較
+## 7. パッチ公開後の比較（2026-10-21 22:50 JST 実施）
 
-公式パッチが出たら、`PATCHED_VERSION` を修正版に変えて patched プロファイルを起動します。
+`PATCHED_VERSION=8.5.12` で ASAN ビルドを作り、8082（通常）と 8084（LFI デモ）で再実行しました。
 
 ```sh
-PATCHED_VERSION=8.4.27 \
-  docker compose -f compose.yaml -f compose.patched.yaml --profile patched up -d --build
+PATCHED_VERSION=8.5.12 \
+  docker compose -f compose.yaml -f compose.patched.yaml --profile patched up -d --build php-patched nginx
 python3 attacker/attack.py --mode all \
   --target http://127.0.0.1:8082/index.php \
   --mitigated http://127.0.0.1:8081/index.php \
   --asan-dir data/logs-patched
+python3 attacker/lfi_demo.py --target http://127.0.0.1:8084/index.php
 ```
 
-`8.4.27` は例です。実際の修正版番号は公式リリースで確認してください。
-タグ/ tarball がまだ存在しない場合、ビルドは失敗します（その場合はリリース後に再実行）。
+結果:
 
-パッチ差分の確認例:
+| 検証 | 8.5.12 |
+| --- | --- |
+| `probe` | `upload_progress=present`, `file_parsed=True` |
+| `trigger` | `bytes_processed=258`, `done=True`, `asan=no` |
+| `poc618` / `poc619` | HTTP 200、`rce=no`, `asan=no` |
+| LFI 鎖（8084） | `uid=33(www-data)` |
+| `data/logs-patched/fpm-error.log` | 起動 / 終了 NOTICE のみ |
+
+読み取り:
+
+- パッチ後も `session.upload_progress` の書き込み primitive は動く（仕様どおり）。
+  公式修正は「RINIT 前の状態初期化」と「リクエストを跨ぐ stale state の reset」であって、
+  進捗書き込みの無効化ではない。
+- **アプリ側 LFI の鎖は 8.5.12 でも成立する。** コア CVE の修正とアプリ側 sink は別レイヤー。
+- 8.5.12 で PoC がクラッシュしないことはパッチ効果の証明にならない。8.5.11 でも
+  このラボの PoC はクラッシュしていないため。効果の根拠は GHSA と差分側に置く。
+
+パッチ差分の確認:
 
 ```sh
-git clone --depth 1 --branch PHP-8.4 https://github.com/php/php-src.git /tmp/php-src
-# 修正版タグができたら
-git -C /tmp/php-src fetch --tags
-git -C /tmp/php-src diff <修正前タグ>..<修正後タグ> -- ext/session/session.c main/rfc1867.c
+git clone --depth 1 --branch PHP-8.5 https://github.com/php/php-src.git /tmp/php-src
+git -C /tmp/php-src fetch --depth 1 origin tag php-8.5.11 tag php-8.5.12
+git -C /tmp/php-src diff php-8.5.11 php-8.5.12 -- \
+  ext/session/session.c main/rfc1867.c Zend/zend_alloc.c
 ```
+
+修正コミットは `31c0ea7d7f`（"Avoid state corruption via bailout"）。
+`ext/session/session.c` では `MULTIPART_EVENT_START` で `php_rinit_session_globals()` を先に呼び、
+upload progress 中の unserialize / serialize を `__PHP_Incomplete_Class` 固定にしている。
 
 ## 8. 設計上の注意
 

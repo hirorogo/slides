@@ -12,6 +12,7 @@ services:
     volumes:
       - ./docker/php/php-on.ini:/opt/php/etc/php.ini:ro
       - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
       - ./data/logs-patched:/var/log/php
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=128m
@@ -24,5 +25,7 @@ services:
   nginx:
     ports:
       - "127.0.0.1:8082:8082"
+      - "127.0.0.1:8084:8084"
     volumes:
       - ./docker/nginx/patched.conf:/etc/nginx/conf.d/patched.conf:ro
+      - ./lfi-demo:/web-lfi:ro
