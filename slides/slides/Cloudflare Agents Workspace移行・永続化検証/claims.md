@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| フェーズ | **6（判定）まで完了。** 結果は `results.md` |
-| 次 | 7. 上流報告の判断（ユーザー待ち）→ 8. `slide-creater` → `article-creater` |
-| 人間待ち | **あり** — ドキュメント不備 4 件を Cloudflare に報告するか |
-| 開示 | **R1+R2 報告済み** → [cloudflare/agents#2645](https://github.com/cloudflare/agents/issues/2645)（2026-10-21、回答待ち）。R3/R4 は未報告 |
+| フェーズ | **7（開示）まで完了。** 結果は `results.md` |
+| 次 | **8. `slide-creater` → `article-creater`**（軸: 「移行は成功したように見える」） |
+| 人間待ち | なし（上流の回答待ちだが、公開はブロックしない方針） |
+| 開示 | **4 件すべて提出済み**（下記「上流への報告」）。全件 open・回答待ち |
 | 作成日 | 2026-10-21 |
 | 対象 | `@cloudflare/shell@0.4.3`+`think@0.20.2` → `@cloudflare/computer@0.6.0`+`think@0.21.0` の永続化・移行・互換性 |
 | 実機 | **一部のみ要**（下記「実機が要るもの／要らないもの」で分離済み） |
@@ -300,3 +300,24 @@ HTTP 往復ではなく **1 ステップ = 1 レコード**で `results/*.json` 
 → Issue は「新発見の報告」ではなく **「過去の判定の訂正」と「引き継ぎ漏れの指摘」** として書き直した。
 
 > **教訓: 既出調査は Issue 本文より先にやる。** 枠組みが変わる。
+
+## 上流への報告（Phase 7 — 完了）
+
+すべて 2026-10-21 に提出。**セキュリティ案件は無く、4 件とも実装とドキュメントの食い違い。**
+
+| # | 内容 | 提出先 | 状態 |
+| --- | --- | --- | --- |
+| R1+R2 | 公式移行スクリプトの symlink 欠陥 2 件（C14 / C16） | [cloudflare/agents#2645](https://github.com/cloudflare/agents/issues/2645) | open・`documentation` |
+| R3 | DO SQL / KV の値上限が doc 2 MB・実測 約 8 MiB（C18） | [cloudflare-docs#34502](https://github.com/cloudflare/cloudflare-docs/issues/34502) | open・`content:edit` |
+| R4a | Changelog のクラス名誤記 | [cloudflare-docs#34504](https://github.com/cloudflare/cloudflare-docs/issues/34504) | open・`content:edit` |
+| R4a | 同・修正 PR（1 語） | [cloudflare-docs#34500](https://github.com/cloudflare/cloudflare-docs/pull/34500) | open・CODEOWNERS レビュー待ち |
+| R4b | `docs/think/index.md` の `ai` が v6 表記 | [cloudflare/agents#2647](https://github.com/cloudflare/agents/issues/2647) | open |
+
+R3 は参考ブランチのみ添付し、PR にはしていない（2 MB が保証値なら修正の向きが逆になるため）:
+`tanahiro2010:cloudflare-docs:fix/durable-objects-value-size-limit`
+
+### 回答が返ってきたら
+
+`verify-judge` のとおり、**却下されてもそれは結論の一部**。理由ごと記事に書く。
+とくに R3 は「2 MB は保証値で 8 MiB は実装の緩さ」という回答なら、
+こちらの観測ではなく**解釈のほうが更新される**。
