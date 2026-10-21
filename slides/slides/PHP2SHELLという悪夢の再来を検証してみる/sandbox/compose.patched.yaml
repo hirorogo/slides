@@ -1,0 +1,28 @@
+services:
+  php-patched:
+    profiles: [patched]
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: "${PATCHED_VERSION:-8.4.27}"
+    image: "php2shell-asan:${PATCHED_VERSION:-8.4.27}"
+    environment:
+      ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1:print_stacktrace=1:log_path=/var/log/php/asan"
+      USE_ZEND_ALLOC: "0"
+    volumes:
+      - ./docker/php/php-on.ini:/opt/php/etc/php.ini:ro
+      - ./web:/web:ro
+      - ./data/logs-patched:/var/log/php
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+  nginx:
+    ports:
+      - "127.0.0.1:8082:8082"
+    volumes:
+      - ./docker/nginx/patched.conf:/etc/nginx/conf.d/patched.conf:ro

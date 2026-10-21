@@ -1,0 +1,148 @@
+name: php2shell
+
+services:
+  php-vuln:
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: "${PHP_VERSION:-8.4.4}"
+    image: "php2shell-asan:${PHP_VERSION:-8.4.4}"
+    environment:
+      ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1:print_stacktrace=1:log_path=/var/log/php/asan"
+      USE_ZEND_ALLOC: "0"
+    volumes:
+      - ./docker/php/php-on.ini:/opt/php/etc/php.ini:ro
+      - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
+      - ./data/logs:/var/log/php
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/php/bin/php -r 'exit(@fsockopen(\"127.0.0.1\",9000)?0:1);'"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+  php-mitigated:
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: "${PHP_VERSION:-8.4.4}"
+    image: "php2shell-asan:${PHP_VERSION:-8.4.4}"
+    environment:
+      ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1:print_stacktrace=1:log_path=/var/log/php/asan"
+      USE_ZEND_ALLOC: "0"
+    volumes:
+      - ./docker/php/php-off.ini:/opt/php/etc/php.ini:ro
+      - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
+      - ./data/logs:/var/log/php
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/php/bin/php -r 'exit(@fsockopen(\"127.0.0.1\",9000)?0:1);'"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 5s
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+
+  php56:
+    profiles: [php56]
+    image: php:5.6.40-fpm
+    volumes:
+      - ./docker/php/php56.ini:/usr/local/etc/php/conf.d/zz-php2shell.ini:ro
+      - ./web:/web:ro
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+
+  php-cleanup:
+    profiles: [cleanup]
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: "${PHP_VERSION:-8.4.4}"
+    image: "php2shell-asan:${PHP_VERSION:-8.4.4}"
+    environment:
+      ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1:print_stacktrace=1:log_path=/var/log/php/asan"
+      USE_ZEND_ALLOC: "0"
+    volumes:
+      - ./docker/php/php-cleanup.ini:/opt/php/etc/php.ini:ro
+      - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
+      - ./data/logs:/var/log/php
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+
+  php-strict:
+    profiles: [strict]
+    build:
+      context: ./docker/php
+      args:
+        PHP_VERSION: "${PHP_VERSION:-8.4.4}"
+    image: "php2shell-asan:${PHP_VERSION:-8.4.4}"
+    environment:
+      ASAN_OPTIONS: "detect_leaks=0:abort_on_error=1:print_stacktrace=1:log_path=/var/log/php/asan"
+      USE_ZEND_ALLOC: "0"
+    volumes:
+      - ./docker/php/php-strict.ini:/opt/php/etc/php.ini:ro
+      - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
+      - ./data/logs:/var/log/php
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:8083:8083"
+      - "127.0.0.1:8087:8087"
+      - "127.0.0.1:8089:8089"
+      - "127.0.0.1:8088:8088"
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web:/web:ro
+      - ./lfi-demo:/web-lfi:ro
+    depends_on:
+      php-vuln:
+        condition: service_healthy
+      php-mitigated:
+        condition: service_healthy
+    networks: [lab]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+
+networks:
+  lab:
+    driver: bridge

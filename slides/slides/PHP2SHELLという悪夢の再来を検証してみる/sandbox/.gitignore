@@ -1,0 +1,11 @@
+.env
+data/logs/*
+!data/logs/.gitkeep
+data/logs-patched/*
+!data/logs-patched/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/*.jsonl
+__pycache__/
+*.pyc
+data/*.log
