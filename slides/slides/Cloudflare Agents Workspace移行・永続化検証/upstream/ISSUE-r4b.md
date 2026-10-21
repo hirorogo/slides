@@ -1,3 +1,12 @@
+<!-- 出し先: cloudflare/agents の「Blank issue」。
+     あちらは Bug report と Blank issue の 2 つしかなく、Blank は本文欄が 1 つだけ。
+     cloudflare-docs の ISSUE-r4a / ISSUE-r3 のような欄分割は不要。
+     下の本文をそのまま丸ごと貼る。
+
+     タイトル:
+     Think docs: the dependency table lists ai as v6, but think requires ai@^7
+-->
+
 `docs/think/index.md` lists `ai` as "Vercel AI SDK v6" in the dependency table, but `@cloudflare/think` requires `ai@^7`.
 
 ### The table
