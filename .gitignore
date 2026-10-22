@@ -22,3 +22,16 @@ dist-ssr/
 test.json
 **/evidence-*.jsonl
 **/lifetime-state*.json
+
+# --- verify-pipeline: Cloudflare Agents / createAI 検証 ---
+# .env を作る前に先に書いている。シークレットは一度もコミットさせない。
+**/sandbox/.env
+**/sandbox/.env.*
+!**/sandbox/.env.example
+# wrangler のローカルシークレット
+**/.dev.vars
+**/.dev.vars.*
+# 証跡の生ログ（指紋化前）と測定データ
+**/sandbox/data/
+**/*.raw.jsonl
+**/sandbox/node_modules/

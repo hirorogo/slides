@@ -1,0 +1,21 @@
+{
+  "name": "createai-fallback-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "watch": "vitest"
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "4.0.31",
+    "agents": "0.30.0",
+    "ai": "7.0.148",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261022.1",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

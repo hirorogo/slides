@@ -1,0 +1,15 @@
+{
+  // 実機検証用。デプロイはせず `wrangler dev --remote` でだけ使う。
+  // account_id は書かない（公開リポジトリなので）。CLOUDFLARE_ACCOUNT_ID で渡す。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "createai-fallback-probe",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": false
+  }
+}
