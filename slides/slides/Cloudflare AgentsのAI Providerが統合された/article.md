@@ -99,7 +99,27 @@ const binding = {
 const ai = createAI({ binding: binding as never });
 ```
 
-これで `fallback` の状態機械がローカルで動きます。アカウントも課金も要りません。SSE を 1 チャンクずつ組み立てられるので、好きな位置で `controller.error()` を呼べます。
+これで `fallback` の状態機械がローカルで動きます。アカウントも課金も要りません。
+
+肝心なのは本文の作り方です。チャンクを 1 つずつ `pull` で出し、尽きたところでエラーにします。
+
+```ts
+function dropAfter(chunks: Chunk[]): ReadableStream<Uint8Array> {
+  const enc = new TextEncoder();
+  let i = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (i < chunks.length) {
+        controller.enqueue(enc.encode(`data: ${JSON.stringify(chunks[i++])}\n\n`));
+        return;
+      }
+      controller.error(new Error("connection dropped"));
+    },
+  });
+}
+```
+
+`chunks` に何を渡すかで、切れる位置が決まります。`{ choices: [{ delta: { content: "h" } }] }` を入れれば本文が 1 文字出てから切れ、`{ choices: [{ delta: { tool_calls: [{ function: { name: "x", arguments: "" } }] } }] }` を入れればツール名だけ出てから切れます。この差が、そのまま次の節の表になります。
 
 実装を読むのに使った手も書いておきます。`agents` は `dist` に sourcemap を同梱していて、`sourcesContent` に元の TypeScript が丸ごと入っています。
 
@@ -180,6 +200,19 @@ if (input !== undefined && input !== "") {
 
 名前だけ届いて引数が空なら、`tool-input-start` が単独で出ます。だからここが、切り替われる最後の地点になります。
 
+並べるとこうなります。
+
+| preamble パート | 単独で出せるか | 理由 |
+| --- | --- | --- |
+| `stream-start` | 出せる | 先頭に 1 つ出る |
+| `response-metadata` | 出せる | 最初のチャンクの id と model から出る |
+| `text-start` | **出せない** | `text-delta` と同じチャンクから続けて出る |
+| `reasoning-start` | **出せない** | `reasoning-delta` と対で出る |
+| `tool-input-start` | 出せる | 引数が空なら `tool-input-delta` が出ない |
+| `raw` | 出せる | `includeRawChunks` を立てたときだけ |
+
+6 つのうち 2 つは、この wire では到達できません。集合の定義を読むだけだと「`text-start` の後もまだ間に合う」と読めてしまいますが、実際には試せません。
+
 `text-start` が集合に入っているのは、ベンダーのモデルオブジェクト向けと読めます。Anthropic の provider は `content_block_start` と `content_block_delta` を別のイベントで出すので、そちらなら単独で到達できるはずです。ただしベンダーモデルでは測っていないので、ここは実装の読みに留まります。
 
 公式テストは「出力前」と「出力後」の 2 つしか試していません。ツール名だけの状態は扱われていません。
@@ -189,6 +222,14 @@ if (input !== undefined && input !== "") {
 `fallback` が手を引いた後、何も無いわけではありません。
 
 `AAA` まで流して切断し、再接続して `BBB` を受け取ると、利用者が手にするのは `AAABBB` です。取りこぼしも重複もありません。そしてこのとき **`fallback` は 1 度も呼ばれません**。
+
+重複しない理由は、再接続の単位が SSE イベントだからです。実装のコメントにこうあります。
+
+> The one subtlety is alignment. `from` counts complete SSE events, so the wrapper only ever passes complete events on and holds back a trailing partial one. After a drop the partial is discarded and the replay starts at the count of events already delivered: no byte is duplicated or lost.
+
+完全なイベントだけを下流に渡し、途中まで届いたイベントは握っておく。切れたらその半端な分を捨てて、すでに渡した個数から再開する、という作りです。
+
+実際に偽 binding で `fetch` の URL を記録すると、渡した個数がそのまま `from=` に乗っているのが見えます。イベントを 2 つ流して切れば `?from=2`、3 つなら `?from=3` でした。
 
 役割が分かれています。`fallback` は「開けなかったとき」。`resume` は「開いた後に壊れたとき」です。
 
@@ -321,6 +362,30 @@ Retry は `fallback` チェーンの**外側**にあります。
 
 404 は `fallback` しますが retry はしません。判定の基準が別だからです。`fallback` は abort 以外のすべてで次に進み、retry は `isRetryable` だけを見ます。
 
+その `isRetryable` の境目も測りました。
+
+| ステータス | `isRetryable` |
+| ---: | --- |
+| 400 / 401 / 403 / 404 / 422 | `false` |
+| 408 / 409 / 429 / 500 / 503 | `true` |
+
+ステータスが付かない失敗（接続断など）も `true` です。実装では `status === undefined` を transport レベルの障害とみなしています。
+
+**abort だけは別扱いです。** `AbortSignal` で中断すると、`fallback` は次のモデルに進まずそのまま throw します。利用者が画面を閉じたのに裏で別のモデルに課金される、という事故にはなりません。対照として、abort ではない例外を投げると `fallback` は普通に進みました。
+
+もう 1 つ、設定の合流で踏みやすいところがあります。`fallback` をモデル側と呼び出し側の両方に書くと、**呼び出し側が置き換えます**。連結ではありません。
+
+```ts
+const model = ai(P, { fallback: [F] });           // モデル側は F
+await generateText({
+  model,
+  providerOptions: { cloudflare: { fallback: [F2] } },  // 呼び出し側は F2
+});
+// 実際に試されたのは P → F2。F は 1 度も呼ばれない
+```
+
+空配列を渡した場合は未指定と同じ扱いで、`attempts` も入りませんでした。
+
 `attempts` は `fallback` を設定していないと `undefined` です。ドキュメントのサンプルには条件なしで「lists every fallback model that failed」と書かれていますが、Cloudflare 自身のテストが `expect(error.attempts).toBeUndefined()` を期待しています。
 
 実機では「存在しないモデル」の `code` が 2 つに割れました。
@@ -365,11 +430,26 @@ UnsupportedModelVersionError: Unsupported model version v4 for provider "cloudfl
 
 別経路で同じ場所に辿り着いているので、読み違いではなさそうです。
 
+この方は core 側の設計意図も引いていました。`models/core/errors.ts` には「framework modules wrap it into their own error type at their boundary」と書かれています。つまり core が framework 中立のエラーを投げるのは設計通りで、抜けているのは境界側の変換だけ、という整理です。直す場所が core ではなく `models/ai-sdk/transport.ts` だという判断も、ここから出ています。
+
 ついでに観測した話を 1 つ。このリポジトリには報告を確認して PR を出すボットがいます。別件で出した Issue では、確認コメントが付いた数時間後に修正 PR が立ちました。すべての報告がそうなるとは限りませんが、ファイルと行が特定できている報告は動きが早いようです。
 
 ## 10. まとめ
 
 `fallback` を 1 行書いて安心していました。測ってみると、守備範囲は「モデルが口を開くまで」でした。
+
+```mermaid
+flowchart TD
+  A[ストリーム開始] --> B{出力が始まったか}
+  B -- まだ --> C[fallback: 次のモデルへ]
+  B -- 始まった --> D{run id があるか}
+  D -- ある --> E[resume: 同じ run に再接続]
+  D -- ない --> F[そのまま失敗]
+  E --> G{6 回目のドロップか}
+  G -- そう --> H[CloudflareAIError<br/>ただし公開型ではない]
+  G -- まだ --> E
+```
+
 
 - ツール名が届いた段階なら、まだ別のモデルに切り替わります
 - 本文が 1 文字出たら、もう切り替わりません
