@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
+<title>Cloudflare AgentsのAI Providerが統合されたので検証してみる</title>
+<meta name="description" content="〜 fallbackは、本文が1文字出たら切り替わらない 〜">
+<meta name="author" content="田中博悠 / tanahiro2010">
+<meta name="generator" content="ippon-slides">
+<style>:root {
+  --slide-bg: #000;
+  --slide-fg: #fff;
+  --slide-accent: #ff6a00;
+  --slide-accent-2: #ff6a00;
+  --slide-muted: #8a8a8a;
+  --slide-code-bg: #0d0d0d;
+  --slide-border: rgba(255, 255, 255, 0.12);
+  --slide-font: -apple-system, 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  /* macOS には凸版文久見出しゴシックが入っている。ない環境では本文フォントに落ちる */
+  --slide-display-font: 'Toppan Bunkyu Midashi Gothic', '凸版文久見出しゴシック', var(--slide-font);
+  --slide-mono: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* 1280x720 で 16px。画面の短い辺に合わせて rem ごと拡大縮小する */
+html {
+  font-size: max(16px, min(1.25vw, 2.223vh));
+  touch-action: manipulation;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  font-family: var(--slide-font);
+  overflow: hidden;
+}
+#deck {
+  position: fixed;
+  inset: 0;
+}
+
+/* ---------- slide ---------- */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6vh 9vw;
+  box-sizing: border-box;
+  overflow: auto;
+  /* 日本語を文節で改行する（Chrome 119+） */
+  word-break: auto-phrase;
+}
+.slide pre {
+  word-break: normal;
+}
+.slide.active {
+  display: flex;
+  animation: slide-in 0.25s ease;
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide > :first-child {
+  margin-top: 0;
+}
+
+.slide h1 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(2.2rem, 5vw, 3.6rem) * var(--slide-size, 1));
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+}
+.slide h2 {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4vw, 2.6rem) * var(--slide-size, 1));
+  line-height: 1.2;
+  margin: 0 0 2.2rem;
+}
+.slide h3 {
+  font-size: calc(clamp(1.4rem, 3vw, 1.9rem) * var(--slide-size, 1));
+  margin: 0 0 1rem;
+}
+.slide p,
+.slide li {
+  font-size: calc(clamp(1.1rem, 2.2vw, 1.5rem) * var(--slide-size, 1));
+  line-height: 1.6;
+}
+.slide ul,
+.slide ol {
+  padding-left: 1.4em;
+  margin: 0 0 1rem;
+}
+.slide li {
+  margin: 0.35em 0;
+}
+.slide li > ul {
+  margin: 0;
+}
+.slide li li {
+  font-size: 0.85em;
+  color: var(--slide-muted);
+}
+.slide a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+}
+/* 太字 = アクセントカラー */
+.slide strong {
+  font-weight: 700;
+  color: var(--slide-accent-2);
+}
+.slide strong code {
+  color: inherit;
+}
+.slide .arrow {
+  color: var(--slide-muted);
+  font-family: 'Hiragino Sans', system-ui, sans-serif;
+  font-weight: 800;
+}
+.slide img {
+  max-height: 58vh;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+.img-caption {
+  display: block;
+  text-align: center;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--slide-muted);
+}
+
+/* `::wide::` 左右の余白を詰める */
+.slide.wide {
+  padding-left: 3vw;
+  padding-right: 3vw;
+}
+
+/* `::right::` 2 カラム */
+.slide .cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  align-items: start;
+  width: 100%;
+}
+.slide .cols.left-wide {
+  grid-template-columns: 1.4fr 1fr;
+}
+.slide .cols.right-wide {
+  grid-template-columns: 1fr 1.4fr;
+}
+.slide .cols > * > :first-child {
+  margin-top: 0;
+}
+.slide .cols pre {
+  margin-top: 0;
+}
+
+/* `::center::` 1 枚 1 メッセージ */
+.slide.center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.slide.center h1,
+.slide.center h2 {
+  margin-bottom: 0.4em;
+}
+.slide.center p {
+  font-family: var(--slide-display-font);
+  font-size: calc(clamp(1.8rem, 4.5vw, 3.5rem) * var(--slide-size, 1));
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0.2em 0;
+}
+.slide.center ul,
+.slide.center ol {
+  text-align: left;
+}
+.slide.center pre {
+  text-align: left;
+  max-width: 100%;
+}
+
+/* `-# ` で始まる段落は小さい注釈 */
+.slide .note,
+.slide.center p.note {
+  font-family: var(--slide-font);
+  font-weight: 400;
+  color: var(--slide-muted);
+}
+.slide .note {
+  font-size: calc(clamp(0.95rem, 1.8vw, 1.25rem) * var(--slide-size, 1));
+}
+.slide.center p.note {
+  font-size: clamp(1.2rem, 2.6vw, 2.1rem);
+}
+
+/* `::title::` 表紙 */
+.slide.title {
+  padding-bottom: 8vh;
+}
+.slide.title h1 {
+  margin-top: auto;
+  font-size: calc(clamp(2.6rem, 7vw, 5.2rem) * var(--slide-size, 1));
+  line-height: 1.2;
+}
+.slide.title p {
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+.slide.title p:last-child {
+  margin-top: auto;
+  font-size: clamp(1rem, 1.8vw, 1.3rem);
+  color: var(--slide-muted);
+}
+
+/* `::bg=white::` 明るい背景 */
+.slide.light {
+  --slide-fg: #1f1f1f;
+  --slide-accent-2: #e85d00;
+  --slide-muted: #777;
+  --slide-border: rgba(0, 0, 0, 0.12);
+  --slide-code-bg: #f0f0f0;
+  color: var(--slide-fg);
+}
+
+.slide blockquote {
+  border-left: 4px solid var(--slide-accent-2);
+  margin: 0 0 1rem;
+  padding: 0.2rem 0 0.2rem 1.2rem;
+  color: var(--slide-muted);
+}
+
+.slide table {
+  border-collapse: collapse;
+  font-size: calc(clamp(1rem, 2vw, 1.35rem) * var(--slide-size, 1));
+  margin: 0 auto 1rem 0;
+}
+.slide.center table {
+  margin: 0 auto;
+}
+.slide th,
+.slide td {
+  padding: 0.5em 1.2em;
+  border-bottom: 1px solid var(--slide-border);
+  text-align: left;
+}
+.slide th {
+  color: var(--slide-muted);
+  font-weight: 600;
+}
+.slide td.num,
+.slide th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- code ---------- */
+
+.slide pre {
+  position: relative;
+  font-family: var(--slide-mono);
+  font-size: calc(clamp(0.8rem, 1.35vw, 1rem) * var(--slide-size, 1));
+  background: var(--slide-code-bg);
+  border: 1px solid var(--slide-border);
+  padding: 1.2rem 1.5rem;
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 64vh;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.slide pre code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.slide pre[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--slide-muted);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.slide :not(pre) > code {
+  font-family: var(--slide-mono);
+  background: rgba(127, 127, 127, 0.18);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ハイライト（atom-one-dark 寄り） */
+.hl-c {
+  color: #7f848e;
+  font-style: italic;
+}
+.hl-s {
+  color: #98c379;
+}
+.hl-k {
+  color: #c678dd;
+}
+.hl-n {
+  color: #d19a66;
+}
+.hl-f {
+  color: #61afef;
+}
+.hl-t {
+  color: #e5c07b;
+}
+.hl-i {
+  color: #56b6c2;
+}
+/* console */
+.hl-prompt {
+  color: var(--slide-accent-2);
+  user-select: none;
+}
+.hl-cmd {
+  color: #fff;
+  font-weight: 600;
+}
+.light .hl-cmd {
+  color: #1f1f1f;
+}
+.hl-out {
+  color: #abb2bf;
+}
+.hl-err {
+  color: #ef5350;
+  font-weight: 600;
+}
+.hl-ok {
+  color: #98c379;
+}
+/* `!! ` を付けた行は行全体を帯でハイライト */
+.hl-mark {
+  display: inline-block;
+  width: calc(100% + 3rem);
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  background: rgba(255, 106, 0, 0.16);
+  box-shadow: inset 3px 0 0 var(--slide-accent-2);
+}
+
+/* コードブロック右上のコピーボタン（deck.js が付ける） */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.25em 0.7em;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+.slide pre:hover .copy-btn,
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.copy-btn.copied {
+  color: #fff;
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+  opacity: 1;
+}
+
+/* ---------- ::http:: プレイグラウンド ---------- */
+
+.slide .http {
+  border: 1px solid var(--slide-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 0 1rem;
+  font-size: calc(clamp(0.85rem, 1.5vw, 1.1rem) * var(--slide-size, 1));
+}
+.http-req {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.6em 0.9em;
+  background: var(--slide-code-bg);
+  border-bottom: 1px solid var(--slide-border);
+}
+.http-method {
+  font-family: var(--slide-mono);
+  font-weight: 700;
+  font-size: 0.85em;
+  padding: 0.15em 0.6em;
+  border-radius: 5px;
+  background: rgba(127, 127, 127, 0.2);
+  color: var(--slide-fg);
+  letter-spacing: 0.03em;
+}
+.http-method.m-get {
+  color: #61afef;
+}
+.http-method.m-post {
+  color: #98c379;
+}
+.http-method.m-put,
+.http-method.m-patch {
+  color: #e5c07b;
+}
+.http-method.m-delete {
+  color: #ef5350;
+}
+.http-url {
+  font-family: var(--slide-mono);
+  font-size: 0.9em;
+  color: var(--slide-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.http-send {
+  flex: none;
+  padding: 0.25em 0.9em;
+  font: inherit;
+  font-size: 0.8em;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.light .http-send {
+  color: #333;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+.http-send:hover {
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+  color: #fff;
+}
+.http-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.http-res {
+  padding: 0.7em 0.9em;
+}
+.http-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  font-family: var(--slide-mono);
+  margin-bottom: 0.6em;
+}
+.http-code {
+  font-weight: 700;
+}
+.http-code.s-2xx {
+  color: #98c379;
+}
+.http-code.s-3xx {
+  color: #61afef;
+}
+.http-code.s-4xx {
+  color: #e5c07b;
+}
+.http-code.s-1xx,
+.http-code.s-5xx {
+  color: #ef5350;
+}
+.http-statustext {
+  color: var(--slide-fg);
+}
+.http-time {
+  margin-left: auto;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+}
+.http-errmsg {
+  color: #ef5350;
+  font-weight: 600;
+}
+.http-headers {
+  margin-bottom: 0.6em;
+}
+.http-headers summary {
+  cursor: pointer;
+  color: var(--slide-muted);
+  font-size: 0.85em;
+  user-select: none;
+}
+.http-headers table {
+  margin: 0.5em 0 0;
+  font-family: var(--slide-mono);
+  font-size: 0.8em;
+  border-collapse: collapse;
+}
+.http-headers td {
+  padding: 0.15em 0.9em 0.15em 0;
+  border: 0;
+  vertical-align: top;
+  word-break: break-all;
+}
+.http-headers .http-hk {
+  color: #56b6c2;
+  white-space: nowrap;
+}
+.http-headers .http-hv {
+  color: var(--slide-muted);
+}
+.slide .http-res pre {
+  margin: 0;
+  max-height: 42vh;
+}
+.http-msg {
+  color: var(--slide-muted);
+  font-size: 0.85em;
+  margin: 0.5em 0 0;
+}
+
+/* ---------- Spotlight / Zoom（画像・コードの拡大） ---------- */
+
+.slide pre {
+  cursor: zoom-in;
+}
+.zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.9);
+  cursor: zoom-out;
+  animation: zoom-fade 0.15s ease;
+}
+@keyframes zoom-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.zoom img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+.zoom pre.zoom-code {
+  margin: 0;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 1.5rem 1.8rem;
+  font-family: var(--slide-mono);
+  font-size: clamp(1rem, 2.1vw, 1.7rem);
+  line-height: 1.6;
+  color: var(--slide-fg);
+  background: var(--slide-code-bg);
+  border: 1px solid var(--slide-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+.zoom-code .zc-line {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0 0.4em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+.zoom-code .zc-line:hover {
+  background: rgba(127, 127, 127, 0.16);
+}
+.zoom-code.dimmed .zc-line:not(.spot) {
+  opacity: 0.3;
+}
+.zoom-code .zc-line.spot {
+  background: rgba(255, 106, 0, 0.18);
+  box-shadow: inset 3px 0 0 var(--slide-accent-2);
+  opacity: 1;
+}
+
+/* ---------- chrome ---------- */
+
+#progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: var(--slide-accent);
+  transition: width 0.2s ease;
+  z-index: 10;
+}
+#counter,
+#timer,
+#hint {
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  position: fixed;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+  z-index: 10;
+}
+#counter {
+  bottom: 12px;
+  right: 18px;
+  font-size: 0.9rem;
+}
+#timer {
+  bottom: 34px;
+  right: 18px;
+  font-size: 0.95rem;
+}
+#hint {
+  bottom: 12px;
+  left: 18px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+:fullscreen #hint {
+  display: none;
+}
+@media (pointer: coarse) {
+  #hint {
+    display: none;
+  }
+}
+
+/* ---------- overview（o / Esc） ---------- */
+
+#overview {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: 28px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: #29292c;
+}
+body.overview #overview {
+  display: flex;
+}
+body.overview #deck,
+body.overview #progress,
+body.overview #counter,
+body.overview #timer,
+body.overview #hint,
+body.overview #presenter {
+  display: none;
+}
+.ov-item {
+  cursor: pointer;
+}
+.ov-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.ov-item.current .ov-frame {
+  outline: 3px solid var(--slide-accent);
+  outline-offset: 2px;
+}
+.ov-item:hover .ov-frame {
+  border-color: var(--slide-accent);
+}
+.ov-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#overview .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+.ov-num {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--slide-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ov-item.current .ov-num {
+  color: var(--slide-fg);
+  font-weight: 600;
+}
+
+/* ---------- presenter（p / 別ウィンドウ） ---------- */
+
+#presenter {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  box-sizing: border-box;
+  padding: 24px;
+  gap: 24px;
+  background: #1c1c1f;
+  color: #fff;
+  font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+}
+body.presenter #presenter {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+body.presenter #deck,
+body.presenter #progress,
+body.presenter #counter,
+body.presenter #timer,
+body.presenter #hint,
+body.presenter #overview {
+  display: none;
+}
+
+.pv-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-slot:last-child {
+  opacity: 0.85;
+}
+.pv-slot:last-child .pv-frame {
+  width: 62%;
+}
+.pv-label {
+  font-size: 0.85rem;
+  color: #9a9aa0;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.pv-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--slide-bg);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+.pv-scale {
+  position: relative;
+  transform-origin: 0 0;
+}
+#presenter .slide {
+  display: flex;
+  animation: none;
+  overflow: hidden;
+}
+
+.pv-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.pv-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.pv-elapsed {
+  font-size: 2.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.pv-wall {
+  font-size: 1rem;
+  color: #9a9aa0;
+  font-variant-numeric: tabular-nums;
+}
+.pv-controls {
+  display: flex;
+  gap: 10px;
+}
+.pv-controls button {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1.1rem;
+  color: #fff;
+  background: #2e2e33;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pv-controls button:hover {
+  background: var(--slide-accent);
+  border-color: var(--slide-accent);
+}
+.pv-notes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: #242428;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.pv-notes .pv-empty {
+  color: #76767c;
+}
+
+/* ---------- PDF（ブラウザの印刷 → PDF に保存） ---------- */
+
+@media print {
+  @page {
+    size: 1280px 720px;
+    margin: 0;
+  }
+  html {
+    font-size: 16px;
+  }
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #deck {
+    position: static;
+  }
+  .slide {
+    display: flex !important;
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    padding: 43px 115px;
+    animation: none !important;
+    overflow: hidden;
+    break-after: page;
+    background: var(--slide-bg);
+  }
+  .slide.wide {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+  .slide.center p {
+    font-size: calc(3.5rem * var(--slide-size, 1));
+  }
+  .slide.title h1 {
+    font-size: calc(5.2rem * var(--slide-size, 1));
+  }
+  #progress,
+  #counter,
+  #timer,
+  #hint,
+  #overview,
+  #presenter,
+  .copy-btn,
+  .http-send,
+  .zoom {
+    display: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<div id="deck">
+<section class="slide title"><h1>Cloudflare AgentsのAI Providerが統合されたので検証してみる</h1><p>〜 fallbackは、本文が1文字出たら切り替わらない 〜</p><p>田中博悠 / tanahiro2010</p></section>
+<section class="slide"><h2>田中博悠 / tanahiro2010</h2><div class="cols"><div><ul><li>三田学園高等学校 1年</li><li>GDG Greater Kwansai</li><li>Workers で LLM を呼んでる</li></ul><h1>fallback、書いて安心してました</h1></div><div><p><img src="img/tanahiro_hono.jpg" alt="tanahiro2010"></p></div></div></section>
+<section class="slide"><h2>今日話すこと</h2><ul><li>10月21日、Agents の AI Provider が <code>createAI</code> に統合された</li><li><code>fallback</code> が1行で書けるようになった</li><li>=&gt; で、いつ効くのか測ってみた</li></ul></section>
+<section class="slide"><h2>何が統合されたのか</h2><ul><li><code>workers-ai-provider</code> と <code>ai-gateway-provider</code> が一本化</li><li>どちらも npm で deprecated（10月20日公開の版）</li><li>Workers AI / カタログモデル / dynamic route / ベンダーのモデル を同じ書き方で</li></ul></section>
+<section class="slide"><h2>fallbackが1行で書けるようになった</h2><pre data-lang="ts"><code><span class="hl-k">const</span> result = <span class="hl-k">await</span> <span class="hl-f">generateText</span>({
+  model: <span class="hl-f">ai</span>(<span class="hl-s">'@cf/zai-org/glm-4.7-flash'</span>, {
+    fallback: [<span class="hl-s">'anthropic/claude-opus-5.5'</span>]
+  }),
+  prompt: <span class="hl-s">'Hello'</span>
+})</code></pre></section>
+<section class="slide"><h2>で、「落ちたら」ってどこから？</h2></section>
+<section class="slide"><h2>ドキュメントにはこう書いてある</h2><blockquote><p>A stream that fails before its first output part.</p></blockquote><p>&gt;</p><blockquote><p>https://developers.cloudflare.com/agents/models/ai-sdk/</p></blockquote></section>
+<section class="slide"><h2>first output part って、どこ？</h2><ul><li>ストリーミングは途中まで出てから切れる</li><li>そのとき切り替わるのか</li><li>切り替わらないのか</li></ul></section>
+<section class="slide"><h2>どうやって測る？</h2><ul><li>本物のモデルは好きな位置で落とせない</li><li>=&gt; 偽の binding を渡せばいい</li></ul></section>
+<section class="slide"><h2>bindingに必要なのは3つだけ</h2><pre data-lang="ts"><code><span class="hl-k">const</span> binding = {
+  aiGatewayLogId: <span class="hl-s">'01LOGID'</span>,
+  <span class="hl-k">async</span> <span class="hl-f">fetch</span>() { <span class="hl-k">return</span> <span class="hl-k">new</span> <span class="hl-f">Response</span>(<span class="hl-s">'gone'</span>, { status: <span class="hl-n">404</span> }) },
+  <span class="hl-k">async</span> <span class="hl-f">run</span>(model, input, options) {
+    <span class="hl-k">return</span> <span class="hl-k">new</span> <span class="hl-f">Response</span>(sseBody, {
+      headers: { <span class="hl-s">'content-type'</span>: <span class="hl-s">'text/event-stream'</span> }
+    })
+  }
+}</code></pre></section>
+<section class="slide"><h2>好きな位置で切れる</h2><pre data-lang="ts"><code><span class="hl-k">function</span> <span class="hl-f">dropAfter</span>(chunks) {
+  <span class="hl-k">let</span> i = <span class="hl-n">0</span>
+  <span class="hl-k">return</span> <span class="hl-k">new</span> <span class="hl-f">ReadableStream</span>({
+    <span class="hl-f">pull</span>(controller) {
+      <span class="hl-k">if</span> (i &lt; chunks.length) {
+        controller.<span class="hl-f">enqueue</span>(enc.<span class="hl-f">encode</span>(<span class="hl-s">`data: ${JSON.stringify(chunks[i++])}\n\n`</span>))
+        <span class="hl-k">return</span>
+      }
+      controller.<span class="hl-f">error</span>(<span class="hl-k">new</span> <span class="hl-f">Error</span>(<span class="hl-s">'connection dropped'</span>))
+    }
+  })
+}</code></pre></section>
+<section class="slide"><h2>アカウントも課金もいらない</h2><ul><li>ローカルで決定的に動く</li><li>86ケース回して毎回同じ結果</li><li>あとで気づいたけど Cloudflare の公式テストも同じ手口だった</li></ul></section>
+<section class="slide"><h2>測った結果</h2><ul><li>何も出さずに切断 <span class="arrow">→</span> 切り替わる</li><li><code>response-metadata</code> だけ <span class="arrow">→</span> 切り替わる</li><li>ツール名だけ <span class="arrow">→</span> 切り替わる</li><li>ツールの引数が出た <span class="arrow">→</span> 切り替わらない</li><li>本文1文字 <span class="arrow">→</span> 切り替わらない</li></ul></section>
+<section class="slide"><h2>境界はここ</h2><ul><li>ツール名までなら、まだ間に合う</li><li>本文が1文字出たら、もう手遅れ</li></ul></section>
+<section class="slide"><h2>なぜそこなのか</h2><ul><li>実装に <code>PREAMBLE_PARTS</code> という集合がある</li><li>「ここまでならまだ出力していない」という判定</li><li>6種類ある</li></ul></section>
+<section class="slide"><h2>6種類ある</h2><pre data-lang="ts"><code><span class="hl-k">const</span> <span class="hl-t">PREAMBLE_PARTS</span> = <span class="hl-k">new</span> <span class="hl-f">Set</span>([
+  <span class="hl-s">'stream-start'</span>,
+  <span class="hl-s">'response-metadata'</span>,
+  <span class="hl-s">'text-start'</span>,
+  <span class="hl-s">'reasoning-start'</span>,
+  <span class="hl-s">'tool-input-start'</span>,
+  <span class="hl-s">'raw'</span>
+])</code></pre></section>
+<section class="slide"><h2>でも単独で出せるのは3つだけ</h2><ul><li><code>text-start</code> <span class="arrow">→</span> <code>text-delta</code> と必ず連続で出る</li><li><code>reasoning-start</code> <span class="arrow">→</span> <code>reasoning-delta</code> と対</li><li><code>tool-input-start</code> <span class="arrow">→</span> 引数が空なら単独で出る</li></ul></section>
+<section class="slide"><h2>出力が始まった後は？</h2></section>
+<section class="slide"><h2>resumeが引き継ぐ</h2><ul><li><code>AAA</code> で切れて再接続して <code>BBB</code> <span class="arrow">→</span> 受け取るのは <code>AAABBB</code></li><li>取りこぼしも重複もない</li><li>このとき <code>fallback</code> は1度も呼ばれない</li></ul></section>
+<section class="slide"><h2>再接続の単位はSSEイベント</h2><ul><li>完全なイベントだけ下流に渡す</li><li>半端なイベントは握っておく</li><li>切れたら半端な分を捨てて、渡した個数から再開</li></ul></section>
+<section class="slide"><h2>ただしWorkers AIは守られない</h2><ul><li><code>resume</code> は <code>cf-aig-run-id</code> がないと働かない</li><li>実機で確認 <span class="arrow">→</span> Workers AI のストリームには run id が付かない</li><li>守備範囲はカタログモデルと dynamic route だけ</li></ul></section>
+<section class="slide"><h2>resumeは5回で諦める</h2><ul><li>定数は <code>maxReconnects ?? 5</code></li><li>公開オプションにないので変えられない</li><li><code>The stream dropped 6 times; giving up at event 7.</code></li></ul></section>
+<section class="slide"><h2>諦めたときのエラーが拾えない</h2><ul><li><code>e.name</code> <span class="arrow">→</span> どちらも <code>CloudflareAIError</code></li><li><code>instanceof</code> <span class="arrow">→</span> 通常は true、resume は false</li><li><code>APICallError.isInstance()</code> <span class="arrow">→</span> 通常は true、resume は false</li></ul></section>
+<section class="slide"><h2>同じ名前のクラスが2つある</h2><ul><li><code>models/core/errors.ts</code> <span class="arrow">→</span> <code>extends Error</code>、非公開</li><li><code>models/ai-sdk/errors.ts</code> <span class="arrow">→</span> <code>extends APICallError</code>、こっちが公開</li><li><code>core/resume.ts</code> は前者を import している</li></ul></section>
+<section class="slide"><h2>投げる場所が悪い</h2><pre data-lang="ts"><code><span class="hl-k">async</span> <span class="hl-f">run</span>(request) {
+  <span class="hl-k">try</span> {
+    <span class="hl-k">return</span> <span class="hl-k">await</span> inner.<span class="hl-f">run</span>(request)   <span class="hl-c">// レスポンスが来た時点で解決</span>
+  } <span class="hl-k">catch</span> (error) {
+    <span class="hl-k">throw</span> <span class="hl-f">toAISDKError</span>(error)         <span class="hl-c">// body 読み出し中の失敗は見えない</span>
+  }
+}</code></pre></section>
+<section class="slide"><h2>なぜ誰も気づかなかったか</h2><pre data-lang="ts"><code><span class="hl-c">// packages/agents/src/tests/models/core/resume.test.ts</span>
+<span class="hl-k">import</span> { <span class="hl-t">CloudflareAIError</span> } <span class="hl-k">from</span> <span class="hl-s">'../../../models/core/errors'</span></code></pre><ul><li>公式テストが内部クラスを import している</li><li>投げられてるのはまさにそのクラス <span class="arrow">→</span> 常に通る</li></ul></section>
+<section class="slide"><h2>内部実装をimportしたテストは、公開APIの約束を守らない</h2></section>
+<section class="slide"><h2>おまけ: streamRetriesを足すと</h2><ul><li>AI SDK v7 のオプション、既定は0</li><li>出力が始まった後のエラーを再試行する</li><li><code>createAI</code> 側のドキュメントは、これに触れていない</li></ul></section>
+<section class="slide"><h2>部分出力が重複する</h2><ul><li>省略 <span class="arrow">→</span> <code>PARTIAL-</code></li><li><code>streamRetries: 1</code> <span class="arrow">→</span> <code>PARTIAL-PARTIAL-</code></li><li><code>streamRetries: 2</code> <span class="arrow">→</span> <code>PARTIAL-PARTIAL-PARTIAL-</code></li></ul></section>
+<section class="slide"><h2>実運用で効く数字</h2><ul><li><code>maxRetries: 0</code> <span class="arrow">→</span> 2リクエスト</li><li><code>maxRetries: 2</code>（既定）<span class="arrow">→</span> 6リクエスト</li><li>3段の入れ子 <span class="arrow">→</span> 9リクエスト</li></ul></section>
+<section class="slide"><h2>他にもハマりどころ</h2><ul><li>404 は fallback するが retry はしない</li><li><code>attempts</code> は fallback 未設定だと undefined</li><li>存在しないモデル <span class="arrow">→</span> <code>@cf/</code> は400、カタログIDは404</li></ul></section>
+<section class="slide"><h2>報告した</h2><ul><li>agents#2687 <span class="arrow">→</span> resume のエラー型</li><li>agents#2690 <span class="arrow">→</span> <code>ai</code> の peer range</li><li>cloudflare-docs#34546 <span class="arrow">→</span> ドキュメントの記述</li></ul></section>
+<section class="slide"><h2>翌日、知らない人が再現してくれた</h2><ul><li>原因の特定も修正方針も一致してた</li><li><code>createTransport().run()</code> で body を包む</li><li>別経路で同じ場所に辿り着いてるので、読み違いではなさそう</li></ul></section>
+<section class="slide"><h2>まとめ</h2><ul><li>10月21日、AI Provider が <code>createAI</code> に統合された</li><li><code>fallback</code> が守るのは、モデルが口を開くまで<ul><li>ツール名までなら切り替わる</li><li>本文が1文字出たら切り替わらない</li></ul></li><li>その先は <code>resume</code>。ただし Workers AI では働かない</li><li>偽の binding を1つ書くだけで、ここまで測れる</li></ul></section>
+<section class="slide"><h2>リンク</h2><ul><li>https://github.com/cloudflare/agents/issues/2687</li><li>https://github.com/cloudflare/agents/issues/2690</li><li>https://github.com/cloudflare/cloudflare-docs/pull/34546</li></ul></section>
+</div>
+<div id="overview"></div>
+<div id="presenter"></div>
+<div id="progress"></div>
+<div id="timer"></div>
+<div id="counter"></div>
+<div id="hint">← → 移動 ・ f フルスクリーン ・ o 一覧 ・ p 発表者</div>
+<script id="notes" type="application/json">["\u003cp>「Cloudflare AgentsのAI Providerが統合されたので検証してみる」、田中博悠です。よろしくお願いします。\u003c/p>\u003cp>全 35 枚・想定 15〜20 分。\u003cstrong>LT 枠（5分）なら「おまけ: streamRetries」と「実運用で効く数字」を落とす\u003c/strong> \u003cspan class=\"arrow\">→\u003c/span> 約 25 枚。\u003c/p>","\u003cp>高校1年です。GDG Greater Kwansai で活動していて、個人開発では Cloudflare Workers から LLM を呼んでいます。\u003c/p>\u003cp>\u003ccode>fallback\u003c/code> を 1 行書いて、これで落ちても大丈夫だと思っていました。その思い込みが今日の話の出発点です。\u003c/p>\u003cp>\u003cstrong>15 秒で切る。\u003c/strong>\u003c/p>","\u003cp>今日話すことは3つです。統合の話、\u003ccode>fallback\u003c/code> が簡単に書けるようになった話、そして実際にいつ効くのか測った話。\u003c/p>\u003cp>本題は3つ目です。前の2つは前置きなので早めに進みます。\u003c/p>","\u003cp>今まで Workers AI を使うか AI Gateway を使うかでパッケージが分かれていました。それが \u003ccode>createAI\u003c/code> ひとつになりました。\u003c/p>\u003cp>旧2つは npm 上でちゃんと deprecated フラグが立っています。レジストリを引けば確認できます。\u003c/p>\u003cp>\u003cstrong>聞かれたら:\u003c/strong> 削除ではなく feature frozen。当面は動く。\u003c/p>","\u003cp>これが今日の主役です。\u003ccode>fallback\u003c/code> に配列を渡すだけで、落ちたら次のモデルに行ってくれます。\u003c/p>\u003cp>Workers AI のモデルから Anthropic のモデルへ、みたいな混在もできます。便利です。\u003c/p>","\u003cp>ここで引っかかりました。\u003c/p>\u003cp>非ストリーミングなら分かります。エラーが返ってきたら落ちた、でいい。でもストリーミングだとどうなるんでしょうか。\u003c/p>\u003cp>\u003cstrong>ここで一拍置く。\u003c/strong>\u003c/p>","\u003cp>ドキュメントの記述はこれだけです。「最初の出力パートより前に失敗したストリーム」。\u003c/p>\u003cp>逆に言うと、それ以上のことは書いてありません。\u003c/p>","\u003cp>ストリーミングは途中まで文章が出てから切れることがあります。ネットワークが切れたり、上流がレート制限に当たったり。\u003c/p>\u003cp>そのとき \u003ccode>fallback\u003c/code> が効くのかどうか。これが分からないと、保険として信用していいのか判断できません。\u003c/p>","\u003cp>測ろうとして、すぐ壁にぶつかりました。本物のモデルは、こちらの好きな位置でストリームを切ってくれません。\u003c/p>\u003cp>なので偽物を渡すことにしました。\u003c/p>","\u003cp>実装を読んだら、\u003ccode>createAI\u003c/code> が binding に求めているのは3つだけでした。\u003ccode>run\u003c/code> と \u003ccode>fetch\u003c/code> が \u003ccode>Response\u003c/code> を返すこと、\u003ccode>aiGatewayLogId\u003c/code> を持つこと。\u003c/p>\u003cp>これだけなら自分で書けます。\u003c/p>\u003cp>\u003cstrong>聞かれたら:\u003c/strong> 実装は \u003ccode>models/core/transport.ts\u003c/code> の \u003ccode>bindingTransport\u003c/code>。\u003c/p>","\u003cp>肝は本文の作り方です。チャンクを1つずつ出して、尽きたところでエラーにする。\u003c/p>\u003cp>\u003ccode>chunks\u003c/code> に何を渡すかで、切れる位置が決まります。本文を入れれば本文が出てから切れ、ツール呼び出しを入れればツール名が出てから切れます。\u003c/p>","\u003cp>この方法のいいところは、Cloudflare のアカウントが要らないことです。課金もゼロ、毎回同じ結果が出ます。\u003c/p>\u003cp>最終的に 86 ケース書きました。実機を叩いたのは、エラーの分類とメタデータのキーを確かめる 1 回だけです。\u003c/p>\u003cp>公式テストを後から読んだら、同じやり方で書かれていました。\u003c/p>","\u003cp>切る位置だけを変えて、他の条件は全部固定しました。\u003c/p>\u003cp>上の3つは切り替わります。下の2つは切り替わりません。\u003c/p>\u003cp>\u003cstrong>ここは1行ずつ指しながら読む。\u003c/strong>\u003c/p>","\u003cp>まとめるとこうです。ツール呼び出しの名前だけが届いた段階なら、まだ別のモデルに切り替わる。本文が1文字でも出たら、もう切り替わらない。\u003c/p>\u003cp>ちなみに切り替わったとき、落ちたモデルのパートは利用者に1つも届きません。答えたモデルのプリアンブルに丸ごと差し替わります。\u003c/p>","\u003cp>なぜそこに線が引かれるのか、実装を読みました。\u003c/p>\u003cp>\u003ccode>PREAMBLE_PARTS\u003c/code> という集合があって、ここに入っているパートまでなら「まだ出力していない」と判定されます。\u003c/p>","\u003cp>6種類あります。これを見ると「\u003ccode>text-start\u003c/code> の後もまだ間に合うのか」と読めます。僕も最初そう読みました。\u003c/p>\u003cp>でも実際には違いました。\u003c/p>","\u003cp>ストリームを組み立てる側のコードを読むと、空文字が弾かれるガードがありました。そのせいで \u003ccode>text-start\u003c/code> の直後には必ず \u003ccode>text-delta\u003c/code> が続きます。単独では出せません。\u003c/p>\u003cp>\u003ccode>reasoning-start\u003c/code> も同じく対で出ます。\u003c/p>\u003cp>ツール呼び出しだけはガードが別で、引数が空なら \u003ccode>tool-input-start\u003c/code> が単独で出ます。だからここが最後の地点になります。\u003c/p>","\u003cp>では、本文が出てしまった後は何も守ってくれないのか。\u003c/p>\u003cp>そうでもありませんでした。\u003c/p>","\u003cp>\u003ccode>resume\u003c/code> という仕組みがあります。同じ run に再接続して、続きから流し直してくれます。\u003c/p>\u003cp>\u003ccode>AAA\u003c/code> まで出て切れて、再接続して \u003ccode>BBB\u003c/code> を受け取ると、利用者が手にするのは \u003ccode>AAABBB\u003c/code> です。重複しません。\u003c/p>\u003cp>そしてこのとき \u003ccode>fallback\u003c/code> は1度も呼ばれません。役割が分かれています。\u003c/p>","\u003cp>なぜ重複しないかというと、再接続の単位が SSE のイベントだからです。\u003c/p>\u003cp>完全なイベントだけを下流に渡して、途中まで届いた半端なものは握っておく。切れたらその半端な分を捨てて、すでに渡した個数から再開します。\u003c/p>\u003cp>実際に偽 binding で URL を記録すると、渡した個数がそのまま \u003ccode>from=\u003c/code> に乗っていました。\u003c/p>","\u003cp>ここが落とし穴です。\u003ccode>resume\u003c/code> は run id が無いと働きません。\u003c/p>\u003cp>実機で確かめたら、Workers AI のストリームには run id が付きませんでした。つまり \u003ccode>@cf/\u003c/code> のモデルを使っている限り、出力が始まった後は誰も守ってくれません。\u003c/p>\u003cp>\u003cstrong>聞かれたら:\u003c/strong> ドキュメントの Limitations にも書いてある。見落としやすいだけ。\u003c/p>","\u003cp>その \u003ccode>resume\u003c/code> にも上限があります。5回まで再接続して、6回目のドロップで諦めます。\u003c/p>\u003cp>定数は実装の中にあって、公開オプションには出ていません。呼び出し側からは変えられません。\u003c/p>\u003cp>\u003cstrong>聞かれたら:\u003c/strong> ドキュメントは「after five drops」と書いているが、実際は5回生き延びて6回目で落ちる。1つ手前を指している。\u003c/p>","\u003cp>ここが今日いちばん言いたいところです。\u003c/p>\u003cp>諦めたときに投げられるエラーを調べたら、名前は \u003ccode>CloudflareAIError\u003c/code> なのに \u003ccode>instanceof\u003c/code> が通りませんでした。\u003c/p>\u003cp>名前が同じなので、ログを眺めていても気づけません。\u003c/p>\u003cp>\u003cstrong>ここでちょっと溜める。\u003c/strong>\u003c/p>","\u003cp>原因は単純でした。同じ名前のクラスが2つあって、公開されているのは後者です。\u003c/p>\u003cp>ところが \u003ccode>resume\u003c/code> の実装は前者を import していました。\u003c/p>","\u003cp>変換する仕組み自体はあります。\u003ccode>toAISDKError\u003c/code> を通せば公開クラスに持ち上がります。\u003c/p>\u003cp>でも \u003ccode>resume\u003c/code> のエラーが投げられるのは、\u003ccode>run()\u003c/code> が返った後、利用者がストリームを読んでいる最中です。この \u003ccode>catch\u003c/code> はもう通り過ぎています。\u003c/p>\u003cp>この関数のコメントには「every failure lifted into the AI SDK error type」と書いてあります。その約束から、ここだけが漏れていました。\u003c/p>","\u003cp>テストはあります。でも内部クラスを import していました。\u003c/p>\u003cp>投げられているのはまさにそのクラスなので、\u003ccode>toBeInstanceOf\u003c/code> は常に通ります。テストは緑のままです。\u003c/p>\u003cp>公開 API としての契約を見ているテストが、1つもありませんでした。\u003c/p>","\u003cp>これは Cloudflare に限った話ではないと思っています。\u003c/p>\u003cp>自分のコードでも起こります。テストを書くとき、内部から import すると通りやすい。でもそれだと、公開している側の約束を検証したことにはなりません。\u003c/p>\u003cp>\u003cstrong>ここが今日の持ち帰りポイント。ゆっくり言う。\u003c/strong>\u003c/p>","\u003cp>ここからはおまけです。時間が無ければ飛ばします。\u003c/p>\u003cp>AI SDK v7 に \u003ccode>streamRetries\u003c/code> というオプションがあります。出力が始まった後のエラーを再試行する、つまり \u003ccode>fallback\u003c/code> が手を引いた領域を拾いに行くものです。\u003c/p>\u003cp>お互いのドキュメントが相手に触れていないので、重なり方は測るしかありませんでした。\u003c/p>","\u003cp>測ったらこうなりました。再試行するたびに、部分出力が別のテキストブロックとして流れます。\u003c/p>\u003cp>\u003ccode>res.text\u003c/code> を読んでいる分には1つ分しか返りませんが、\u003ccode>fullStream\u003c/code> を UI に流していると同じ文章が繰り返し画面に出ます。\u003c/p>\u003cp>\u003cstrong>聞かれたら:\u003c/strong> 再試行しても fallback には届かない。primary がストリームを開けてしまうので毎回 primary に確定する。\u003c/p>","\u003cp>Retry は \u003ccode>fallback\u003c/code> チェーンの外側にあります。なのでチェーンの長さ ×（1 + maxRetries）になります。\u003c/p>\u003cp>\u003ccode>maxRetries\u003c/code> の既定は 2 です。何も指定しないと3倍になります。\u003c/p>\u003cp>入れ子にすると、さらに掛け算されます。\u003c/p>","\u003cp>細かいところを3つ。\u003c/p>\u003cp>404 は \u003ccode>fallback\u003c/code> しますが retry はしません。判定の基準が別だからです。\u003c/p>\u003cp>\u003ccode>attempts\u003c/code> はドキュメントだと無条件に入るように読めますが、\u003ccode>fallback\u003c/code> を設定していないと undefined です。\u003c/p>\u003cp>存在しないモデルのエラーコードが2つに割れるのも罠で、\u003ccode>not-found\u003c/code> だけ見ていると \u003ccode>@cf/\u003c/code> の打ち間違いがすり抜けます。\u003c/p>","\u003cp>見つけたものは報告しました。3件です。\u003c/p>\u003cp>\u003ccode>agents\u003c/code> は pull request をコラボレーターに限定しているので、Issue に修正ブランチのリンクを添える形にしました。\u003c/p>","\u003cp>翌日、知らない方から再現報告が付きました。\u003c/p>\u003cp>原因の特定も、直し方も、こちらが出したものと一致していました。別の経路で同じ場所に辿り着いているので、自分の読み違いではなさそうです。\u003c/p>\u003cp>報告して良かったと思った瞬間でした。\u003c/p>","\u003cp>まとめます。\u003c/p>\u003cp>\u003ccode>fallback\u003c/code> を1行書いて安心していましたが、守備範囲はモデルが口を開くまででした。その先は \u003ccode>resume\u003c/code> が引き継ぎますが、Workers AI では働きません。\u003c/p>\u003cp>そして偽の binding を1つ書くだけで、ここまで測れます。50行ほどのオブジェクトです。\u003c/p>\u003cp>自分が使っている SDK で同じことをすると、ドキュメントに書いていない境界が出てくると思います。\u003c/p>","\u003cp>リンクです。Issue には再現コードを載せてあるので、興味があれば見てください。\u003c/p>\u003cp>ありがとうございました。\u003c/p>"]</script>
+<script>"use strict";
+// スライドのナビゲーション。ippon が HTML に埋め込む。
+//   → / Space / PageDown / クリック右側     次へ
+//   ← / PageUp / クリック左側              前へ
+//   Home / End                              最初 / 最後
+//   f                                       フルスクリーン
+//   o / Esc                                 一覧
+//   p                                       発表者ビュー（別ウィンドウ）
+(() => {
+    const slides = Array.from(document.querySelectorAll('#deck .slide'));
+    if (!slides.length)
+        return;
+    // ippon serve のときだけ注入される設定（スマホリモコン用）。無ければ従来どおり何もしない
+    const serveCfg = window.__ippon;
+    const $ = (id) => document.getElementById(id);
+    const div = (className) => {
+        const el = document.createElement('div');
+        el.className = className;
+        return el;
+    };
+    function fmt(ms) {
+        const total = Math.floor(ms / 1000);
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    // ---------- Spotlight / Zoom（画像・コードをクリックで拡大） ----------
+    let zoomEl = null;
+    function closeZoom() {
+        if (zoomEl) {
+            zoomEl.remove();
+            zoomEl = null;
+        }
+    }
+    function openZoom(content) {
+        closeZoom();
+        const ov = div('zoom');
+        ov.appendChild(content);
+        ov.addEventListener('click', () => closeZoom()); // 背景クリックで閉じる
+        document.body.appendChild(ov);
+        zoomEl = ov;
+    }
+    function openImageZoom(img) {
+        const big = document.createElement('img');
+        big.src = img.currentSrc || img.src;
+        big.alt = img.alt;
+        openZoom(big);
+    }
+    function openCodeZoom(pre) {
+        const box = pre.cloneNode(true);
+        box.querySelector('.copy-btn')?.remove();
+        box.classList.add('zoom-code');
+        const code = box.querySelector('code');
+        if (code) {
+            // 行ごとに分けてクリックでスポットライトできるようにする
+            // （ハイライトのトークンは行をまたがないので innerHTML を改行で割れる）
+            const lines = code.innerHTML.split('\n');
+            code.textContent = '';
+            for (const ln of lines) {
+                const line = div('zc-line');
+                line.innerHTML = ln.length ? ln : '&#8203;';
+                line.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    line.classList.toggle('spot');
+                    box.classList.toggle('dimmed', !!box.querySelector('.zc-line.spot'));
+                });
+                code.appendChild(line);
+            }
+        }
+        // コード内のクリックは閉じない（行スポットライトを操作するため）
+        box.addEventListener('click', (e) => e.stopPropagation());
+        openZoom(box);
+    }
+    // 別ウィンドウで開いたときは発表者ビューとして動く（本番のナビは動かさない）
+    if (window.name === 'ippon-presenter') {
+        presenterMode();
+        return;
+    }
+    let idx = 0;
+    const progress = $('progress');
+    const counter = $('counter');
+    const timerEl = $('timer');
+    const clamp = (n) => Math.max(0, Math.min(slides.length - 1, n));
+    // ---------- タイマー（表紙から進んだら開始、表紙に戻ったらリセット） ----------
+    let startedAt = null;
+    let ticking;
+    function syncTimer() {
+        if (idx === 0) {
+            startedAt = null;
+            clearInterval(ticking);
+            ticking = undefined;
+            timerEl.textContent = '';
+            return;
+        }
+        const t0 = (startedAt ?? (startedAt = Date.now()));
+        ticking ?? (ticking = window.setInterval(() => {
+            timerEl.textContent = fmt(Date.now() - t0);
+        }, 500));
+        timerEl.textContent = fmt(Date.now() - t0);
+    }
+    // ---------- 描画 ----------
+    function render() {
+        slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+        slides[idx].scrollTop = 0;
+        counter.textContent = idx + 1 + ' / ' + slides.length;
+        progress.style.width = ((idx + 1) / slides.length) * 100 + '%';
+        syncTimer();
+        broadcast();
+        netPublish();
+    }
+    function go(n) {
+        n = clamp(n);
+        if (n === idx)
+            return;
+        idx = n;
+        render();
+        history.replaceState(null, '', '#' + (idx + 1));
+    }
+    window.addEventListener('hashchange', () => {
+        const n = parseInt(location.hash.slice(1), 10);
+        if (n)
+            go(n - 1);
+    });
+    // ---------- 発表者ビュー（別ウィンドウ）との同期 ----------
+    let presenterWin = null;
+    function openPresenter() {
+        if (presenterWin && !presenterWin.closed) {
+            presenterWin.focus();
+            return;
+        }
+        presenterWin = window.open(location.href, 'ippon-presenter', 'width=1024,height=700');
+    }
+    function broadcast() {
+        if (presenterWin && !presenterWin.closed)
+            presenterWin.postMessage({ ippon: 'state', idx, total: slides.length, startedAt }, '*');
+    }
+    window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || typeof m !== 'object')
+            return;
+        if (m.ippon === 'hello')
+            broadcast();
+        else if (m.ippon === 'go' && typeof m.n === 'number')
+            go(m.n);
+    });
+    // ---------- serve（スマホリモコン：SSE で受信、/cmd へ state 送信） ----------
+    function netPublish() {
+        if (!serveCfg)
+            return;
+        const running = startedAt != null;
+        fetch('/cmd?t=' + encodeURIComponent(serveCfg.token), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                type: 'state',
+                idx,
+                total: slides.length,
+                elapsed: running ? Date.now() - startedAt : 0,
+                running,
+            }),
+        }).catch(() => { });
+    }
+    function resetTimer() {
+        startedAt = idx === 0 ? null : Date.now();
+        syncTimer();
+        netPublish();
+    }
+    function initServe() {
+        if (!serveCfg)
+            return;
+        const es = new EventSource('/events?t=' + encodeURIComponent(serveCfg.token));
+        es.onmessage = (e) => {
+            let m;
+            try {
+                m = JSON.parse(e.data);
+            }
+            catch {
+                return;
+            }
+            if (m.type === 'go' && typeof m.n === 'number')
+                go(m.n);
+            else if (m.type === 'timer' && m.action === 'reset')
+                resetTimer();
+        };
+    }
+    // QR を全画面で出す（r キー）。スマホのカメラで読めばリモコンになる
+    let qrOverlay = null;
+    function toggleQr() {
+        if (!serveCfg)
+            return;
+        if (qrOverlay) {
+            qrOverlay.remove();
+            qrOverlay = null;
+            return;
+        }
+        const ov = div('');
+        ov.style.cssText =
+            'position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(0,0,0,.88);cursor:pointer';
+        const box = div('');
+        box.style.cssText = 'background:#fff;padding:16px;border-radius:12px;width:min(60vmin,360px)';
+        box.innerHTML = serveCfg.qr;
+        const svg = box.querySelector('svg');
+        if (svg)
+            svg.setAttribute('style', 'width:100%;height:auto;display:block');
+        const url = div('');
+        url.style.cssText =
+            'color:#fff;font-family:system-ui,sans-serif;font-size:1rem;word-break:break-all;max-width:80vw;text-align:center';
+        url.textContent = serveCfg.remoteUrl;
+        const hint = div('');
+        hint.style.cssText = 'color:#aaa;font-family:system-ui,sans-serif;font-size:.85rem';
+        hint.textContent = 'スマホのカメラで読み取るとリモコンになります（同じ Wi-Fi に接続）';
+        ov.appendChild(box);
+        ov.appendChild(url);
+        ov.appendChild(hint);
+        ov.addEventListener('click', () => toggleQr());
+        document.body.appendChild(ov);
+        qrOverlay = ov;
+    }
+    const overview = $('overview');
+    let ovItems = null;
+    let ovOpen = false;
+    const THUMB = 240;
+    function buildOverview() {
+        return slides.map((s, i) => {
+            const item = div('ov-item');
+            const frame = div('ov-frame');
+            const scale = div('ov-scale');
+            const clone = s.cloneNode(true);
+            clone.classList.remove('active');
+            scale.appendChild(clone);
+            frame.appendChild(scale);
+            const num = div('ov-num');
+            num.textContent = String(i + 1);
+            item.appendChild(frame);
+            item.appendChild(num);
+            item.addEventListener('click', () => {
+                idx = i;
+                closeOverview();
+                render();
+                history.replaceState(null, '', '#' + (idx + 1));
+            });
+            overview.appendChild(item);
+            return { item, frame, scale };
+        });
+    }
+    function layoutOverview(items) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const k = THUMB / w;
+        for (const t of items) {
+            t.frame.style.width = THUMB + 'px';
+            t.frame.style.height = h * k + 'px';
+            t.scale.style.width = w + 'px';
+            t.scale.style.height = h + 'px';
+            t.scale.style.transform = 'scale(' + k + ')';
+        }
+    }
+    function openOverview() {
+        const items = (ovItems ?? (ovItems = buildOverview()));
+        layoutOverview(items);
+        items.forEach((t, i) => t.item.classList.toggle('current', i === idx));
+        ovOpen = true;
+        document.body.classList.add('overview');
+        items[idx].item.scrollIntoView({ block: 'center' });
+    }
+    function closeOverview() {
+        ovOpen = false;
+        document.body.classList.remove('overview');
+    }
+    window.addEventListener('resize', () => {
+        if (ovOpen && ovItems)
+            layoutOverview(ovItems);
+    });
+    // ---------- 入力 ----------
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey)
+            return;
+        if (zoomEl) {
+            if (e.key === 'Escape')
+                closeZoom();
+            return;
+        }
+        if (ovOpen) {
+            if (e.key === 'Escape' || e.key === 'o')
+                closeOverview();
+            return;
+        }
+        if (qrOverlay) {
+            if (e.key === 'Escape' || e.key === 'r')
+                toggleQr();
+            return;
+        }
+        switch (e.key) {
+            case 'ArrowRight':
+            case 'PageDown':
+            case ' ':
+                e.preventDefault();
+                go(idx + 1);
+                break;
+            case 'ArrowLeft':
+            case 'PageUp':
+                e.preventDefault();
+                go(idx - 1);
+                break;
+            case 'Home':
+                go(0);
+                break;
+            case 'End':
+                go(slides.length - 1);
+                break;
+            case 'f':
+                if (document.fullscreenElement)
+                    document.exitFullscreen();
+                else
+                    document.documentElement.requestFullscreen();
+                break;
+            case 'o':
+                openOverview();
+                break;
+            case 'p':
+                openPresenter();
+                break;
+            case 'r':
+                toggleQr();
+                break;
+            case 'Escape':
+                if (!document.fullscreenElement)
+                    openOverview();
+                break;
+        }
+    });
+    // 画面の右 3 割で次へ、左 3 割で前へ（リンクと文字選択は邪魔しない）
+    const deck = $('deck');
+    deck.addEventListener('click', (e) => {
+        if (e.target instanceof Element && e.target.closest('a, button'))
+            return;
+        if (String(window.getSelection() || ''))
+            return;
+        const x = e.clientX / window.innerWidth;
+        if (x > 0.7)
+            go(idx + 1);
+        else if (x < 0.3)
+            go(idx - 1);
+    });
+    // 横スワイプ
+    let touch = null;
+    deck.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        touch = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+    }, { passive: true });
+    deck.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        if (!touch || !t)
+            return;
+        const dx = t.clientX - touch.x;
+        const dy = t.clientY - touch.y;
+        touch = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            go(dx < 0 ? idx + 1 : idx - 1);
+    }, { passive: true });
+    // コードブロックの右上にコピーボタンを付ける
+    slides.forEach((s) => {
+        s.querySelectorAll('pre').forEach((pre) => {
+            const code = pre.querySelector('code') || pre;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.addEventListener('click', () => {
+                const text = code.innerText;
+                const done = () => {
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    window.setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 1200);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done, done);
+                }
+                else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                    }
+                    catch { }
+                    document.body.removeChild(ta);
+                    done();
+                }
+            });
+            pre.appendChild(btn);
+            // クリックでコードを拡大（文字選択中とコピーボタンは邪魔しない）
+            pre.addEventListener('click', (e) => {
+                if (e.target instanceof Element && e.target.closest('.copy-btn'))
+                    return;
+                if (String(window.getSelection() || ''))
+                    return;
+                e.stopPropagation();
+                openCodeZoom(pre);
+            });
+        });
+        // 画像はクリックで拡大
+        s.querySelectorAll('img').forEach((img) => {
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openImageZoom(img);
+            });
+        });
+    });
+    // ::http:: の「再送信」ボタン：ブラウザからライブで叩く（CORS が通る相手のみ）。
+    // 失敗したらビルド時のスナップショットに戻す。
+    function escText(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function hlJson(src) {
+        const re = /"(?:[^"\\]|\\.)*"|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?/g;
+        let out = '';
+        let last = 0;
+        let m;
+        while ((m = re.exec(src))) {
+            out += escText(src.slice(last, m.index));
+            const tok = m[0];
+            last = m.index + tok.length;
+            // 文字列で直後が : ならキー（hl-t）、それ以外の文字列は hl-s、数値と true/false/null は hl-n
+            const cls = tok[0] === '"' ? (/^\s*:/.test(src.slice(last)) ? 'hl-t' : 'hl-s') : 'hl-n';
+            out += '<span class="' + cls + '">' + escText(tok) + '</span>';
+        }
+        return out + escText(src.slice(last));
+    }
+    function httpStatusClass(status) {
+        return 's-' + (status < 200 ? 1 : status < 300 ? 2 : status < 400 ? 3 : status < 500 ? 4 : 5) + 'xx';
+    }
+    function httpResultHtml(r, text, ms) {
+        let count = 0;
+        let rows = '';
+        r.headers.forEach((v, k) => {
+            count++;
+            rows += '<tr><td class="http-hk">' + escText(k) + '</td><td class="http-hv">' + escText(v) + '</td></tr>';
+        });
+        const ct = r.headers.get('content-type') || '';
+        let body;
+        if (/\bjson\b/i.test(ct) || /^\s*[[{]/.test(text)) {
+            try {
+                body = '<pre data-lang="json"><code>' + hlJson(JSON.stringify(JSON.parse(text), null, 2)) + '</code></pre>';
+            }
+            catch {
+                body = '<pre><code>' + escText(text) + '</code></pre>';
+            }
+        }
+        else {
+            body = '<pre><code>' + escText(text) + '</code></pre>';
+        }
+        return ('<div class="http-status">' +
+            '<span class="http-code ' + httpStatusClass(r.status) + '">' + r.status + '</span>' +
+            '<span class="http-statustext">' + escText(r.statusText) + '</span>' +
+            '<span class="http-time">' + ms + ' ms</span></div>' +
+            '<details class="http-headers"><summary>ヘッダー（' + count + '）</summary><table>' + rows + '</table></details>' +
+            body);
+    }
+    slides.forEach((s) => {
+        s.querySelectorAll('.http').forEach((box) => {
+            const btn = box.querySelector('.http-send');
+            const resEl = box.querySelector('.http-res');
+            if (!btn || !resEl)
+                return;
+            const baked = resEl.innerHTML; // ビルド時スナップショット
+            const method = box.dataset.method || 'GET';
+            const url = box.dataset.url || '';
+            btn.addEventListener('click', async () => {
+                if (!url)
+                    return;
+                const label = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = '送信中…';
+                const t0 = performance.now();
+                try {
+                    const r = await fetch(url, { method });
+                    const text = await r.text();
+                    resEl.dataset.state = 'ok';
+                    resEl.innerHTML = httpResultHtml(r, text, Math.round(performance.now() - t0));
+                }
+                catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    resEl.dataset.state = 'error';
+                    resEl.innerHTML =
+                        '<div class="http-status"><span class="http-errmsg">✗ ' + escText(msg) + '</span></div>' +
+                            '<p class="http-msg">ブラウザからは CORS で取得できないことがあります。ビルド時のスナップショットを表示します。</p>' +
+                            baked;
+                }
+                finally {
+                    btn.disabled = false;
+                    btn.textContent = label;
+                }
+            });
+        });
+    });
+    const start = parseInt(location.hash.slice(1), 10);
+    if (start)
+        idx = clamp(start - 1);
+    render();
+    if (serveCfg) {
+        const hint = $('hint');
+        if (hint)
+            hint.textContent += ' ・ r リモコン';
+        initServe();
+    }
+    // ---------- 発表者ビュー本体（別ウィンドウで動く） ----------
+    function presenterMode() {
+        document.body.classList.add('presenter');
+        const root = $('presenter');
+        const left = div('pv-left');
+        const right = div('pv-right');
+        root.appendChild(left);
+        root.appendChild(right);
+        const makeSlot = (labelText) => {
+            const slot = div('pv-slot');
+            const label = div('pv-label');
+            label.textContent = labelText;
+            const frame = div('pv-frame');
+            const scale = div('pv-scale');
+            frame.appendChild(scale);
+            slot.appendChild(label);
+            slot.appendChild(frame);
+            left.appendChild(slot);
+            return { label, frame, scale };
+        };
+        const cur = makeSlot('現在');
+        const nxt = makeSlot('次へ');
+        const clock = div('pv-clock');
+        const elapsedEl = div('pv-elapsed');
+        const wallEl = div('pv-wall');
+        clock.appendChild(elapsedEl);
+        clock.appendChild(wallEl);
+        const controls = div('pv-controls');
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀';
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '▶';
+        controls.appendChild(prevBtn);
+        controls.appendChild(nextBtn);
+        const notesEl = div('pv-notes');
+        right.appendChild(clock);
+        right.appendChild(controls);
+        right.appendChild(notesEl);
+        // serve のときはリモコン用 QR を手元に出す
+        if (serveCfg) {
+            const qr = div('');
+            qr.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:4px';
+            const img = div('');
+            img.style.cssText = 'background:#fff;padding:8px;border-radius:8px;width:120px;flex:none';
+            img.innerHTML = serveCfg.qr;
+            const s = img.querySelector('svg');
+            if (s)
+                s.setAttribute('style', 'width:100%;height:auto;display:block');
+            const cap = div('');
+            cap.style.cssText = 'font-size:.8rem;color:#9a9aa0;word-break:break-all';
+            cap.textContent = 'スマホで読み取るとリモコン: ' + serveCfg.remoteUrl;
+            qr.appendChild(img);
+            qr.appendChild(cap);
+            right.appendChild(qr);
+        }
+        let curIdx = 0;
+        let total = slides.length;
+        let startedAt = null;
+        // 発表者ノートは <script id="notes"> の JSON から読む（スライド本体には無い）
+        let notesData = [];
+        try {
+            const el = document.getElementById('notes');
+            if (el && el.textContent)
+                notesData = JSON.parse(el.textContent);
+        }
+        catch { }
+        function fitPreview(frame, scale) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const fw = frame.clientWidth;
+            const k = fw / w;
+            frame.style.height = fw * (h / w) + 'px';
+            scale.style.width = w + 'px';
+            scale.style.height = h + 'px';
+            scale.style.transform = 'scale(' + k + ')';
+        }
+        function setPreview(frame, scale, i) {
+            scale.textContent = '';
+            const s = slides[i];
+            if (s)
+                scale.appendChild(s.cloneNode(true));
+            fitPreview(frame, scale);
+        }
+        function draw() {
+            cur.label.textContent = '現在  ' + (curIdx + 1) + ' / ' + total;
+            setPreview(cur.frame, cur.scale, curIdx);
+            const hasNext = curIdx + 1 < total;
+            nxt.label.textContent = hasNext ? '次へ  ' + (curIdx + 2) + ' / ' + total : 'おわり';
+            setPreview(nxt.frame, nxt.scale, hasNext ? curIdx + 1 : -1);
+            const note = notesData[curIdx];
+            notesEl.innerHTML = note ? note : '<p class="pv-empty">（ノートなし）</p>';
+        }
+        function tick() {
+            elapsedEl.textContent = startedAt == null ? '0:00' : fmt(Date.now() - startedAt);
+            wallEl.textContent = new Date().toLocaleTimeString();
+        }
+        const send = (n) => {
+            if (window.opener)
+                window.opener.postMessage({ ippon: 'go', n }, '*');
+        };
+        prevBtn.addEventListener('click', () => send(curIdx - 1));
+        nextBtn.addEventListener('click', () => send(curIdx + 1));
+        window.addEventListener('message', (e) => {
+            const m = e.data;
+            if (!m || m.ippon !== 'state')
+                return;
+            if (typeof m.idx === 'number')
+                curIdx = m.idx;
+            if (typeof m.total === 'number')
+                total = m.total;
+            startedAt = m.startedAt ?? null;
+            draw();
+            tick();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.metaKey || e.ctrlKey || e.altKey)
+                return;
+            switch (e.key) {
+                case 'ArrowRight':
+                case 'PageDown':
+                case ' ':
+                    e.preventDefault();
+                    send(curIdx + 1);
+                    break;
+                case 'ArrowLeft':
+                case 'PageUp':
+                    e.preventDefault();
+                    send(curIdx - 1);
+                    break;
+                case 'Home':
+                    send(0);
+                    break;
+                case 'End':
+                    send(total - 1);
+                    break;
+                case 'p':
+                case 'Escape':
+                    window.close();
+                    break;
+            }
+        });
+        window.addEventListener('resize', () => {
+            fitPreview(cur.frame, cur.scale);
+            fitPreview(nxt.frame, nxt.scale);
+        });
+        window.setInterval(tick, 500);
+        // 本番ウィンドウに現在の状態を要求する
+        if (window.opener)
+            window.opener.postMessage({ ippon: 'hello' }, '*');
+        draw();
+        tick();
+    }
+})();
+</script>
+</body>
+</html>
