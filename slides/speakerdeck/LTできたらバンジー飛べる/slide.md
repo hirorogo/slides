@@ -377,7 +377,7 @@ tanahiro2010 / 田中博悠
 <ul>
   <li>tanahiro2010</li>
   <li>三田学園高等学校 1年生</li>
-  <li>株式会社KOMPEITO</li>
+  <li>どこかの上場済み企業</li>
   <li>Alpha+ Project</li>
   <li>趣味: バンジー / 読書</li>
   <li>最近: スカイダイビングに思いを馳せています</li>

@@ -379,7 +379,7 @@
 - 自己紹介
   - 名前：田中博悠（tanahiro2010）
   - 学校：三田学園高等学校 1年生
-  - 所属：株式会社KOMPEITO / GDG Greater Kwansai / Alpha+ Project
+  - 所属：どこかの上場済み企業 / GDG Greater Kwansai / Alpha+ Project
   - 趣味：バンジー / 読書
   - 最近：まだ見ぬスカイダイビングに向けて思いを馳せている
   - 画像：img/tanaka.png

@@ -16,7 +16,7 @@ connpass: https://gdgkwansai.connpass.com/event/391029/
 - タイトル
 - 自己紹介
   - 名前：田中博悠（tanahiro2010）
-  - 所属：株式会社KOMPEITO / GDG Greater Kwansai
+  - 所属：どこかの上場済み企業 / GDG Greater Kwansai
   - 趣味：バンジー
   - 最近：強制的にでもバンジー一緒に飛んでくれる人を探してます
   - 画像：img/tanaka.png
