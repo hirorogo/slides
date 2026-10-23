@@ -1,0 +1,5 @@
+---
+published: false
+---
+
+# Cloudflare AgentsがPi 1.4に対応したので、Agentの中断・復旧・永続化を検証する
